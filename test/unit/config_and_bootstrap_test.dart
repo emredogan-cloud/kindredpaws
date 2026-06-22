@@ -2,9 +2,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kindredpaws/core/bootstrap.dart';
 import 'package:kindredpaws/core/kindred_terms.dart';
 import 'package:kindredpaws/core/service_locator.dart';
+import 'package:kindredpaws/render/pet_renderer.dart';
 import 'package:kindredpaws/services/analytics_service.dart';
 import 'package:kindredpaws/services/auth_service.dart';
 import 'package:kindredpaws/services/backend_service.dart';
+import 'package:kindredpaws/services/crash_reporter.dart';
+import 'package:kindredpaws/services/logger.dart';
+import 'package:kindredpaws/services/observability.dart';
+import 'package:kindredpaws/services/performance_monitor.dart';
 import 'package:kindredpaws/services/remote_config_service.dart';
 import 'package:kindredpaws/heartmind/heartmind_service.dart';
 
@@ -23,6 +28,17 @@ void main() {
       expect(sl.get<HeartmindService>(), isA<StubHeartmind>());
       expect(sl.get<AnalyticsService>(), isA<InMemoryAnalyticsService>());
       expect(sl.get<RemoteConfigService>(), isA<DefaultRemoteConfig>());
+    });
+
+    test('registers the observability stack + render seam', () {
+      bootstrap();
+      final sl = ServiceLocator.instance;
+      expect(sl.get<Logger>(), isA<InMemoryLogger>());
+      expect(sl.get<CrashReporter>(), isA<InMemoryCrashReporter>());
+      expect(sl.get<PerformanceMonitor>(), isA<InMemoryPerformanceMonitor>());
+      expect(sl.get<ObservabilityFacade>(), isA<ObservabilityFacade>());
+      // Default render backend is the deterministic placeholder.
+      expect(sl.get<PetRenderer>().backendId, 'placeholder');
     });
 
     test('service locator throws for unregistered types', () {
