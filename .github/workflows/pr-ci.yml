@@ -1,0 +1,145 @@
+name: PR CI
+
+# Fast, fail-fast gate that runs on every pull request. "Green here" == "green to merge".
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+concurrency:
+  group: pr-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  FLUTTER_VERSION: "3.41.9"
+  FLUTTER_CHANNEL: "stable"
+  MIN_COVERAGE: "60"
+
+jobs:
+  analyze:
+    name: analyze
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: ${{ env.FLUTTER_CHANNEL }}
+          cache: true
+      - name: Resolve dependencies
+        run: flutter pub get
+      - name: Dependency lockfile is committed & in sync
+        run: |
+          if [ ! -f pubspec.lock ]; then
+            echo "::error::pubspec.lock missing — commit it for reproducible builds"; exit 1
+          fi
+          git diff --exit-code pubspec.lock || {
+            echo "::error::pubspec.lock changed after 'flutter pub get' — commit the update"; exit 1; }
+      - name: Format check
+        run: dart format --output=none --set-exit-if-changed .
+      - name: Static analysis (lints + dead/unused code are fatal)
+        run: flutter analyze --fatal-infos --fatal-warnings
+
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: ${{ env.FLUTTER_CHANNEL }}
+          cache: true
+      - run: flutter pub get
+      - name: Unit · widget · golden · performance tests (with coverage)
+        run: flutter test --coverage --reporter expanded
+      - name: Enforce coverage threshold
+        run: |
+          python3 - "$MIN_COVERAGE" <<'PY'
+          import sys, re, pathlib
+          target = float(sys.argv[1])
+          data = pathlib.Path("coverage/lcov.info")
+          if not data.exists():
+              print("::error::coverage/lcov.info not generated"); sys.exit(1)
+          lf = lh = 0
+          for line in data.read_text().splitlines():
+              if line.startswith("LF:"): lf += int(line[3:])
+              elif line.startswith("LH:"): lh += int(line[3:])
+          pct = (lh / lf * 100) if lf else 0.0
+          print(f"Line coverage: {pct:.1f}% (hit {lh}/{lf}); threshold {target:.1f}%")
+          if pct + 1e-9 < target:
+              print(f"::error::coverage {pct:.1f}% is below the {target:.1f}% threshold"); sys.exit(1)
+          PY
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-lcov
+          path: coverage/lcov.info
+          if-no-files-found: warn
+
+  build-android:
+    name: build-android
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: ${{ env.FLUTTER_CHANNEL }}
+          cache: true
+      - run: flutter pub get
+      - name: Build debug APK
+        run: flutter build apk --debug
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+
+  integration-android:
+    name: integration-android
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enable KVM (hardware acceleration)
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: ${{ env.FLUTTER_CHANNEL }}
+          cache: true
+      - run: flutter pub get
+      - name: Run integration tests on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: flutter test integration_test/app_smoke_test.dart -d emulator-5554

@@ -1,0 +1,24 @@
+# CODEOWNERS — KindredPaws
+#
+# IMPORTANT: With the current governance model, human review is NOT mandatory
+# (AI agents may self-merge once CI is green). CODEOWNERS therefore exists to
+# (a) document domain ownership and (b) auto-REQUEST review / notify the founder
+# on sensitive areas — it does NOT add a blocking required-review, because the
+# branch ruleset sets required_approving_review_count = 0.
+#
+# To later make any path human-gated, add it here AND raise required approvals
+# for that path via a branch ruleset / path-scoped rule.
+
+# Default owner: the founder.
+*                           @emredogan-cloud
+
+# High-sensitivity surfaces the founder should always be pinged on.
+/.github/                   @emredogan-cloud
+/.github/workflows/         @emredogan-cloud
+/android/app/build.gradle*  @emredogan-cloud
+/android/key.properties     @emredogan-cloud
+/ios/Runner.xcodeproj/      @emredogan-cloud
+/release-please-config.json @emredogan-cloud
+/CODEOWNERS                 @emredogan-cloud
+/SECURITY.md                @emredogan-cloud
+/game-os/                   @emredogan-cloud

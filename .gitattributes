@@ -1,0 +1,25 @@
+# Normalize line endings; keep binaries binary.
+* text=auto eol=lf
+
+*.sh text eol=lf
+*.bat text eol=crlf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.ttf binary
+*.otf binary
+*.jks binary
+*.keystore binary
+*.apk binary
+*.aab binary
+*.ipa binary
+
+test/golden/goldens/*.png binary
+
+# Keep generated/vendored dirs out of language stats.
+game-os/** linguist-documentation
+android/** linguist-generated=false
+ios/** linguist-generated=false

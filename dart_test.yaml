@@ -1,0 +1,7 @@
+# Declares test tags so `--tags`/`--exclude-tags` work and the runner stops
+# warning about "unspecified" tags.
+tags:
+  golden:
+    description: "Pixel / snapshot golden tests (Linux-rendered to match CI)."
+  performance:
+    description: "Coarse host-side performance budgets."

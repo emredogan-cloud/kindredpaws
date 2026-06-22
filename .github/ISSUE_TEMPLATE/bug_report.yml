@@ -1,0 +1,54 @@
+name: "🐛 Bug report"
+description: "Something is broken in the app, tests, or pipelines."
+labels: ["type: fix", "agent: ready"]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Clear description of the bug and the expected behavior.
+      placeholder: "When I ... I expected ... but got ..."
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Exact, minimal steps. Include the `just`/`flutter` command if relevant.
+      placeholder: |
+        1. just test
+        2. ...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / output
+      description: Paste error output, stack traces, or a failing CI run URL.
+      render: shell
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Affected surface
+      options:
+        - App (Flutter)
+        - Tests
+        - CI/CD pipeline
+        - Tooling / scripts
+        - Android build/emulator
+        - iOS build/device cloud
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      description: Flutter/Dart version, OS, device/emulator.
+      placeholder: "Flutter 3.41.9, Ubuntu 24.04, Pixel 6 API 34"
+  - type: checkboxes
+    id: agent-ok
+    attributes:
+      label: Agent suitability
+      options:
+        - label: This is well-specified enough for an AI agent to attempt autonomously.

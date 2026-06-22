@@ -1,0 +1,470 @@
+{
+  "project": {
+    "title": "KindredPaws",
+    "tagline": "I rescued a tiny abandoned animal, raised it with love, became emotionally attached to it, and together we made the real world a better place.",
+    "elevatorPitch": "An emotionally intelligent AI virtual-pet mobile game where you adopt a rescued puppy or kitten, raise it from infancy to adulthood, bond with an AI companion that remembers you, and fund real animal shelters through play.",
+    "genre": {
+      "primary": "Cozy Sim + Virtual Pet + Live-Service Casual",
+      "secondary": ["companion sim", "life sim", "AI character experience"]
+    },
+    "coreFeelings": ["attachment", "care", "responsibility", "comfort", "empathy", "pride", "meaningfulness"],
+    "coreVerbs": ["adopt", "feed", "clean", "play", "talk", "comfort", "decorate", "train", "grow", "donate", "care", "bond", "share"],
+    "coreLoop": "receive notification -> open game -> check pet mood/needs -> interact (feed/play/talk) -> gain affection+rewards -> unlock growth/customization -> strengthen emotional bond -> return later",
+    "metaLoop": "daily care -> relationship growth -> pet evolves/matures -> unlock stories/memories -> earn donation currency -> help real shelters -> feel meaningful impact -> continue caring",
+    "platforms": ["iOS", "Android"],
+    "differentiators": [
+      "AI Companion Layer (Heartmind): hybrid LLM dialogue with structured memory and evolving personality, always wholesome and child-safe",
+      "Voice Mimic Layer: pet imitates short player voice clips (DEFERRED, on-device DSP only)",
+      "Real-World Impact Layer: percentage of net revenue funds vetted real animal shelters with transparent impact reporting",
+      "Daily Life Integration (Companion Presence): widgets, notifications, streaks so the player feels 'my pet lives with me'"
+    ],
+    "comparables": {
+      "primary": ["My Talking Tom", "Pou", "Nintendogs"],
+      "secondary": ["Finch", "Tamagotchi", "Animal Crossing Pocket Camp", "Pikmin Bloom"]
+    }
+  },
+  "version": "1.0.0",
+  "lastUpdated": "2026-06-22",
+  "canonicalSource": {
+    "name": "KINDREDPAWS — CANONICAL DECISION BRIEF",
+    "file": "KINDREDPAWS_CANONICAL_DECISION_BRIEF.md",
+    "path": "/home/emre/Downloads/my-talking-tom/game-os/KINDREDPAWS_CANONICAL_DECISION_BRIEF.md",
+    "ssotRootStatus": "committed",
+    "status": "v1.0 LOCKED",
+    "date": "2026-06-22",
+    "authority": "SINGLE SOURCE OF TRUTH. Where a specialist analysis conflicts with this brief, this brief wins. This current_state.json is the machine-readable mirror of that brief and the live project-state SSOT. Authority chain: KINDREDPAWS_CANONICAL_DECISION_BRIEF.md -> current_state.json -> the six downstream docs.",
+    "note": "All six downstream docs cross-link to the brief (by the exact filename KINDREDPAWS_CANONICAL_DECISION_BRIEF.md) and this file; they do not redefine canonical facts."
+  },
+  "canonicalFilenameMap": {
+    "note": "The ONE canonical on-disk filename per document. Every cross-link in every doc MUST use these exact strings. Invented/legacy aliases (e.g. GAME_DESIGN_SYSTEMS.md, GAME_ECONOMY_MONETIZATION.md, GAME_ART_AUDIO_BIBLE.md, GAME_GTM_VIRALITY.md, GAME_DESIGN.md, GAME_ECONOMY.md, GAME_ART_BIBLE.md, GAME_IMPACT_TRUST.md, GAME_AI_COMPANION.md, GAME_DONATION_IMPACT.md, GAME_GTM_LIVEOPS.md, AI_COMPANION_AND_SAFETY.md, ART_AUDIO_AND_ASSET_BUDGET.md, DONATION_TRUST_AND_IMPACT.md, LIVEOPS_AND_GROWTH.md, GAME_IMPACT_DONATION.md, GAME_ART_ASSET_PLAN.md, GAME_DESIGN_SPEC.md, GAME_DESIGN_BIBLE.md, GAME_AI_COMPANION_SYSTEM.md, GAME_DONATION_IMPACT_SYSTEM.md, GAME_ART_ASSET_PRODUCTION.md, CANONICAL_DECISION_BRIEF.md) are RETIRED and must not appear.",
+    "canonicalDecisionBrief": "KINDREDPAWS_CANONICAL_DECISION_BRIEF.md",
+    "machineReadableState": "current_state.json",
+    "metaProcessOS": "GAME_EXECUTION_MASTER_SYSTEM.md",
+    "roadmapPhasesGates": "GAME_MASTER_EXECUTION_ROADMAP.md",
+    "decisionLog": "GAME_DECISION_LOG.md",
+    "gameplayDesignEconomyDonationLoopVirality": "GAMEPLAY_AND_PROGRESSION_BIBLE.md",
+    "technicalArchitectureLlmMemoryModerationLedgerAntiFraud": "GAME_TECHNICAL_SYSTEMS.md",
+    "contentFactoryArtAudioAssetBudgetDialogueProductionLiveOpsContent": "GAME_CONTENT_FACTORY.md",
+    "topicToOwner": {
+      "designLoopCareMetersBondLifeStages": "GAMEPLAY_AND_PROGRESSION_BIBLE.md",
+      "economyCurrenciesMonetizationLtv": "GAMEPLAY_AND_PROGRESSION_BIBLE.md",
+      "heartmindDialogueAffectionDesignIntent": "GAMEPLAY_AND_PROGRESSION_BIBLE.md",
+      "heartmindRuntimeMemorySchemaModeration": "GAME_TECHNICAL_SYSTEMS.md",
+      "donationPlayerFacingLoopRescueWallTrustPillars": "GAMEPLAY_AND_PROGRESSION_BIBLE.md",
+      "donationLedgerIntermediaryAntiFraudBackend": "GAME_TECHNICAL_SYSTEMS.md",
+      "donationEthicsLockedDecisions": "GAME_DECISION_LOG.md",
+      "artAssetBudgetRigPipelineAudio": "GAME_CONTENT_FACTORY.md",
+      "dialogueBankContentProductionLocalizationLiveOpsContent": "GAME_CONTENT_FACTORY.md",
+      "personasViralityKeepsake": "GAMEPLAY_AND_PROGRESSION_BIBLE.md",
+      "phasesGatesCriticalPathKpiByPhaseRiskRegister": "GAME_MASTER_EXECUTION_ROADMAP.md",
+      "frameworksClassificationConsolidationAgentPlaybook": "GAME_EXECUTION_MASTER_SYSTEM.md"
+    }
+  },
+  "assumptions": {
+    "team": "solo founder + heavy AI-agent assistance",
+    "platform": "Mobile, iOS + Android",
+    "monetization": "Hybrid F2P — ads + subscriptions + cosmetic purchases + donation-linked purchases",
+    "audience": "global casual players, pet lovers, Gen Z, socially conscious users",
+    "budget": "indie / bootstrapped",
+    "timeline": "12–18 months to global launch (~16 months baseline)",
+    "scopePhilosophy": "minimum asset count, maximum emotional attachment",
+    "hardConstraints": [
+      "realistically buildable by a solo founder + AI agents",
+      "aggressively minimize asset cost",
+      "NO AAA scope",
+      "NO multiplayer in MVP",
+      "NO UGC in MVP",
+      "NO complex open world",
+      "NO full voice conversation in MVP",
+      "NO custom 3D animation pipeline in MVP",
+      "every major feature MUST pass the Fun-Per-Dollar framework",
+      "emotional attachment is more important than graphical fidelity",
+      "the game must feel premium despite low production cost",
+      "the roadmap must explicitly classify every major feature as MVP / Deferred / Removed / North-Star"
+    ],
+    "hardConstraintComplianceCheck": "No multiplayer (North-Star), no UGC (North-Star), no open world, no full-voice conversation (Deferred), no custom-3D (Live2D only), voice mimic Deferred."
+  },
+  "terminology": {
+    "gameTitle": "KindredPaws",
+    "subscriptionTier": "Forever Friends",
+    "seasonalPass": "Care Pass",
+    "softCurrency": "Kibble",
+    "premiumCurrency": "Heartstones",
+    "donationCurrency": "Compassion Coins",
+    "species": ["puppy", "kitten"],
+    "defaultExamplePetNames": {"kitten": "Mochi", "puppy": "Biscuit"},
+    "affectionSystem": "The Bond",
+    "bondStages": ["Stranger", "Friend", "Companion", "Kindred", "Soulmate"],
+    "lifeStages": ["Pup/Kit (infancy)", "Young One (juvenile)", "Grown (adult)"],
+    "aiCompanionSystem": "Heartmind",
+    "memoryStore": "The Memory Book",
+    "needsSystem": "Care Meters",
+    "dailyLifeIntegration": "Companion Presence",
+    "streak": "Care Streak",
+    "streakForgiveness": "Streak Warmth",
+    "donationPolicy": "The Impact Pledge",
+    "impactUI": "Rescue Wall",
+    "adoptionOnboarding": "Rescue Day",
+    "anniversary": "Gotcha Day",
+    "shareArtifacts": "Keepsake Cards",
+    "homeCustomization": "The Nest"
+  },
+  "currentPhase": {
+    "id": "P0",
+    "name": "Pre-production",
+    "duration": "6 wks",
+    "startState": "Phase 0 START. Canonical Decision Brief v1.0 LOCKED and committed on-disk as KINDREDPAWS_CANONICAL_DECISION_BRIEF.md (the SSOT root). The six downstream documents have been drafted and now cross-link the brief and each other by their exact on-disk filenames. This current_state.json is the machine-readable SSOT mirror of the brief.",
+    "goal": "Lock design, tech, legal frame, and asset style.",
+    "keyDeliverables": [
+      "This brief expanded into 6 docs",
+      "current_state.json (this file)",
+      "Live2D rig design locked via AI concept",
+      "tech stack provisioned",
+      "legal child-directedness determination scoped",
+      "LLM unit-economics model v1"
+    ],
+    "exitGate": {
+      "id": "G0",
+      "passCriteria": "Brief ratified; rig contractor secured; LLM cost/DAU model shows < ARPDAU at projected mix; legal review booked.",
+      "status": "open"
+    },
+    "status": "in-progress"
+  },
+  "phases": [
+    {
+      "id": "P0",
+      "name": "Pre-production",
+      "duration": "6 wks",
+      "goal": "Lock design, tech, legal frame, asset style.",
+      "keyDeliverables": ["This brief -> 6 docs", "current_state.json", "Live2D rig design locked via AI concept", "tech stack provisioned", "legal child-directedness determination scoped", "LLM unit-economics model v1"],
+      "exitGateId": "G0",
+      "exitGateSummary": "Brief ratified; rig contractor secured; LLM cost/DAU model shows < ARPDAU at projected mix; legal review booked.",
+      "status": "in-progress"
+    },
+    {
+      "id": "P1",
+      "name": "Core-loop prototype",
+      "duration": "8 wks",
+      "goal": "Prove the daily loop is fun on cheap assets.",
+      "keyDeliverables": ["1 rig (puppy)", "4 Care Meters w/ no-death floor", "feed/clean/play", "The Bond", "1 placeholder room", "local notifications"],
+      "exitGateId": "G1",
+      "exitGateSummary": "Internal playtest: core loop 'feels alive & cozy'; sim deterministic + offline-catch-up tested; no neglect-guilt present.",
+      "status": "planned"
+    },
+    {
+      "id": "P2",
+      "name": "Vertical slice",
+      "duration": "10 wks",
+      "goal": "One polished, emotionally complete experience incl. AI.",
+      "keyDeliverables": ["Rescue Day", "Heartmind hybrid (pre-gen bank + structured memory + Memory Book)", "3 life-stages", "home widget", "Keepsake Cards", "2nd species OR cut decision"],
+      "exitGateId": "G2",
+      "exitGateSummary": "Hand-test of personas (Maya/Tom/David) hit 'would tell a friend'; AI memory callback lands reliably; rig pipeline cost on-budget (else cut 2nd species); spinner-free first AI line.",
+      "status": "planned"
+    },
+    {
+      "id": "P3",
+      "name": "MVP / Closed beta",
+      "duration": "12 wks",
+      "goal": "Feature-complete, store-compliant, instrumented.",
+      "keyDeliverables": ["Full MVP feature set", "RevenueCat IAP/sub", "ads SDK (child-safe config)", "Rescue Wall", "cloud save + migration", "analytics (~15 events)", "legal sign-off", "localization shell"],
+      "exitGateId": "G3",
+      "exitGateSummary": "Closed beta D1>=40% / D7>=18%; no child-safety incident; cloud-save restore proven; LLM cost/DAU within model; legal green-light.",
+      "status": "planned"
+    },
+    {
+      "id": "P4",
+      "name": "Soft launch",
+      "duration": "8 wks",
+      "goal": "Validate retention + unit economics in 2–3 markets.",
+      "keyDeliverables": ["Phased geo rollout (e.g. CA/PH/NZ)", "live LLM gated pilot for adults", "donation intermediary live + first disbursement", "ASO assets"],
+      "exitGateId": "G4",
+      "exitGateSummary": "D1>=42% / D7>=20% / D30>=10%; ARPDAU >= $0.03 and LLM cost/DAU < 35% of ARPDAU; >=1 viral Keepsake share/DAU-week; donation reconciliation clean.",
+      "status": "planned"
+    },
+    {
+      "id": "P5",
+      "name": "Global launch",
+      "duration": "4 wks",
+      "goal": "Worldwide release.",
+      "keyDeliverables": ["Full localization push", "PR around donation/tech-for-good", "store featuring pitch", "scaled infra"],
+      "exitGateId": "G5",
+      "exitGateSummary": "Soft-launch KPIs held at scale for 4 wks; infra cost/DAU stable; crash-free >=99.5%; donation transparency badge live.",
+      "status": "planned"
+    },
+    {
+      "id": "P6",
+      "name": "Live ops",
+      "duration": "Ongoing",
+      "goal": "Sustainable cadence; deferred-feature drops.",
+      "keyDeliverables": ["Lock-screen widget", "voice mimic (on-device)", "training", "Care Pass", "seasonal events", "2nd species (if cut)", "breed palette-swaps"],
+      "exitGateId": "G6",
+      "exitGateSummary": "Recurring quarterly: D30 holding >=10%; sub conversion >=2%; donation volume + quarterly Impact Report published; content cadence sustainable solo+AI.",
+      "status": "planned"
+    }
+  ],
+  "featureClassification": {
+    "mvp": [
+      {"id": 1, "feature": "Rescue Day (adoption cold-open)", "fpd": 3.33, "verdict": "MVP", "rationale": "The player fantasy in one 60–90s scene; cheapest high-fun hook; reuses rig."},
+      {"id": 2, "feature": "Care Meters (4 needs / mood)", "fpd": 2.67, "verdict": "MVP", "rationale": "Retention engine; pure data; no-death floor."},
+      {"id": 3, "feature": "Core care (feed/clean/play)", "fpd": 2.67, "verdict": "MVP", "rationale": "Tactile daily verbs; tap + prop + reaction; 3 interactions only."},
+      {"id": 4, "feature": "The Bond (affection progression)", "fpd": 4.50, "verdict": "MVP", "rationale": "Highest FPD; literal quantification of attachment; near-free."},
+      {"id": 5, "feature": "Growth / Life-Stages", "fpd": 1.80, "verdict": "MVP", "rationale": "Payoff of 'raised it'; #1 art-cost lever — capped at 3 stages x 2 species."},
+      {"id": 6, "feature": "Heartmind dialogue (HYBRID)", "fpd": 1.29, "verdict": "MVP*", "rationale": "Hybrid LLM-pre-generated bank + structured memory, NOT live free-form. Cost-gated."},
+      {"id": 7, "feature": "AI Memory (Memory Book)", "fpd": 1.67, "verdict": "MVP", "rationale": "Emotional payload + #1 viral moment; structured fact store is cheap."},
+      {"id": 8, "feature": "Evolving Personality", "fpd": 1.75, "verdict": "MVP", "rationale": "Prompt-parameterized dials; ~0 marginal cost; deepens D30 bond."},
+      {"id": 9, "feature": "Child-Safety Moderation", "fpd": 0.80, "verdict": "MVP (forced)", "rationale": "Non-negotiable legal gate for any AI; FPD irrelevant."},
+      {"id": 11, "feature": "Donation/Impact Engine", "fpd": 1.33, "verdict": "MVP*", "rationale": "Differentiator 3; cheapest form = % net-rev pledge to ONE vetted intermediary."},
+      {"id": 12, "feature": "Rescue Wall (impact UI)", "fpd": 2.33, "verdict": "MVP", "rationale": "Converts policy into felt, shareable trust; data-driven dashboard."},
+      {"id": 13, "feature": "Anti-fraud (platform-native)", "fpd": null, "verdict": "MVP (forced)", "rationale": "S2S postbacks + receipt validation + attestation gate Coin minting."},
+      {"id": 14, "feature": "Home-Screen Widget", "fpd": 1.60, "verdict": "MVP", "rationale": "Centerpiece of Companion Presence; primary re-engage for high-LTV cohort."},
+      {"id": 16, "feature": "Notifications (pet-voiced)", "fpd": 3.50, "verdict": "MVP", "rationale": "Cheapest retention lever; warm/invitational, never guilt. Local-first."},
+      {"id": 17, "feature": "Care Streak (+ Streak Warmth)", "fpd": 3.50, "verdict": "MVP", "rationale": "Cheap habit loop; MUST be forgiving (freeze/repair)."},
+      {"id": 18, "feature": "Ambient Interactions (idle life)", "fpd": 1.75, "verdict": "MVP", "rationale": "Makes pet feel alive; pure sequencing of existing assets."},
+      {"id": 19, "feature": "The Nest (decoration)", "fpd": 1.20, "verdict": "MVP*", "rationale": "Cosmetic monetization surface; 1 room + modular palette-swap kit only."},
+      {"id": 21, "feature": "Cosmetics Shop", "fpd": 1.50, "verdict": "MVP", "rationale": "Primary non-sub revenue; overlay sprites; ~30 pieces at launch."},
+      {"id": 22, "feature": "Subscription (Forever Friends)", "fpd": 1.25, "verdict": "MVP*", "rationale": "Financial keystone funding LLM OPEX; single tier."},
+      {"id": 23, "feature": "Ads (rewarded + sparse interstitial)", "fpd": 1.33, "verdict": "MVP", "rationale": "F2P floor + donation funding; rewarded-first, kids see contextual/none."},
+      {"id": 24, "feature": "Keepsake Cards (sharing/virality)", "fpd": 2.67, "verdict": "MVP", "rationale": "K-factor engine; templated composition; 1-tap native share."},
+      {"id": 25, "feature": "Cloud Save / Account", "fpd": 0.60, "verdict": "MVP (forced)", "rationale": "Losing the pet = catastrophic; prerequisite for memory/ledger/entitlements."},
+      {"id": 26, "feature": "Localization (static UI)", "fpd": 1.25, "verdict": "MVP*", "rationale": "Global reach; AI-translate UI/copy; dialogue stays EN(+1–2) at first."}
+    ],
+    "deferred": [
+      {"id": "6b", "feature": "Heartmind LIVE free-form LLM chat", "fpd": 1.29, "verdict": "Deferred", "rationale": "Gated behind age-verify + subscriber + caps + moderation; post-soft-launch."},
+      {"id": 10, "feature": "Voice Mimic Layer", "fpd": 0.88, "verdict": "Deferred", "rationale": "Not the emotional core; child-voice privacy minefield; on-device pitch-shift only, post-launch."},
+      {"id": "13b", "feature": "Anti-fraud (bespoke anomaly/ML)", "fpd": 0.60, "verdict": "Deferred", "rationale": "Premature at MVP scale; add when volume/social justify."},
+      {"id": 15, "feature": "Lock-Screen Widget / Live Activities", "fpd": 1.00, "verdict": "Deferred", "rationale": "Incremental over home widget; fast-follow once pipeline proven."},
+      {"id": 20, "feature": "Training / Tricks", "fpd": 1.00, "verdict": "Deferred", "rationale": "Animation-expensive, non-differentiating; live-ops drop."},
+      {"id": 27, "feature": "Live-Ops Events", "fpd": 1.17, "verdict": "Deferred", "rationale": "Inherently post-launch; MUST architect remote-config now."},
+      {"id": 28, "feature": "More Species / Breeds (beyond 2)", "fpd": 0.75, "verdict": "Deferred", "rationale": "Costliest expansion; breed palette-swaps first, new rig later."}
+    ],
+    "removed": [
+      {"id": 29, "feature": "Health / Illness / Vet", "fpd": 0.80, "verdict": "Removed", "rationale": "Contradicts cozy/safe core; fold 'comfort when sad' into mood."}
+    ],
+    "northStar": [
+      {"id": 30, "feature": "Multiplayer / Social Visiting", "fpd": 0.67, "verdict": "North-Star", "rationale": "Hard-constraint excluded; community impact counter is the only MVP proxy."},
+      {"id": 31, "feature": "UGC / Custom Pet Creation", "fpd": 0.56, "verdict": "North-Star", "rationale": "Hard-constraint excluded; lowest FPD; curated cosmetics meet expression need."}
+    ]
+  },
+  "fpdFramework": {
+    "definition": "FPD = FUN (1–10: emotional impact + retention power + differentiation + virality) / DOLLAR (1–10: build effort + unique-asset cost + ongoing/LLM/infra cost + technical risk + maintenance load).",
+    "verdictBands": {
+      "strongMVP": "FPD >= 1.5",
+      "mvpIfSimplified": "1.0–1.49 (MVP only if simplified to cheapest emotionally-intact form)",
+      "defer": "0.6–0.99",
+      "removeOrNorthStar": "< 0.6"
+    },
+    "rule": "Always specify the CHEAPEST VIABLE VERSION that preserves the emotional core."
+  },
+  "gates": [
+    {"id": "G0", "phase": "P0", "name": "Pre-production gate", "passCriteria": "Brief ratified; rig contractor secured; LLM cost/DAU model shows < ARPDAU at projected mix; legal review booked.", "status": "open"},
+    {"id": "G1", "phase": "P1", "name": "Core-loop prototype gate", "passCriteria": "Loop 'fun' qualitative pass; deterministic sim + offline-catch-up tests green; zero neglect-guilt.", "status": "planned"},
+    {"id": "G2", "phase": "P2", "name": "Vertical-slice gate", "passCriteria": "Persona 'tell a friend' qualitative pass; AI memory callback reliability >=95% (no hallucinated facts); first-AI-line latency = 0 spinner; rig cost on-budget (else cut 2nd species).", "status": "planned"},
+    {"id": "G3", "phase": "P3", "name": "Closed-beta gate", "passCriteria": "D1 >=40% · D7 >=18%; 0 child-safety incidents; cloud-restore proven; LLM cost/DAU within model; crash-free >=99%; legal green-light.", "status": "planned"},
+    {"id": "G4", "phase": "P4", "name": "Soft-launch gate", "passCriteria": "D1 >=42% · D7 >=20% · D30 >=10%; ARPDAU >=$0.03; LLM cost/DAU < 35% ARPDAU; >=1 viral share / DAU-week; clean donation reconciliation.", "status": "planned"},
+    {"id": "G5", "phase": "P5", "name": "Global-launch gate", "passCriteria": "Soft KPIs held 4 wks at scale; infra cost/DAU stable; crash-free >=99.5%; transparency badge live.", "status": "planned"},
+    {"id": "G6", "phase": "P6", "name": "Live-ops recurring gate (quarterly)", "passCriteria": "D30 >=10%; sub conversion >=2%; IAP-payer >=1.5%; donation volume up + quarterly Impact Report shipped; 'noticed AI repetition' & 'felt guilt-tripped' leading-churn metrics within bounds; sustainable cadence.", "status": "planned"}
+  ],
+  "assetBudget": {
+    "style": "Live2D Cubism, 1 rig per species. Fallback: Spine 2D-skeletal. NO custom 3D.",
+    "heroSpend": "2 commissioned Live2D rigs @ $1,200–$2,000 each. Lock design with AI concept (Midjourney) BEFORE paying for rig. Add 15–20% contingency for rig revision rounds.",
+    "totalUniqueAssets": {
+      "count": 140,
+      "trulyNewlyDrawn": 65,
+      "breakdown": "2 rigs + 6 life-stage skins; 12 emotion motions [0 new art]; 4 environments; 25 props; 30 cosmetics; ~52 UI/icons/widgets; 12 FX; ~48 audio; 5 music. Rest derived via rig params + palette-swaps."
+    },
+    "estUSD": {
+      "range": "$3,500–$7,550",
+      "planAt": 5500,
+      "currency": "USD",
+      "excludes": "engine/LLM/infra/store fees/founder time"
+    },
+    "disciplineRules": [
+      "Cap 2 species",
+      "3 life-stages via scale/param (not new rigs)",
+      "emotions = param blends (free)",
+      "day/night/weather = shader tints on same 4 BGs",
+      "cosmetics = overlay sprites + palette-swap",
+      "reallocate from music/SFX before EVER cutting rig quality"
+    ]
+  },
+  "economy": {
+    "careMeters": {
+      "needs": ["hunger", "energy/sleep", "hygiene", "happiness"],
+      "scale": "0–100 floats, gentle decay",
+      "noDeathFloor": "Hard floor at 'sad but safe'; pet can NEVER die/suffer irreversibly.",
+      "moodStates": "~4 mood states; low meters only dampen Bond gain, never reverse it."
+    },
+    "currencies": [
+      {"name": "Kibble", "type": "soft", "description": "Abundant, earned, buys delight only."},
+      {"name": "Heartstones", "type": "premium", "description": "Scarce, IAP + milestone-earned."},
+      {"name": "Compassion Coins", "type": "impact", "description": "Non-purchasable-for-power, non-tradeable, non-convertible, zero gameplay power, maps 1:1 to real outcomes (e.g. 50 Coins = 1 real meal)."}
+    ],
+    "monetizationStreams": [
+      {"stream": "Rewarded + sparse interstitial ads", "design": "Rewarded-first, opt-in, ~4–6/day cap; max 1 interstitial/session at natural breaks; never mid-emotion; kids see contextual-only or none; every watch mints Compassion Coins.", "estPctGross": "45–55%"},
+      {"stream": "Subscription (Forever Friends)", "design": "$5.99/mo · $39.99/yr; removes interstitials, daily Kibble, monthly Heartstones + Coins, cosmetic drip, higher donation match.", "estPctGross": "30–40% (LTV anchor)"},
+      {"stream": "Cosmetic IAP (Heartstone bundles + packs)", "design": "Horizontal cosmetics only; direct-purchase; NO gacha/loot boxes.", "estPctGross": "10–20%"},
+      {"stream": "Donation-linked Rescue Bundles", "design": "Stated split (e.g. 70% donation / 30% cosmetic+fee), disclosed pre-purchase + receipt.", "estPctGross": "5–10% (outsized trust/virality)"}
+    ],
+    "donationModel": {
+      "policyName": "The Impact Pledge",
+      "summary": "Transparent Pooled Allocation with 1:1 Impact Mapping. % of NET revenue (net of store fees 15–30%, processing, ad-network cut) -> segregated auditable Impact Pool ledger -> disbursed on fixed cadence through an established giving-platform intermediary (PayPal Giving Fund / Percent / Benevity) to 1–3 vetted partners.",
+      "netModelIllustrative": "rewarded-ad 5%, IAP/sub 5–10%, Rescue Bundles ~70% of bundle price. 'X% of revenue' claims always stated NET.",
+      "noDonationIAP": "NO donation-IAP, NO player tax-deductible donations in MVP. Compassion Coins represent pooled intent, not personal deductible gifts.",
+      "hardEthicalWall": "Never tie the virtual pet's wellbeing/survival to real donations; never guilt-frame. Free players still generate real impact via ad-funded daily 'kind act' Coins.",
+      "trustPillars": [
+        "single version-stamped Impact Pledge doc = SSOT",
+        "segregated ledger + neutral intermediary = trust in process not founder's word",
+        "Rescue Wall shows lifetime/personal real $, live campaign bars, dated downloadable receipts, partner acknowledgments",
+        "outcome-based claims, always rounded DOWN, under-promise/over-deliver",
+        "explicit donated-vs-cosmetic+fee split on every bundle",
+        "quarterly co-signed Impact Report",
+        "third-party 'Impact verified through <date>' badge past volume threshold"
+      ]
+    },
+    "antiFraudMVP": [
+      "server-side mint-gating (S2S signed ad postbacks; Apple/Google receipt validation)",
+      "device attestation (App Attest / Play Integrity)",
+      "per-user/device daily caps",
+      "reconcile against network-PAID impressions only",
+      "clawback Coins + revoke badges on refund/chargeback (disburse only after settlement window)",
+      "Compassion Coins non-transferable/non-convertible (kills laundering)"
+    ],
+    "ltvAssumptions": {
+      "blendedLtvPerInstall": "$0.30–$0.80 at launch, upside $1.00–1.50+",
+      "subCohortLtv": "$30–80+ (the profit lever)",
+      "subConversionTarget": "1–3% MAU",
+      "iapPayer": "1–2%",
+      "arppu": "$8–20",
+      "arpdau": "$0.03–0.06",
+      "cac": "near-zero at launch — growth must be organic/viral; paid UA only after sub LTV > CAC proven",
+      "keySensitivity": "LLM cost/DAU must stay well below ARPDAU (target <35%) — enforced by caching, hybrid pre-gen, small models, token caps, subscriber-funded live chat"
+    }
+  },
+  "techStack": {
+    "engine": "Unity (2D) OR Flutter + Live2D SDK — pick at P0/G0; must support Live2D Cubism runtime + native widget interop; bias to fastest solo+AI shipping path.",
+    "backend": "Managed BaaS — Firebase or Supabase (auth, DB, cloud save, remote config). No owned servers.",
+    "llmStrategy": "Hybrid: offline LLM pre-generates large human-reviewed dialogue bank; runtime selects by pet-state + injects structured memory facts into cached persona prompt. Live free-form LLM DEFERRED & gated (adult-verified + subscriber + token caps ~60–100 out + daily turn caps + per-user cost ceiling). This is the make-or-break OPEX model.",
+    "aiMemory": "Structured key-value fact store (10–30 durable facts) in BaaS DB + short rolling turn window + batched off-peak fact extraction. Surfaced as the Memory Book. Reliability > breadth.",
+    "moderation": "Two-sided input + output through cheap moderation/classification endpoint; hard system-prompt constraints; fixed safe-fallback line; self-harm -> static safe message; full audit logging. Under-13: templated/non-generative only.",
+    "onDeviceVsCloud": "Sim runs client-side (deterministic, elapsed-time, server-validatable). Memory/entitlements/donation-ledger server-side. Voice mimic (deferred) = on-device DSP only, audio never leaves device.",
+    "saveSync": "Authoritative cloud save keyed to Apple/Google sign-in (+ guest). Local-first, single-device last-write-wins for MVP; defer true multi-device live sync. Version every schema + automated migration + restore flow. No update may orphan a pet.",
+    "payments": "RevenueCat — single abstraction over StoreKit + Play Billing; receipt validation, entitlements, restore.",
+    "ads": "Standard mediation SDK (AdMob/ironSource) with COPPA/kids flags; rewarded-first. Drop personalized ads for under-13.",
+    "widgets": "Native iOS WidgetKit + Android Glance/AppWidget. Single shared 'pet status snapshot' payload feeds widget + notification scheduler. Pre-rendered mood images. Lock-screen/Live Activities deferred.",
+    "notifications": "Local-scheduled (no push cost) in MVP; FCM/APNs templated pet-voiced lines, 1–2/day cap.",
+    "analytics": "Managed (Firebase/GameAnalytics), ~15 events mapped to funnel gates, privacy-by-design, no PII."
+  },
+  "personas": [
+    {"name": "Maya", "oneLine": "Gen-Z TikTok Casual, 19, 60–120s bursts, screenshot-first, zero tolerance for cringe/latency/repetition", "shares": "Comfort moment (D1), memory payoff (D30)", "role": "Highest K-factor / install volume"},
+    {"name": "David", "oneLine": "Busy Adult Pet-Lover, 37, real rescue dog, widget-anchored, low-guilt, pays for calm+ad-free", "shares": "Donation impact + before/after", "role": "Highest LTV (sub + bundles)"},
+    {"name": "Priya", "oneLine": "Socially-Conscious Donor, 29, nonprofit, scrutinizes donation mechanics, trust-gated", "shares": "Verified impact (or public warning)", "role": "Trust-credential / anti-cynicism shield"},
+    {"name": "Tom", "oneLine": "Lapsed Tamagotchi Nostalgic, 34, stress-tests AI-memory authenticity, allergic to predatory F2P", "shares": "'It remembered me' (Reddit/Discord)", "role": "Depth advocate or harsh critic"},
+    {"name": "Leo & Parent", "oneLine": "Kid Under Supervision, 9 + cautious parent; parent vets AI safety, wants voice mimic", "shares": "Parent-to-parent 'safe & kind' referral", "role": "One-strike safety gate; trusted referral"}
+  ],
+  "viralityMechanics": [
+    {"name": "Unprompted Comfort", "description": "Pet notices low mood, offers care unasked -> 'an AI pet comforted me' card.", "persona": "Maya"},
+    {"name": "Long Memory Callback", "description": "Surfaces a weeks-old personal fact -> 'it remembered' card.", "persona": "Tom (highest WOM)"},
+    {"name": "Before/After Growth", "description": "Auto split-card, scared rescue vs. thriving Grown, elapsed days.", "persona": "David"},
+    {"name": "Rescue/Gotcha-Day Milestones", "description": "'Forever home' ceremony card at peak pride.", "persona": "all"},
+    {"name": "Real-Impact Celebration", "description": "Verified named-shelter impact badge 'I helped real animals.'", "persona": "Priya, David"},
+    {"name": "Widget Candids", "description": "Endearing home/lock-screen moment screenshotted directly; widget IS the ambient ad.", "persona": "all"},
+    {"name": "Naming/Personality Reveal", "description": "'Only MY pet would say this,' singular per player.", "persona": "all"}
+  ],
+  "kpis": {
+    "headlineRetentionTargets": {
+      "D1": "~45% (40–48)",
+      "D7": "~20–22% (18–25)",
+      "D30": "~10–12% (8–14)",
+      "worstCase": "If AI memory disappoints: D30 -> ~5–6% (genre median)."
+    },
+    "perPhase": {
+      "G1": "Loop 'fun' qualitative pass; deterministic sim + offline-catch-up tests green; zero neglect-guilt.",
+      "G2": "Persona 'tell a friend' qualitative pass; AI memory callback reliability >=95% (no hallucinated facts); first-AI-line latency = 0 spinner; rig cost on-budget.",
+      "G3": "D1 >=40% · D7 >=18%; 0 child-safety incidents; cloud-restore proven; LLM cost/DAU within model; crash-free >=99%.",
+      "G4": "D1 >=42% · D7 >=20% · D30 >=10%; ARPDAU >=$0.03; LLM cost/DAU < 35% ARPDAU; >=1 viral share / DAU-week; clean donation reconciliation.",
+      "G5": "Soft KPIs held 4 wks at scale; infra cost/DAU stable; crash-free >=99.5%; transparency badge live.",
+      "G6": "D30 >=10%; sub conversion >=2%; IAP-payer >=1.5%; donation volume up + quarterly Impact Report shipped; leading-churn metrics within bounds; sustainable cadence."
+    },
+    "leadingChurnIndicators": [
+      "noticed AI repetition",
+      "felt guilt-tripped about the pet"
+    ]
+  },
+  "risks": [
+    {"id": "R1", "description": "Kids-compliance (COPPA/GDPR-K/store kids policy) — existential; detonated by AI chat, voice capture, ad targeting.", "severity": "Critical", "mitigation": "Build to child-safe standard for ALL users; hybrid (templated under-13, no free-text storage from minors); no behavioral ad targeting; mandatory budgeted pre-launch legal review (gate G3)."},
+    {"id": "R2", "description": "Unbounded LLM OPEX scales with engagement (anti-F2P economics).", "severity": "Critical", "mitigation": "Hybrid pre-gen + structured memory; small/cheap model; prompt-caching; token + daily-turn caps; live chat subscriber-only & age-gated; gate G4 on cost/DAU < 35% ARPDAU."},
+    {"id": "R3", "description": "AI-memory authenticity — the single load-bearing feature; flaky recall = 'theater'/'mid'/'unsafe' across personas.", "severity": "Critical", "mitigation": "Engineer narrow+reliable memory over broad+flaky; tangible Memory Book artifact as provable trust signal; >=95% callback reliability gate at G2; anti-repetition rotation system."},
+    {"id": "R4", "description": "Save loss / pet 'death' = refund + 1-star + broken trust.", "severity": "High", "mitigation": "Authoritative versioned cloud save + automated migration + restore flow; no-death decay floor so pet can never suffer irreversibly."},
+    {"id": "R5", "description": "Donation legal/charity-washing — vague/coercive = public backlash (Priya) + regulatory.", "severity": "High", "mitigation": "% NET-revenue pledge via vetted intermediary; named partners + receipts + verification badge; hard ethical wall; lawyer review of revenue-share claim; NO donation IAP."},
+    {"id": "R6", "description": "Neglect-guilt / punitive streaks churn highest-LTV personas + violate cozy brand.", "severity": "High", "mitigation": "'Pet missed you but is okay' longing model; Streak Warmth (freeze/repair); never punish absence."},
+    {"id": "R7", "description": "Asset-cost explosion (multi-species, per-stage animation, cosmetics).", "severity": "High", "mitigation": "1 modular Live2D rig/species; 3 stages via param/scale; overlay cosmetics + palette-swap; defer 2nd species at G2 if hot; never under-budget the rig."},
+    {"id": "R8", "description": "Live-ops content treadmill exceeds solo+AI capacity -> post-launch churn.", "severity": "Medium", "mitigation": "Remote-config/data-driven event infra in MVP; honestly low launch cadence (1 small moment / 6–8 wks); core loop retains via bond/memory, not new content."},
+    {"id": "R9", "description": "Cross-platform native fragmentation (widgets/notifications/billing).", "severity": "Medium", "mitigation": "RevenueCat for billing; single shared status payload -> one widget/platform; local notifications MVP; defer lock-screen/Live Activities."},
+    {"id": "R10", "description": "Negative virality — one tone-deaf/unsafe AI screenshot defines the brand.", "severity": "Medium-High", "mitigation": "Hard guardrails + child-safe persona lock + per-turn moderation; many small authentic moments over one engineered spectacle; under-13 templated-only."}
+  ],
+  "openDecisions": [
+    {"id": 1, "decision": "Engine: Unity vs Flutter+Live2D", "resolveBy": "G0", "note": "Bias to fastest solo+AI shipping path with native widget interop."},
+    {"id": 2, "decision": "2nd species ship-or-cut", "resolveBy": "G2", "note": "Based on rig-pipeline cost burn (budget for 2; ship 1 if hot)."},
+    {"id": 3, "decision": "LLM provider + exact model tiers and final token/turn caps", "resolveBy": "G0 (model), G3/G4 (validate)", "note": "Cheap routine model vs. live-chat model."},
+    {"id": 4, "decision": "Donation intermediary choice + initial 1–3 partner shelters", "resolveBy": "before G4", "note": "PayPal Giving Fund vs Percent vs Benevity; must be live for soft launch."},
+    {"id": 5, "decision": "Exact donation % per revenue type (net)", "resolveBy": "before G4", "note": "Finalize with accounting/legal; lock in Impact Pledge doc."},
+    {"id": 6, "decision": "Launch localization languages (which 4–6 for static UI)", "resolveBy": "G3", "note": "AI-dialogue languages stay EN(+1–2), expand post-launch per-language safety validation."},
+    {"id": 7, "decision": "Soft-launch geos", "resolveBy": "G3", "note": "e.g. CA/PH/NZ candidate."},
+    {"id": 8, "decision": "Subscription final price point ($5.99 assumed) + Care Pass pricing", "resolveBy": "G4", "note": "Validate elasticity in soft launch."},
+    {"id": 9, "decision": "Under-13 handling: neutral age gate vs. fully child-safe-for-all", "resolveBy": "G3", "note": "Legal determination of child-directedness drives this."},
+    {"id": 10, "decision": "Live free-form chat go/no-go for adults", "resolveBy": "G4 (pilot in P4)", "note": "Decide expand/hold on cost + safety data."}
+  ],
+  "documents": [
+    {"file": "KINDREDPAWS_CANONICAL_DECISION_BRIEF.md", "path": "/home/emre/Downloads/my-talking-tom/game-os/KINDREDPAWS_CANONICAL_DECISION_BRIEF.md", "purpose": "The SSOT root: reconciled canonical decisions, terminology, feature classification, phases/gates, economy, tech, personas, virality, donation model, risks, open decisions.", "canonicalFor": "EVERYTHING product-level. The brief wins all conflicts. All other docs cross-link this exact filename."},
+    {"file": "GAME_DECISION_LOG.md", "path": "/home/emre/Downloads/my-talking-tom/game-os/GAME_DECISION_LOG.md", "purpose": "Append-only record of reconciled conflicts, design decisions, and their rationale.", "canonicalFor": "Decision history, conflict-resolution records, decision provenance."},
+    {"file": "GAME_MASTER_EXECUTION_ROADMAP.md", "path": "/home/emre/Downloads/my-talking-tom/game-os/GAME_MASTER_EXECUTION_ROADMAP.md", "purpose": "Phase/gate timeline, milestones, and deliverables across the 12–18 month plan.", "canonicalFor": "Phases (P0–P6), gates (G0–G6), durations, exit criteria, schedule."},
+    {"file": "GAME_EXECUTION_MASTER_SYSTEM.md", "path": "/home/emre/Downloads/my-talking-tom/game-os/GAME_EXECUTION_MASTER_SYSTEM.md", "purpose": "Operating system for solo-founder + AI-agent execution: workflows, roles, cadence, frameworks.", "canonicalFor": "FPD/Founder-Fit/Playtester/Discovery frameworks application, execution process, agent leverage."},
+    {"file": "GAMEPLAY_AND_PROGRESSION_BIBLE.md", "path": "/home/emre/Downloads/my-talking-tom/game-os/GAMEPLAY_AND_PROGRESSION_BIBLE.md", "purpose": "Detailed game design: core/meta loops, Care Meters, The Bond, life-stages, Heartmind, virality moments.", "canonicalFor": "Gameplay systems, progression curves, feature mechanics, economy of fun, virality mechanics."},
+    {"file": "GAME_TECHNICAL_SYSTEMS.md", "path": "/home/emre/Downloads/my-talking-tom/game-os/GAME_TECHNICAL_SYSTEMS.md", "purpose": "Technical architecture: engine, BaaS, LLM/hybrid memory, moderation, save/sync, payments, ads, widgets, analytics.", "canonicalFor": "Tech stack, LLM/OPEX architecture, anti-fraud implementation, data schemas, infra."},
+    {"file": "GAME_CONTENT_FACTORY.md", "path": "/home/emre/Downloads/my-talking-tom/game-os/GAME_CONTENT_FACTORY.md", "purpose": "Asset pipeline, asset-budget discipline, dialogue-bank generation, content production with AI assistance.", "canonicalFor": "Asset budget, asset reuse/palette-swap rules, dialogue-bank generation, content production cadence."},
+    {"file": "current_state.json", "path": "/home/emre/Downloads/my-talking-tom/game-os/current_state.json", "purpose": "Machine-readable single source of truth mirroring the Canonical Decision Brief; live project state.", "canonicalFor": "Live project state, machine-readable mirror of the brief, current phase/gate status."}
+  ],
+  "consolidationRules": [
+    "Each fact lives in exactly ONE canonical document; all other documents cross-link rather than duplicate.",
+    "current_state.json is the machine-readable single source of truth for live project state.",
+    "No document may contradict another; the Canonical Decision Brief (KINDREDPAWS_CANONICAL_DECISION_BRIEF.md) wins on conflict.",
+    "State must be updated on every major decision.",
+    "All cross-links use the real on-disk filenames recorded in canonicalFilenameMap; retired/invented aliases must not appear."
+  ],
+  "decisionLog": [
+    {
+      "ts": "2026-06-22T00:00:00Z",
+      "owner_doc": "KINDREDPAWS_CANONICAL_DECISION_BRIEF.md",
+      "decision": "Brief v1.0 LOCKED; committed as SSOT root on-disk.",
+      "old": null,
+      "new": "v1.0",
+      "rationale": "Reconciled all specialist conflicts; canonical seed and authority-chain root."
+    },
+    {
+      "ts": "2026-06-22T00:00:00Z",
+      "owner_doc": "current_state.json",
+      "decision": "Resolve systemic cross-reference incoherence: pick ONE canonical filename per document and normalize every cross-link in all six docs + the brief to the real on-disk names.",
+      "old": "Docs cited mutually-inconsistent, nonexistent sibling filenames (e.g. GAME_DESIGN_SYSTEMS.md, GAME_ECONOMY_MONETIZATION.md, GAME_ART_AUDIO_BIBLE.md, GAME_GTM_VIRALITY.md, GAME_DESIGN.md, GAME_ECONOMY.md, GAME_ART_BIBLE.md, GAME_IMPACT_TRUST.md, GAME_AI_COMPANION.md, GAME_DONATION_IMPACT.md, GAME_GTM_LIVEOPS.md, AI_COMPANION_AND_SAFETY.md, ART_AUDIO_AND_ASSET_BUDGET.md, DONATION_TRUST_AND_IMPACT.md, LIVEOPS_AND_GROWTH.md, GAME_IMPACT_DONATION.md, GAME_ART_ASSET_PLAN.md, GAME_DESIGN_SPEC.md, GAME_DESIGN_BIBLE.md, GAME_AI_COMPANION_SYSTEM.md, GAME_DONATION_IMPACT_SYSTEM.md, GAME_ART_ASSET_PRODUCTION.md).",
+      "new": "Canonical filenames: KINDREDPAWS_CANONICAL_DECISION_BRIEF.md, GAMEPLAY_AND_PROGRESSION_BIBLE.md, GAME_TECHNICAL_SYSTEMS.md, GAME_CONTENT_FACTORY.md, GAME_DECISION_LOG.md, GAME_MASTER_EXECUTION_ROADMAP.md, GAME_EXECUTION_MASTER_SYSTEM.md. Map recorded in canonicalFilenameMap; EXECUTION_MASTER_SYSTEM §3 Document Map corrected to match.",
+      "rationale": "DRY 'cross-link, do not duplicate' architecture was non-navigable. One canonical name per doc restores navigability and lets the Consistency Auditor (EXECUTION_MASTER_SYSTEM §13) run against a coherent set."
+    },
+    {
+      "ts": "2026-06-22T00:00:00Z",
+      "owner_doc": "KINDREDPAWS_CANONICAL_DECISION_BRIEF.md",
+      "decision": "Commit the Canonical Decision Brief to game-os/ as KINDREDPAWS_CANONICAL_DECISION_BRIEF.md and normalize every doc's reference to that exact name.",
+      "old": "SSOT root missing on-disk; docs named the brief variously (KINDREDPAWS_CANONICAL_DECISION_BRIEF without .md, CANONICAL_DECISION_BRIEF.md, prose 'Canonical Decision Brief'). Authority chain had a missing root link.",
+      "new": "Brief committed; ssotRootStatus = committed; authority chain brief -> current_state.json -> docs is now mechanically enforceable.",
+      "rationale": "'The brief wins all conflicts' could not be enforced and downstream could not verify against the SSOT without the root file present under a single agreed filename."
+    }
+  ],
+  "nextActions": [
+    {"step": 1, "action": "Ratify the Canonical Decision Brief v1.0 and confirm this current_state.json as the live SSOT (P0/G0 prerequisite).", "owner": "founder"},
+    {"step": 2, "action": "Decide the engine: Unity (2D) vs Flutter + Live2D SDK — pick the fastest solo+AI shipping path with native widget interop (Open Decision 1, resolve at G0).", "owner": "founder + AI agents"},
+    {"step": 3, "action": "Build the LLM unit-economics model v1: project cost/DAU at the hybrid pre-gen + capped-live mix; prove it stays < ARPDAU (G0 pass criterion; R2 mitigation).", "owner": "founder + AI agents"},
+    {"step": 4, "action": "Generate Live2D rig concept art via AI (Midjourney) for puppy + kitten; lock the design BEFORE commissioning rigs; secure a rig contractor (G0 pass criterion; R7 mitigation).", "owner": "founder + AI agents"},
+    {"step": 5, "action": "Book the child-directedness legal review (COPPA/GDPR-K/store kids policy) — scope determination of under-13 handling (G0 pass criterion; R1 mitigation).", "owner": "founder + legal"},
+    {"step": 6, "action": "Provision the managed BaaS (Firebase or Supabase): auth, DB, cloud save, remote config — and scaffold versioned-save migration/restore layer with AI agents (R4 mitigation).", "owner": "founder + AI agents"},
+    {"step": 7, "action": "Stand up RevenueCat and ads mediation SDK accounts (child-safe config flags) as provisioning groundwork for P3.", "owner": "founder"},
+    {"step": 8, "action": "Draft the version-stamped Impact Pledge doc skeleton and shortlist donation intermediaries (PayPal Giving Fund / Percent / Benevity) for the G4 deadline (Open Decisions 4 & 5).", "owner": "founder + legal"}
+  ]
+}

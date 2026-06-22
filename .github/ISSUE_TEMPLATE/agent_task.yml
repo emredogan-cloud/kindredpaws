@@ -1,0 +1,40 @@
+name: "🤖 Agent task (autonomous)"
+description: "A fully-specified unit of work for an AI agent to execute end-to-end."
+labels: ["agent: ready"]
+body:
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objective
+      description: One sentence. What must be true when this is done.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context & pointers
+      description: Files, functions, docs (game-os/, CLAUDE.md) the agent should read first.
+    validations:
+      required: true
+  - type: textarea
+    id: plan
+    attributes:
+      label: Suggested approach
+      description: Optional step outline. The agent may deviate if justified.
+  - type: textarea
+    id: dod
+    attributes:
+      label: Definition of done
+      value: |
+        - [ ] Implemented on a `feature/*` branch
+        - [ ] `just verify` green locally
+        - [ ] Tests added/updated
+        - [ ] PR opened with Conventional-Commit title
+        - [ ] CI green → agent self-merges (unless `agent: needs-human`)
+    validations:
+      required: true
+  - type: input
+    id: budget
+    attributes:
+      label: Guardrails / non-goals
+      placeholder: "Do NOT touch X. Stay within Phase N scope."

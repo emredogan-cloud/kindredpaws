@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Engineering foundation & architecture
+    url: https://github.com/emredogan-cloud/kindredpaws/blob/main/PRE_PHASE0_ENGINEERING_FOUNDATION_MASTER_REPORT.md
+    about: Read the environment/architecture report before filing infra issues.
+  - name: Product & design (game-os)
+    url: https://github.com/emredogan-cloud/kindredpaws/tree/main/game-os
+    about: Roadmap, gameplay bible, decision log, and the canonical design brief.
