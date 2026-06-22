@@ -13,6 +13,11 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
+  # Rig runtime (ADR-001, locked at P1-0 — see docs/ANIMATION_SPIKE_REPORT.md).
+  # Pinned to the 0.13 line on purpose: it resolves WITHOUT the per-build native
+  # artifact download that 0.14's `rive_native` requires. Re-evaluate moving to
+  # 0.14.x at P2 when the real .riv rig lands. Do not bump to ^0.14 unintentionally.
+  rive: ^0.13.0
 
 dev_dependencies:
   flutter_test:

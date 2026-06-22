@@ -1,15 +1,17 @@
-/// Pet rendering abstraction (Live2D integration seam).
+/// Pet rendering abstraction (rig integration seam).
 ///
-/// Engine + style are locked: Flutter + Live2D Cubism (ADR-002). However, the
-/// Live2D Cubism runtime has no first-party Flutter binding — integration is a
-/// real technical risk evaluated at P0 (founder decision authorizes a Rive
-/// fallback if Live2D-on-Flutter is blocked; see docs/LIVE2D_RIG_DESIGN_BRIEF.md
-/// §"Integration spike"). This interface decouples the game from the concrete
-/// rig backend so the actual rig (Live2D or Rive) drops in during P1/P2 without
-/// touching gameplay code.
+/// Engine is locked to **Flutter** (ADR-001). The rig runtime was resolved at
+/// **P1-0**: the animation spike found Live2D Cubism has no first-party Flutter
+/// runtime (only an unproven community binding), so the rig backend switched to
+/// **Rive** (the founder-pre-authorized fallback) — a first-party, multi-platform
+/// Flutter runtime with the same "params, not frames" economics. Evidence +
+/// decision: `docs/ANIMATION_SPIKE_REPORT.md`. (Art style stays Live2D-Cubism-
+/// styled per ADR-002; only the *runtime* changed.)
 ///
-/// The placeholder below is NOT the rig and NOT gameplay — it is a cheap
-/// stand-in that proves the rendering seam compiles, themes, and paints.
+/// This interface decouples the game from the concrete rig backend so the actual
+/// commissioned rig (`RivePetRenderer`, P2) drops in without touching gameplay.
+/// The placeholder below is NOT the rig and NOT gameplay — it is a cheap,
+/// deterministic stand-in that proves the rendering seam compiles and paints.
 library;
 
 import 'package:flutter/material.dart';

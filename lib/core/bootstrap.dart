@@ -7,6 +7,8 @@ library;
 
 import 'app_config.dart';
 import 'service_locator.dart';
+import '../render/pet_renderer.dart';
+import '../render/pet_renderer_factory.dart';
 import '../services/analytics_service.dart';
 import '../services/auth_service.dart';
 import '../services/backend_service.dart';
@@ -28,6 +30,9 @@ AppConfig bootstrap({ServiceLocator? locator}) {
   sl.registerSingleton<RemoteConfigService>(const DefaultRemoteConfig());
   sl.registerSingleton<AnalyticsService>(InMemoryAnalyticsService());
   sl.registerSingleton<HeartmindService>(const StubHeartmind());
+  sl.registerSingleton<PetRenderer>(
+    createPetRenderer(config.petRendererBackend),
+  );
 
   return config;
 }
