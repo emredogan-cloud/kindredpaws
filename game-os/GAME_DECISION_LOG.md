@@ -389,9 +389,9 @@ Server-side mint-gating (S2S signed ad postbacks; Apple/Google receipt validatio
 
 > ADR format extends §2 with: Architectural scope · Alternatives rejected (reason) · Reversibility cost · Validation gate. These are the load-bearing technical commitments. Deep detail → `GAME_TECHNICAL_SYSTEMS.md`.
 
-### ADR-001 — Engine: Unity (2D) OR Flutter + Live2D SDK; decide at G0
-- **Status:** PROPOSED (open until G0) · **Scope:** client engine.
-- **Decision:** Defer final pick to G0; bias to whichever lets founder+AI ship fastest *and* supports Live2D Cubism runtime + native widget interop.
+### ADR-001 — Engine: Flutter + Live2D SDK (decided at G0; Unity 2D rejected)
+- **Status:** LOCKED (2026-06-22 at G0; was PROPOSED) → **Flutter + Live2D SDK**, with Rive pre-authorized as the de-risked fallback (D-048). · **Scope:** client engine.
+- **Decision:** Flutter client + Live2D Cubism via a community/custom runtime bridge; founder pre-authorized switching the rig commission to Rive (Flutter-native) if the Live2D-on-Flutter integration spike runs hot at the start of P1 (`PetRenderer` seam makes this a backend swap). Original framing: defer to G0, bias to whichever lets founder+AI ship fastest with Live2D runtime + native widget interop.
 - **Alternatives rejected:** Custom 3D engine (violates no-custom-3D constraint); pure web (no native widgets/billing).
 - **Reversibility cost:** HIGH (rewrite). · **Validation gate:** G0. · **Cross-link:** brief §6, §12.1, D-002.
 
@@ -401,9 +401,9 @@ Server-side mint-gating (S2S signed ad postbacks; Apple/Google receipt validatio
 - **Alternatives rejected:** Custom 3D animation pipeline (hard constraint); pre-rendered frame sheets per stage (asset explosion, Risk R7).
 - **Reversibility cost:** MED. · **Validation gate:** rig cost on-budget at **G2 (else cut 2nd species)**. · **Cross-link:** §8, `GAME_CONTENT_FACTORY.md`, D-046.
 
-### ADR-003 — Backend: managed BaaS (Firebase or Supabase), no owned servers
-- **Status:** ACCEPTED · **Scope:** backend/persistence.
-- **Decision:** Managed BaaS for auth, DB, cloud save, remote config. No owned servers.
+### ADR-003 — Backend: managed BaaS — Firebase (decided at G0), no owned servers
+- **Status:** LOCKED (2026-06-22 at G0; was ACCEPTED) → **Firebase** (D-049). · **Scope:** backend/persistence.
+- **Decision:** Firebase for auth, Firestore DB, cloud save, remote config, analytics. No owned servers. (Supabase was the rejected BaaS alternative.)
 - **Alternatives rejected:** Self-hosted backend (ops burden breaks solo+AI maintainability).
 - **Reversibility cost:** MED. · **Validation gate:** G1. · **Cross-link:** brief §6, ADR-005, ADR-009.
 
@@ -629,13 +629,47 @@ Server-side mint-gating (S2S signed ad postbacks; Apple/Google receipt validatio
 
 ---
 
+#### Phase-0 / G0 decisions (D-048 … D-052) — added 2026-06-22 on founder approval to execute Phase 0
+
+### D-048 — Engine = Flutter + Live2D SDK (resolves OD-1)
+- **Status:** LOCKED · **Gate/Phase:** P0 / G0 · **Basis:** Founder-decision + Founder-Fit.
+- **Decision:** Flutter (stable) + Live2D Cubism. **Rive** is the authorized fallback if the Live2D-on-Flutter integration spike (start of P1) runs hot; the `PetRenderer` abstraction makes the rig backend a swap with no gameplay changes.
+- **Consequences:** ADR-001 PROPOSED → **LOCKED**; OD-1 RESOLVED. `PetRenderer` seam + `PlaceholderPetRenderer` shipped in P0.
+- **Cross-link:** ADR-001, `docs/LIVE2D_RIG_DESIGN_BRIEF.md` (§Integration spike), brief §6/§12.1.
+
+### D-049 — Backend = Firebase (resolves the Firebase-or-Supabase choice)
+- **Status:** LOCKED · **P0 / G0** · **Basis:** Founder-decision.
+- **Decision:** Firebase as the canonical BaaS — auth, Firestore cloud save, Remote Config, Analytics, Crashlytics. No owned servers.
+- **Consequences:** ADR-003 ACCEPTED → **LOCKED**. Firebase adapter seam shipped (inert until `flutterfire configure` + creds — `REQUIRED_ENVIRONMENTS.md` §1).
+- **Cross-link:** ADR-003, brief §6, `REQUIRED_ENVIRONMENTS.md`.
+
+### D-050 — LLM models: runtime/live = claude-haiku-4-5, pre-gen = claude-opus-4-8 (partially resolves OD-3)
+- **Status:** LOCKED (models); final caps validated at G3/G4 · **P0 / G0** · **Basis:** Founder-decision + Econ.
+- **Decision:** Anthropic Claude. Founder default runtime "Claude Haiku 4" → `claude-haiku-4-5` (cost-sensitive live path); offline pre-gen → `claude-opus-4-8` (quality, paid once).
+- **Cross-link:** ADR-004, D-006, `docs/LLM_UNIT_ECONOMICS_MODEL.md`, OD-3.
+
+### D-051 — LLM unit-economics model v1 PASSES the G0 cost gate
+- **Status:** LOCKED · **P0 / G0** · **Basis:** Econ / Risk R2.
+- **Decision:** Modeled LLM cost/DAU = **2.7%** (MVP hybrid, $0 runtime tokens) and **3.9%** (soft-launch capped live pilot) of ARPDAU — both far under the 35% gate; an uncapped control scenario fails at 296%, proving the guard. Satisfies **G0 pass criterion #3**.
+- **Cross-link:** D-006, ADR-004, `lib/tooling/llm_cost_model.dart`, `test/unit/llm_cost_model_test.dart`.
+
+### D-052 — P0 tech stack provisioned + versioned-save layer scaffolded
+- **Status:** ACCEPTED · **P0 / G0** · **Basis:** Brief-mandate / Risk R4, R8.
+- **Decision:** Flutter architecture skeleton (config/feature-flags/DI), service abstractions + offline mocks (Auth/Backend/RemoteConfig/Analytics/Heartmind) + gated Firebase seam; versioned-save migration/restore framework (R4); Heartmind memory/dialogue schemas + safety constants; analytics ~15-event taxonomy; remote-config defaults (R8 / ADR-009); PetRenderer abstraction. Validated: `flutter analyze` clean, 31 tests @ 76.4% coverage, APK build + emulator E2E green.
+- **Consequences:** G0 status **engineering-complete**; the two remaining G0 criteria (secure rig contractor, book legal review) are founder/credentialed actions, fully enabled by delivered docs. **Phase 1 (core-loop) NOT started.**
+- **Cross-link:** `REQUIRED_ENVIRONMENTS.md`, ADR-009, ADR-010, ADR-011.
+
+> **ADR status updates (2026-06-22):** ADR-001 PROPOSED → **LOCKED** (Flutter+Live2D, D-048); ADR-003 ACCEPTED → **LOCKED** (Firebase, D-049).
+
+---
+
 ## 12. Open Decisions / To-Be-Resolved
 
 > Mirror of brief §12. Each must be resolved by the noted gate and converted to a LOCKED D-entry + `current_state.json` update.
 
-- [ ] **OD-1 — Engine: Unity vs Flutter+Live2D.** Resolve at **G0** (bias to fastest solo+AI shipping path with native widget interop). → ADR-001.
+- [x] **OD-1 — Engine: Unity vs Flutter+Live2D.** **RESOLVED 2026-06-22 → Flutter + Live2D SDK** (Rive fallback authorized). → D-048, ADR-001.
 - [ ] **OD-2 — 2nd species ship-or-cut.** Resolve at **G2** on rig-pipeline cost burn (budget 2, ship 1 if hot). → D-009.
-- [ ] **OD-3 — LLM provider + model tiers + final token/turn caps.** Model at **G0**, validate at **G3/G4**. → ADR-004, D-006.
+- [~] **OD-3 — LLM provider + model tiers + final token/turn caps.** **MODEL RESOLVED 2026-06-22 → `claude-haiku-4-5` (runtime/live) / `claude-opus-4-8` (pre-gen)**; final token/turn caps validated at **G3/G4**. → D-050, ADR-004, D-006.
 - [ ] **OD-4 — Donation intermediary (PayPal Giving Fund / Percent / Benevity) + initial 1–3 partner shelters.** Resolve before **G4** (must be live for soft launch). → D-021.
 - [ ] **OD-5 — Exact donation % per revenue type (NET).** Finalize with accounting/legal before **G4**; lock in Impact Pledge doc. → §9.4.
 - [ ] **OD-6 — Launch localization languages (4–6 for static UI).** Decide by **G3**; dialogue languages EN(+1–2), expand post-launch per-language safety validation. → D-037.
@@ -653,6 +687,7 @@ Server-side mint-gating (S2S signed ad postbacks; Apple/Google receipt validatio
 | Change ID | Date | What changed | From → To | Reason | Affected |
 |---|---|---|---|---|---|
 | CHG-001 | 2026-06-22 | Initial decision log authored from brief v1.0 | — → v1.0 baseline | P0 seed | All D-001…D-047, ADR-001…011 |
+| CHG-002 | 2026-06-22 | Phase 0 launched on founder approval; locked engine/backend/LLM; G0 engineering deliverables complete | OD-1 open→resolved; OD-3 model open→resolved; ADR-001 PROPOSED→LOCKED; ADR-003 ACCEPTED→LOCKED | Founder decision + P0 execution | D-048…D-052, ADR-001, ADR-003, OD-1, OD-3 |
 
 **Reconciled conflicts already resolved in brief v1.0 (recorded for audit, no further action):**
 - **RC-1** AI dialogue: live LLM vs hybrid → **Hybrid-first canonical for MVP**; live LLM gated/deferred. (→ D-015, D-016, ADR-004)

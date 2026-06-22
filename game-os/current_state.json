@@ -126,9 +126,16 @@
     "exitGate": {
       "id": "G0",
       "passCriteria": "Brief ratified; rig contractor secured; LLM cost/DAU model shows < ARPDAU at projected mix; legal review booked.",
-      "status": "open"
+      "status": "open",
+      "criteriaProgress": {
+        "briefRatified": "MET — founder approval granted 2026-06-22.",
+        "rigContractorSecured": "PENDING (founder action) — locked concept brief + contractor scope delivered: docs/LIVE2D_RIG_DESIGN_BRIEF.md.",
+        "llmCostModelUnderArpdau": "MET — MVP 2.7% / soft-launch 3.9% of ARPDAU (< 35% gate). tool/llm_cost_model.dart, docs/LLM_UNIT_ECONOMICS_MODEL.md.",
+        "legalReviewBooked": "PENDING (founder action) — review scope + question list delivered: docs/LEGAL_CHILD_DIRECTEDNESS_SCOPING.md."
+      },
+      "note": "Engineering G0 deliverables complete; 2 criteria are founder/credentialed actions (secure paid rig contractor, book legal engagement) that cannot be performed by an agent — everything to enable them is delivered."
     },
-    "status": "in-progress"
+    "status": "engineering-complete; 2 founder actions pending for G0 sign-off"
   },
   "phases": [
     {
@@ -341,9 +348,9 @@
     }
   },
   "techStack": {
-    "engine": "Unity (2D) OR Flutter + Live2D SDK — pick at P0/G0; must support Live2D Cubism runtime + native widget interop; bias to fastest solo+AI shipping path.",
-    "backend": "Managed BaaS — Firebase or Supabase (auth, DB, cloud save, remote config). No owned servers.",
-    "llmStrategy": "Hybrid: offline LLM pre-generates large human-reviewed dialogue bank; runtime selects by pet-state + injects structured memory facts into cached persona prompt. Live free-form LLM DEFERRED & gated (adult-verified + subscriber + token caps ~60–100 out + daily turn caps + per-user cost ceiling). This is the make-or-break OPEX model.",
+    "engine": "Flutter + Live2D SDK — LOCKED at G0 (founder decision 2026-06-22; resolves Open Decision #1, D-048). Live2D Cubism has no first-party Flutter runtime; Rive is the authorized fallback if the P1 integration spike runs hot (the PetRenderer abstraction makes it a backend swap). Native widget interop via WidgetKit/Glance.",
+    "backend": "Firebase — LOCKED at G0 (founder decision 2026-06-22; resolves ADR-003, D-049). Managed BaaS: auth, Firestore cloud save, Remote Config, Analytics, Crashlytics. No owned servers.",
+    "llmStrategy": "Hybrid: offline LLM pre-generates large human-reviewed dialogue bank; runtime selects by pet-state + injects structured memory facts into cached persona prompt. Live free-form LLM DEFERRED & gated (adult-verified + subscriber + token caps ~60–100 out + daily turn caps + per-user cost ceiling). Models LOCKED at G0 (D-050): runtime/live = claude-haiku-4-5 (founder: 'Claude Haiku 4'); offline pre-gen = claude-opus-4-8. LLM cost/DAU modeled at 2.7% (MVP) / 3.9% (soft-launch live pilot) of ARPDAU — well under the 35% gate (docs/LLM_UNIT_ECONOMICS_MODEL.md). This is the make-or-break OPEX model.",
     "aiMemory": "Structured key-value fact store (10–30 durable facts) in BaaS DB + short rolling turn window + batched off-peak fact extraction. Surfaced as the Memory Book. Reliability > breadth.",
     "moderation": "Two-sided input + output through cheap moderation/classification endpoint; hard system-prompt constraints; fixed safe-fallback line; self-harm -> static safe message; full audit logging. Under-13: templated/non-generative only.",
     "onDeviceVsCloud": "Sim runs client-side (deterministic, elapsed-time, server-validatable). Memory/entitlements/donation-ledger server-side. Voice mimic (deferred) = on-device DSP only, audio never leaves device.",
@@ -403,9 +410,9 @@
     {"id": "R10", "description": "Negative virality — one tone-deaf/unsafe AI screenshot defines the brand.", "severity": "Medium-High", "mitigation": "Hard guardrails + child-safe persona lock + per-turn moderation; many small authentic moments over one engineered spectacle; under-13 templated-only."}
   ],
   "openDecisions": [
-    {"id": 1, "decision": "Engine: Unity vs Flutter+Live2D", "resolveBy": "G0", "note": "Bias to fastest solo+AI shipping path with native widget interop."},
+    {"id": 1, "decision": "Engine: Unity vs Flutter+Live2D", "resolveBy": "G0", "status": "RESOLVED 2026-06-22", "resolution": "Flutter + Live2D SDK (Rive fallback authorized if Live2D-on-Flutter blocked). See D-048.", "note": "Bias to fastest solo+AI shipping path with native widget interop."},
     {"id": 2, "decision": "2nd species ship-or-cut", "resolveBy": "G2", "note": "Based on rig-pipeline cost burn (budget for 2; ship 1 if hot)."},
-    {"id": 3, "decision": "LLM provider + exact model tiers and final token/turn caps", "resolveBy": "G0 (model), G3/G4 (validate)", "note": "Cheap routine model vs. live-chat model."},
+    {"id": 3, "decision": "LLM provider + exact model tiers and final token/turn caps", "resolveBy": "G0 (model), G3/G4 (validate)", "status": "PARTIALLY RESOLVED 2026-06-22", "resolution": "Anthropic Claude; runtime/live = claude-haiku-4-5, offline pre-gen = claude-opus-4-8 (D-050). Final token/turn caps validated at G3/G4.", "note": "Cheap routine model vs. live-chat model."},
     {"id": 4, "decision": "Donation intermediary choice + initial 1–3 partner shelters", "resolveBy": "before G4", "note": "PayPal Giving Fund vs Percent vs Benevity; must be live for soft launch."},
     {"id": 5, "decision": "Exact donation % per revenue type (net)", "resolveBy": "before G4", "note": "Finalize with accounting/legal; lock in Impact Pledge doc."},
     {"id": 6, "decision": "Launch localization languages (which 4–6 for static UI)", "resolveBy": "G3", "note": "AI-dialogue languages stay EN(+1–2), expand post-launch per-language safety validation."},
@@ -455,6 +462,22 @@
       "old": "SSOT root missing on-disk; docs named the brief variously (KINDREDPAWS_CANONICAL_DECISION_BRIEF without .md, CANONICAL_DECISION_BRIEF.md, prose 'Canonical Decision Brief'). Authority chain had a missing root link.",
       "new": "Brief committed; ssotRootStatus = committed; authority chain brief -> current_state.json -> docs is now mechanically enforceable.",
       "rationale": "'The brief wins all conflicts' could not be enforced and downstream could not verify against the SSOT without the root file present under a single agreed filename."
+    },
+    {
+      "ts": "2026-06-22T00:00:00Z",
+      "owner_doc": "current_state.json",
+      "decision": "P0/G0: Lock engine = Flutter + Live2D SDK; backend = Firebase; LLM runtime = claude-haiku-4-5 (pre-gen claude-opus-4-8). Resolves Open Decision #1 and the model half of #3 (founder decisions, 2026-06-22).",
+      "old": "Engine, backend, and LLM tiers were open (brief §12 OD-1, OD-3); brief listed Unity-or-Flutter and Firebase-or-Supabase.",
+      "new": "Flutter+Live2D / Firebase / Claude Haiku 4 locked. Recorded as D-048/D-049/D-050 in GAME_DECISION_LOG.md; ADR-001 PROPOSED->LOCKED, ADR-003 ACCEPTED->LOCKED. Brief stays v1.0 (locked seed); resolutions live in this mirror + the decision log.",
+      "rationale": "Founder ratified the brief and chose the stack to start Phase 0; the SSOT brief is immutable, so resolved open-decisions are recorded downstream per the update protocol."
+    },
+    {
+      "ts": "2026-06-22T00:00:00Z",
+      "owner_doc": "current_state.json",
+      "decision": "P0 engineering deliverables complete: LLM unit-economics model v1 (G0 criterion #3 PASS — 2.7%/3.9% of ARPDAU); tech stack provisioned (Flutter architecture skeleton + service abstractions + mocks + gated Firebase seam); versioned-save migration/restore framework (R4); Heartmind/memory/dialogue schemas; analytics taxonomy; remote-config defaults; PetRenderer abstraction. Rig design brief + legal scoping + Impact Pledge skeleton + REQUIRED_ENVIRONMENTS authored.",
+      "old": "P0 deliverables pending.",
+      "new": "G0 status: engineering-complete; 2 founder/credentialed actions remain (secure rig contractor, book legal review) — both fully enabled by delivered docs. Validated: flutter analyze clean, 31 tests pass @76.4% coverage, APK build + emulator E2E green.",
+      "rationale": "Phase 0 (Pre-production) is design/provision/model, not gameplay; the playable core loop is Phase 1 (G1) and intentionally NOT started."
     }
   ],
   "nextActions": [
