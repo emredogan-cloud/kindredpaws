@@ -389,11 +389,11 @@ Server-side mint-gating (S2S signed ad postbacks; Apple/Google receipt validatio
 
 > ADR format extends §2 with: Architectural scope · Alternatives rejected (reason) · Reversibility cost · Validation gate. These are the load-bearing technical commitments. Deep detail → `GAME_TECHNICAL_SYSTEMS.md`.
 
-### ADR-001 — Engine: Flutter + Live2D SDK (decided at G0; Unity 2D rejected)
-- **Status:** LOCKED (2026-06-22 at G0; was PROPOSED) → **Flutter + Live2D SDK**, with Rive pre-authorized as the de-risked fallback (D-048). · **Scope:** client engine.
-- **Decision:** Flutter client + Live2D Cubism via a community/custom runtime bridge; founder pre-authorized switching the rig commission to Rive (Flutter-native) if the Live2D-on-Flutter integration spike runs hot at the start of P1 (`PetRenderer` seam makes this a backend swap). Original framing: defer to G0, bias to whichever lets founder+AI ship fastest with Live2D runtime + native widget interop.
-- **Alternatives rejected:** Custom 3D engine (violates no-custom-3D constraint); pure web (no native widgets/billing).
-- **Reversibility cost:** HIGH (rewrite). · **Validation gate:** G0. · **Cross-link:** brief §6, §12.1, D-002.
+### ADR-001 — Engine: Flutter + **Rive** rig runtime (Unity 2D & Live2D-on-Flutter rejected)
+- **Status:** LOCKED → **Flutter** engine (G0, 2026-06-22) + **Rive** rig runtime (**P1-0, 2026-06-23**, D-053; supersedes the "Live2D SDK" runtime, which the P1-0 spike found non-viable on Flutter). · **Scope:** client engine + rig runtime.
+- **Decision:** Flutter client with the **Rive** Flutter-native runtime for the pet rig. The P1-0 animation spike (`docs/ANIMATION_SPIKE_REPORT.md`) proved Live2D Cubism has **no first-party Flutter runtime** (only an unproven community binding: 1 like / ~142 downloads-30d) while **Rive is first-party + mature** (~1,935 likes / ~404k downloads-30d / 6 platforms), builds an APK here, and preserves the "params-not-frames" economics (R7). Founder pre-authorization (D-048) for the Rive fallback is exercised. The `PetRenderer` seam kept this a backend swap with **zero gameplay change**.
+- **Alternatives rejected:** Live2D-on-Flutter (no first-party runtime; community binding unproven + Cubism Core native licensing — too risky for solo+AI); Custom 3D engine (violates no-custom-3D constraint); pure web (no native widgets/billing).
+- **Reversibility cost:** LOW for the runtime (isolated behind `PetRenderer`); HIGH for the engine. · **Validation gate:** G0 (engine) + **P1-0 spike (rig runtime) — PASSED**. · **Cross-link:** brief §6, §12.1, D-002, D-048, D-053, ADR-002.
 
 ### ADR-002 — Art style: Live2D Cubism, 1 rig/species, life-stages via param/scale
 - **Status:** LOCKED · **Scope:** art pipeline.
@@ -660,6 +660,16 @@ Server-side mint-gating (S2S signed ad postbacks; Apple/Google receipt validatio
 - **Cross-link:** `REQUIRED_ENVIRONMENTS.md`, ADR-009, ADR-010, ADR-011.
 
 > **ADR status updates (2026-06-22):** ADR-001 PROPOSED → **LOCKED** (Flutter+Live2D, D-048); ADR-003 ACCEPTED → **LOCKED** (Firebase, D-049).
+
+#### Phase-1 decisions (D-053 …) — added 2026-06-23 on founder approval to execute Phase 1
+
+### D-053 — Rig runtime = **Rive** (P1-0 animation spike result; supersedes Live2D runtime)
+- **Status:** ACCEPTED · **P1 / P1-0** · **Basis:** P1-0 spike evidence + founder pre-authorization (D-048) + Risk R7.
+- **Decision:** The pet rig runtime is **Rive** (Flutter-native), not Live2D Cubism. Spike evidence (`docs/ANIMATION_SPIKE_REPORT.md`): Live2D has **no first-party Flutter runtime** (only `flutter_live2d` — 1 like / ~142 dl-30d / Android+iOS, plus Cubism Core native licensing); **Rive** is first-party (`rive-app/rive-flutter`), ~1,935 likes / ~404k dl-30d / 6 platforms, builds an APK here, same "params-not-frames" economics. Pinned to **`rive: ^0.13`** (pure-Dart line; avoids the per-build `rive_native` artifact download of 0.14 — re-evaluate at P2 when the `.riv` rig lands). `RivePetRenderer` wired behind the `PetRenderer` seam + `KP_PET_RENDERER` flag (default `placeholder`).
+- **Consequences:** ADR-001 amended (runtime Live2D→Rive); the P0 open Live2D-on-Flutter integration risk is **CLOSED**; the rig commission (`docs/LIVE2D_RIG_DESIGN_BRIEF.md`) now targets **Rive `.riv`** deliverables against the documented `PetStateMachine` contract. Art *style* (ADR-002) unchanged. Zero gameplay impact (seam swap).
+- **Cross-link:** ADR-001, ADR-002, D-048, `docs/ANIMATION_SPIKE_REPORT.md`, Risk R7.
+
+> **ADR status updates (2026-06-23):** ADR-001 rig runtime **Live2D → Rive** (P1-0 spike, D-053).
 
 ---
 
