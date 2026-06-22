@@ -20,8 +20,10 @@ relative to the phase it's needed in.
 ## 1. Firebase (backend — LOCKED, ADR-003) — [P1, scaffold ready now]
 
 The app's authoritative backend (auth, Firestore cloud save, Remote Config,
-Analytics, Crashlytics). The code seam exists (`lib/services/firebase_backend.dart`);
-wiring it is a credentialed step.
+Analytics, **Crashlytics**, **Performance Monitoring**). The code seams exist —
+`lib/services/firebase_backend.dart` (Firestore) + `lib/services/firebase_provisioning.dart`
+(init + observability adapters) — and the app runs fully on in-memory/console
+observability until wired. Activation is a credentialed step.
 
 | Item | Value/var | Mandatory? | Where used | How to get it |
 |---|---|---|---|---|
@@ -32,11 +34,15 @@ wiring it is a credentialed step.
 
 **Steps to activate (after Phase 0):**
 1. `dart pub global activate flutterfire_cli`
-2. `flutter pub add firebase_core cloud_firestore firebase_auth firebase_remote_config firebase_analytics firebase_crashlytics`
+2. `flutter pub add firebase_core cloud_firestore firebase_auth firebase_remote_config firebase_analytics firebase_crashlytics firebase_performance`
 3. `flutterfire configure` (select the KindredPaws project; writes `firebase_options.dart` + native config + adds the `google-services` Gradle plugin)
-4. Implement the bodies in `lib/services/firebase_backend.dart` against `cloud_firestore`, register it in `bootstrap()` when `KP_BACKEND=firebase`.
-5. Run with `--dart-define=KP_BACKEND=firebase`.
-> Until step 5, the app runs on the in-memory backend (default `KP_BACKEND=mock`).
+4. Replace `FirebaseProvisioning.initialize()` with `await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform)`; implement the bodies in `lib/services/firebase_backend.dart` against `cloud_firestore`; add real `CrashReporter`/`PerformanceMonitor`/`AnalyticsService` adapters (Crashlytics/Perf/Analytics) and register them in `bootstrap()`.
+5. Run with `--dart-define=KP_BACKEND=firebase --dart-define=KP_FIREBASE_PROVISIONED=true`.
+> Until step 5, the app runs on the in-memory backend + console/in-memory
+> observability (defaults `KP_BACKEND=mock`, `KP_FIREBASE_PROVISIONED=false`).
+> All observability code (structured `Logger`, `CrashReporter`,
+> `PerformanceMonitor`, `ObservabilityFacade` incl. the mandatory leading-churn
+> flags) is wired and unit-tested now — provisioning only swaps the sink.
 
 ---
 
@@ -114,6 +120,8 @@ See `docs/IMPACT_PLEDGE.md`. No donation-IAP / no player tax-deductible donation
 |---|---|---|
 | `KP_ENV` | `dev` | environment label |
 | `KP_BACKEND` | `mock` | `mock` \| `firebase` |
+| `KP_FIREBASE_PROVISIONED` | `false` | `true` only after `flutterfire configure` + deps added |
+| `KP_PET_RENDERER` | `placeholder` | `placeholder` \| `rive` (rig runtime; default keeps goldens deterministic) |
 | `KP_HEARTMIND_LIVE_CHAT` | `false` | Deferred #6b — keep OFF for MVP |
 | `KP_ANTHROPIC_PROXY` | `false` | whether the server proxy is wired |
 
