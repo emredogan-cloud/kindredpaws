@@ -21,7 +21,7 @@ After cloning and running `just doctor`, a future Claude agent can autonomously:
 | Capability | How | Status |
 |---|---|---|
 | Write code | `lib/`, structured per `CLAUDE.md` | ✅ |
-| Run all tests | `just test` (unit/widget/golden/perf, coverage gate) | ✅ 6 tests, 93.3% |
+| Run all tests | `just test` (unit/widget/golden/perf, coverage gate) | ✅ 31 tests, 76.4% (as of Phase 0; 6 tests @ 93.3% at the close of Pre-Phase-0) |
 | Static analysis | `just analyze` (`--fatal-infos --fatal-warnings`) | ✅ clean |
 | Boot an emulator | `just emulator` (KVM AVD `kp_pixel_api34`) | ✅ |
 | Build an APK | `just build-apk` / release variants | ✅ built in ~47s |

@@ -1,81 +1,142 @@
 import 'package:flutter/material.dart';
-import 'package:kindredpaws/src/build_info.dart';
+
+import 'core/app_config.dart';
+import 'core/bootstrap.dart';
+import 'core/kindred_terms.dart';
+import 'core/service_locator.dart';
+import 'data/kindred_save_state.dart';
+import 'heartmind/heartmind_service.dart';
+import 'render/pet_renderer.dart';
+import 'services/analytics_service.dart';
+import 'services/backend_service.dart';
+import 'tooling/llm_cost_model.dart';
 
 void main() {
-  runApp(const KindredPawsApp());
+  final config = bootstrap();
+  runApp(KindredPawsApp(config: config));
 }
 
 /// Root application widget.
 ///
-/// NOTE: This is a *walking skeleton* used solely to validate the engineering
-/// environment (build → test → screenshot → device → CI → release). It
-/// deliberately contains no gameplay. Phase 0 replaces [EnvironmentCheckPage].
+/// NOTE: This is the **Phase-0 pre-production shell**. It renders a provisioning
+/// status screen — which services are live vs mocked, the save schema version,
+/// the locked LLM models, and the LLM cost-gate result — plus a placeholder pet
+/// to validate the render seam. It contains **no gameplay**; Phase 1 replaces
+/// the home screen with the core-loop prototype.
 class KindredPawsApp extends StatelessWidget {
-  const KindredPawsApp({super.key});
+  const KindredPawsApp({required this.config, super.key});
+
+  final AppConfig config;
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: kAppName,
+      title: KindredTerms.gameTitle,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF6C8EAD)),
       ),
-      home: const EnvironmentCheckPage(),
+      home: ProvisioningStatusPage(config: config),
     );
   }
 }
 
-/// Minimal screen proving the toolchain renders, themes, and handles input.
-class EnvironmentCheckPage extends StatefulWidget {
-  const EnvironmentCheckPage({super.key});
+class ProvisioningStatusPage extends StatelessWidget {
+  const ProvisioningStatusPage({
+    required this.config,
+    this.renderer = const PlaceholderPetRenderer(),
+    super.key,
+  });
 
-  @override
-  State<EnvironmentCheckPage> createState() => _EnvironmentCheckPageState();
-}
-
-class _EnvironmentCheckPageState extends State<EnvironmentCheckPage> {
-  int _taps = 0;
-
-  void _increment() => setState(() => _taps++);
+  final AppConfig config;
+  final PetRenderer renderer;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final backend = ServiceLocator.instance.get<BackendService>();
+    final heartmind = ServiceLocator.instance.get<HeartmindService>();
+    final analytics = ServiceLocator.instance.get<AnalyticsService>();
+    final cost = computeLlmCost(LlmCostScenarios.mvpLaunch);
+
+    final rows = <(String, String)>[
+      ('Environment', config.environmentLabel),
+      (
+        'Backend',
+        '${config.backendMode.name} '
+            '(${backend.isAuthoritative ? 'authoritative' : 'mock'})',
+      ),
+      (
+        'Heartmind live chat',
+        config.heartmindLiveChatEnabled ? 'ON' : 'OFF (deferred)',
+      ),
+      ('Heartmind backend', heartmind.runtimeType.toString()),
+      ('Runtime LLM', HeartmindModels.runtimeModel),
+      ('Pre-gen LLM', HeartmindModels.pregenModel),
+      ('Save schema', 'v${KindredSaveState.currentSchemaVersion}'),
+      (
+        'Analytics events',
+        '${AnalyticsEvent.values.length} (${analytics.runtimeType})',
+      ),
+    ];
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: theme.colorScheme.inversePrimary,
-        title: const Text(kAppName),
+        title: const Text('${KindredTerms.gameTitle} · Pre-production'),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.pets, size: 72, color: theme.colorScheme.primary),
-            const SizedBox(height: 16),
-            Text(
-              healthLabel(),
-              key: const Key('healthcheck-banner'),
-              style: theme.textTheme.titleLarge,
-            ),
-            const SizedBox(height: 8),
-            Text('channel: $kBuildChannel', style: theme.textTheme.bodySmall),
-            const SizedBox(height: 32),
-            const Text('interaction self-check taps:'),
-            Text(
-              '$_taps',
-              key: const Key('counter-text'),
-              style: theme.textTheme.headlineMedium,
-            ),
-          ],
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: renderer.build(
+                  context,
+                  mood: PetMood.content,
+                  lifeStage: 'Pup/Kit',
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Engineering provisioning status',
+                key: const Key('provisioning-status'),
+                textAlign: TextAlign.center,
+                style: theme.textTheme.titleLarge,
+              ),
+              const SizedBox(height: 16),
+              Card(
+                child: Column(
+                  children: [
+                    for (final r in rows)
+                      ListTile(
+                        dense: true,
+                        title: Text(r.$1),
+                        trailing: Text(r.$2),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Card(
+                color: cost.passesGuardGate
+                    ? theme.colorScheme.secondaryContainer
+                    : theme.colorScheme.errorContainer,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    'LLM cost gate (G4): ${(cost.ratio * 100).toStringAsFixed(1)}% '
+                    'of ARPDAU — ${cost.passesGuardGate ? 'PASS' : 'FAIL'}',
+                    key: const Key('cost-gate-banner'),
+                    style: theme.textTheme.titleMedium,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        key: const Key('increment-fab'),
-        onPressed: _increment,
-        tooltip: 'Increment self-check',
-        child: const Icon(Icons.add),
       ),
     );
   }
