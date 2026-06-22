@@ -1,24 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:integration_test/integration_test.dart';
 import 'package:kindredpaws/core/bootstrap.dart';
 import 'package:kindredpaws/core/service_locator.dart';
 import 'package:kindredpaws/main.dart';
 
-/// End-to-end smoke test on a real device/emulator: the app boots to the
-/// Phase-0 provisioning shell with the cost gate passing. No gameplay yet.
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  setUp(ServiceLocator.instance.reset);
 
-  testWidgets('app boots to the provisioning status shell', (tester) async {
-    ServiceLocator.instance.reset();
+  testWidgets('renders provisioning status, pet seam, and cost gate', (
+    tester,
+  ) async {
     final config = bootstrap();
     await tester.pumpWidget(KindredPawsApp(config: config));
-    await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('provisioning-status')), findsOneWidget);
     expect(find.byKey(const Key('pet-renderer')), findsOneWidget);
     expect(find.byKey(const Key('cost-gate-banner')), findsOneWidget);
     expect(find.textContaining('PASS'), findsWidgets);
+  });
+
+  testWidgets('defaults are offline-safe: mock backend, live chat off', (
+    tester,
+  ) async {
+    final config = bootstrap();
+    await tester.pumpWidget(KindredPawsApp(config: config));
+
+    expect(find.textContaining('OFF (deferred)'), findsOneWidget);
+    expect(find.textContaining('mock'), findsWidgets);
   });
 }
