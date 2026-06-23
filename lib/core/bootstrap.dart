@@ -19,6 +19,7 @@ import '../services/notification_scheduler.dart';
 import '../services/observability.dart';
 import '../services/performance_monitor.dart';
 import '../services/remote_config_service.dart';
+import '../services/status_snapshot_service.dart';
 import '../heartmind/heartmind_service.dart';
 
 AppConfig bootstrap({ServiceLocator? locator}) {
@@ -35,6 +36,7 @@ AppConfig bootstrap({ServiceLocator? locator}) {
   sl.registerSingleton<RemoteConfigService>(const DefaultRemoteConfig());
   sl.registerSingleton<HeartmindService>(const StubHeartmind());
   sl.registerSingleton<NotificationScheduler>(InMemoryNotificationScheduler());
+  sl.registerSingleton<StatusSnapshotService>(InMemoryStatusSnapshotService());
   sl.registerSingleton<PetRenderer>(
     createPetRenderer(config.petRendererBackend),
   );

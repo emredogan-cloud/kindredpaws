@@ -9,6 +9,7 @@ import '../services/backend_service.dart';
 import '../services/notification_scheduler.dart';
 import '../services/observability.dart';
 import '../services/remote_config_service.dart';
+import '../services/status_snapshot_service.dart';
 import 'controller/game_controller.dart';
 import 'sim/game_simulation.dart';
 import 'sim/sim_config.dart';
@@ -18,15 +19,15 @@ GameController createGameController({
   required LocalSaveStore store,
   int Function()? clock,
 }) {
-  final sim = GameSimulation(
-    SimConfig.fromRemoteConfig(sl.get<RemoteConfigService>()),
-  );
+  final config = SimConfig.fromRemoteConfig(sl.get<RemoteConfigService>());
   final repo = SaveRepository(local: store, backend: sl.get<BackendService>());
   return GameController(
-    sim: sim,
+    sim: GameSimulation(config),
+    config: config,
     repo: repo,
     observability: sl.get<ObservabilityFacade>(),
     notifications: sl.get<NotificationScheduler>(),
+    snapshots: sl.get<StatusSnapshotService>(),
     clock: clock,
   );
 }
