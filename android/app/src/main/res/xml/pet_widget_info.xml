@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Companion Presence home widget metadata (P2-6). Ambient surface; the OS
+     budgets refreshes (~30 min) which is fine — it is not real-time. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="180dp"
+    android:minHeight="110dp"
+    android:updatePeriodMillis="1800000"
+    android:initialLayout="@layout/pet_widget"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen" />

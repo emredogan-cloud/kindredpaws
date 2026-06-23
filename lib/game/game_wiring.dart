@@ -6,6 +6,7 @@ library;
 import '../core/service_locator.dart';
 import '../data/save_repository.dart';
 import '../services/backend_service.dart';
+import '../services/home_widget_service.dart';
 import '../services/notification_scheduler.dart';
 import '../services/observability.dart';
 import '../services/remote_config_service.dart';
@@ -29,6 +30,7 @@ GameController createGameController({
     observability: sl.get<ObservabilityFacade>(),
     notifications: sl.get<NotificationScheduler>(),
     snapshots: sl.get<StatusSnapshotService>(),
+    homeWidget: sl.get<HomeWidgetService>(),
     heartmind: sl.get<Heartmind>(),
     clock: clock,
   );
