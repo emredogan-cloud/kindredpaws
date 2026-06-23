@@ -40,6 +40,10 @@ class SessionInteractions {
     CareInteraction.play => play,
   };
 
+  /// Total care interactions this session — the `interactions_n` that drives
+  /// the `sessionQuality` retention signal (empty session ⇔ total == 0).
+  int get total => feed + clean + play + petting;
+
   SessionInteractions increment(CareInteraction i) => SessionInteractions(
     feed: feed + (i == CareInteraction.feed ? 1 : 0),
     clean: clean + (i == CareInteraction.clean ? 1 : 0),

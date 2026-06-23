@@ -21,14 +21,36 @@ class GameRoot extends StatefulWidget {
   State<GameRoot> createState() => _GameRootState();
 }
 
-class _GameRootState extends State<GameRoot> {
+class _GameRootState extends State<GameRoot> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    // Observe app lifecycle so the controller can end/begin play sessions
+    // (P3-7: emits the sessionQuality retention beat on background).
+    WidgetsBinding.instance.addObserver(this);
     if (widget.autoLoad) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         widget.controller.load();
       });
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.resumed:
+        widget.controller.onAppForegrounded();
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.paused:
+      case AppLifecycleState.hidden:
+      case AppLifecycleState.detached:
+        widget.controller.onAppBackgrounded();
     }
   }
 

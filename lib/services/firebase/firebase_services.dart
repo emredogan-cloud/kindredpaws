@@ -20,6 +20,7 @@ import '../../core/service_locator.dart';
 import '../analytics_service.dart';
 import '../backend_service.dart';
 import '../crash_reporter.dart';
+import '../feedback_service.dart';
 import '../logger.dart' show LogRecord;
 import '../performance_monitor.dart';
 import '../remote_config_service.dart';
@@ -47,6 +48,10 @@ Future<bool> initFirebase() async {
 /// process launch, before this gate). Now that we are, re-enable collection.
 void registerFirebaseServices(ServiceLocator sl) {
   sl.registerSingleton<BackendService>(FirestoreBackendService());
+  // Closed-beta feedback now writes to the authoritative backend (P3-7).
+  sl.registerSingleton<FeedbackService>(
+    BackendFeedbackService(sl.get<BackendService>()),
+  );
   sl.registerSingleton<AnalyticsService>(FirebaseAnalyticsAdapter());
   sl.registerSingleton<CrashReporter>(FirebaseCrashReporterAdapter());
   sl.registerSingleton<PerformanceMonitor>(FirebasePerformanceAdapter());

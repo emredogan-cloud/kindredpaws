@@ -18,6 +18,7 @@ import '../../keepsake/keepsake.dart';
 import '../../keepsake/keepsake_factory.dart';
 import '../../render/pet_renderer.dart';
 import '../../services/analytics_service.dart';
+import '../../services/feedback_service.dart';
 import '../../services/home_widget_service.dart';
 import '../../services/notification_scheduler.dart';
 import '../../services/observability.dart';
@@ -44,9 +45,11 @@ class GameController extends ChangeNotifier {
     required this.homeWidget,
     required this.heartmind,
     required this.share,
+    FeedbackService? feedback,
     int Function()? clock,
     String Function()? idGenerator,
-  }) : _now = clock ?? (() => DateTime.now().millisecondsSinceEpoch),
+  }) : _feedback = feedback ?? const NoopFeedbackService(),
+       _now = clock ?? (() => DateTime.now().millisecondsSinceEpoch),
        _idGenerator =
            idGenerator ??
            (() => 'pet-${DateTime.now().microsecondsSinceEpoch}');
@@ -60,6 +63,7 @@ class GameController extends ChangeNotifier {
   final HomeWidgetService homeWidget;
   final Heartmind heartmind;
   final ShareService share;
+  final FeedbackService _feedback;
   final int Function() _now;
   final String Function() _idGenerator;
 
@@ -84,6 +88,11 @@ class GameController extends ChangeNotifier {
   SessionInteractions _session = SessionInteractions.empty;
   Mood _mood = Mood.content;
   bool _loading = true;
+
+  /// Wall-clock (ms) the current play session began, or null between sessions.
+  /// Set when a session starts (adopt / resume / app-foregrounded); cleared by
+  /// [_endSession] after the `sessionQuality` beat is emitted.
+  int? _sessionStartMs;
 
   /// Transient warm line for the UI to surface (never guilt). Null after read.
   String? lastMessage;
@@ -139,6 +148,7 @@ class GameController extends ChangeNotifier {
       keepsakes: [_keepsakes.rescueDay(pet, now)], // the first card
     );
     _session = SessionInteractions.empty;
+    _sessionStartMs = now;
     lastInteraction = null;
     ambientEmotion = null;
     _personality = PersonalityProfile.neutral;
@@ -230,6 +240,7 @@ class GameController extends ChangeNotifier {
           : save.facts,
     );
     _session = SessionInteractions.empty;
+    _sessionStartMs = _now();
     lastInteraction = null;
     ambientEmotion = null;
     _mood = resume.mood;
@@ -243,6 +254,42 @@ class GameController extends ChangeNotifier {
         : HeartmindIntent.greeting;
     _say(intent, tryCallback: true);
   }
+
+  /// App returned to the foreground (P3-7). Starts a fresh session: re-resolves
+  /// offline catch-up, greets, and re-arms the session clock. No-op on Rescue
+  /// Day (no pet yet) — onboarding owns its own first session.
+  void onAppForegrounded() {
+    if (!hasPet) return;
+    _resumeSession();
+    notifyListeners();
+  }
+
+  /// App went to the background (P3-7). Ends the session — emits the
+  /// `sessionQuality` retention beat — and persists. Idempotent: a second
+  /// background event before the next foreground is a no-op.
+  Future<void> onAppBackgrounded() async {
+    _endSession();
+    await _persist();
+  }
+
+  /// Emits the deferred `sessionQuality` summary (the daily-retention lever):
+  /// `empty=false` ⇔ the player did ≥1 care interaction this session. No-op if
+  /// no session is active (guards double-emit). See [ObservabilityFacade].
+  void _endSession() {
+    final start = _sessionStartMs;
+    if (start == null) return;
+    observability.recordSessionQuality(
+      interactions: _session.total,
+      durationSeconds: ((_now() - start) / 1000).round(),
+    );
+    _sessionStartMs = null;
+  }
+
+  /// Submits closed-beta feedback (P3-7) via the [FeedbackService] seam.
+  /// Best-effort + PII-minimized (rating + capped note only); never throws into
+  /// the UI.
+  Future<void> submitBetaFeedback({required int rating, String? comment}) =>
+      _feedback.submit(BetaFeedback(rating: rating, comment: comment));
 
   Future<void> _persist() async {
     final save = _save;
