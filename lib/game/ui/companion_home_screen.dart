@@ -94,6 +94,7 @@ class CompanionHomeScreen extends StatelessWidget {
                           context,
                           mood: petMoodFor(controller.mood),
                           lifeStage: pet.lifeStage.id,
+                          emotion: currentPetEmotion(controller),
                         ),
                       ),
                     ),
