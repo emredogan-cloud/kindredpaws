@@ -162,8 +162,9 @@ class _RescueDayScreenState extends State<RescueDayScreen> {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 20),
-        SizedBox(
-          width: 240,
+        ConstrainedBox(
+          // Responsive: caps at 240 but shrinks on very narrow screens.
+          constraints: const BoxConstraints(maxWidth: 240),
           child: TextField(
             key: const Key('name-field'),
             controller: _name,

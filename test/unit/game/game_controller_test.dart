@@ -37,12 +37,25 @@ void main() {
 
         await c.interact(CareInteraction.play); // costs energy, awards Bond
         final bond1 = c.pet!.bond.value;
-        expect(bond1, greaterThan(0));
+        // play (+3) + first-care-day streak (+6), mood-modified — bounded range.
+        expect(bond1, inInclusiveRange(3, 20));
 
         await c.interact(CareInteraction.feed);
         expect(c.pet!.wallet.kibble, greaterThan(0));
         expect(c.pet!.bond.value, greaterThanOrEqualTo(bond1));
-        expect(c.lastMessage, isNotNull); // warm, never guilt
+        // The feedback line must be warm — never guilt-framed (Risk R6 / D-047).
+        expect(c.lastMessage, isNotNull);
+        final msg = c.lastMessage!.toLowerCase();
+        for (final banned in [
+          'starving',
+          'dying',
+          'sick',
+          'abandon',
+          'guilt',
+          'miss you',
+        ]) {
+          expect(msg, isNot(contains(banned)));
+        }
         c.dispose();
       },
     );

@@ -108,4 +108,33 @@ void main() {
       expect(a.awarded, 50);
     });
   });
+
+  group('BondLedger (daily soft-cap accounting)', () {
+    const today = 20000;
+
+    test('forDay returns self on the same day', () {
+      const l = BondLedger(dayEpoch: today, earnedToday: 40);
+      expect(identical(l.forDay(today), l), isTrue);
+    });
+
+    test('forDay resets earnedToday when the day rolls over', () {
+      const l = BondLedger(dayEpoch: today, earnedToday: 40);
+      final next = l.forDay(today + 1);
+      expect(next.dayEpoch, today + 1);
+      expect(next.earnedToday, 0);
+    });
+
+    test('toMap/fromMap round-trips losslessly', () {
+      const l = BondLedger(dayEpoch: today, earnedToday: 33);
+      final back = BondLedger.fromMap(l.toMap());
+      expect(back.dayEpoch, today);
+      expect(back.earnedToday, 33);
+    });
+
+    test('fromMap tolerates a null day (a fresh ledger)', () {
+      final l = BondLedger.fromMap(const {'dayEpoch': null, 'earnedToday': 0});
+      expect(l.dayEpoch, isNull);
+      expect(l.earnedToday, 0);
+    });
+  });
 }

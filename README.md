@@ -7,7 +7,7 @@
 [![Nightly](https://github.com/emredogan-cloud/kindredpaws/actions/workflows/nightly.yml/badge.svg)](https://github.com/emredogan-cloud/kindredpaws/actions/workflows/nightly.yml)
 [![Security](https://github.com/emredogan-cloud/kindredpaws/actions/workflows/security.yml/badge.svg)](https://github.com/emredogan-cloud/kindredpaws/actions/workflows/security.yml)
 
-> **Status: Pre-Phase-0.** This repository currently contains the **engineering foundation** and a **walking-skeleton** app only. There is **no gameplay yet** — see [`PRE_PHASE0_ENGINEERING_FOUNDATION_MASTER_REPORT.md`](PRE_PHASE0_ENGINEERING_FOUNDATION_MASTER_REPORT.md). Gameplay begins after founder approval of Phase 0.
+> **Status: Phase 1 (Core-loop prototype) — in progress.** Phase 0 (Pre-production / G0) is complete ([`PHASE0_COMPLETION_REPORT.md`](PHASE0_COMPLETION_REPORT.md)). The app is now a **playable vertical slice**: adopt a pet on Rescue Day, care for it (feed / clean / play), grow The Bond, and your progress persists across restarts. Rig runtime is **Rive** (locked at P1-0, [`docs/ANIMATION_SPIKE_REPORT.md`](docs/ANIMATION_SPIKE_REPORT.md)). See [`game-os/current_state.json`](game-os/current_state.json) for the live phase/gate status.
 
 ---
 

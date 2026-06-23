@@ -132,5 +132,5 @@ Example live build: `flutter build apk --release --dart-define=KP_ENV=prod --dar
 ## Outstanding founder actions to fully close G0
 - [ ] Create the Firebase project + run `flutterfire configure` (§1) — *or* defer to P1 (the scaffold + cost model satisfy "tech stack provisioned" for G0).
 - [ ] Create an Anthropic API key for the pre-gen content op (§2).
-- [ ] Secure a Live2D rig contractor with the locked concept (see `docs/LIVE2D_RIG_DESIGN_BRIEF.md`) — **G0 pass criterion**.
+- [ ] Secure a **Rive** rig contractor (deliver `.riv` artboards against the `PetStateMachine` contract; rig runtime locked to Rive at P1-0, D-053 — see `docs/ANIMATION_SPIKE_REPORT.md`) with the locked concept (`docs/LIVE2D_RIG_DESIGN_BRIEF.md` for art direction) — **G0 pass criterion**.
 - [ ] Book the child-directedness legal review (see `docs/LEGAL_CHILD_DIRECTEDNESS_SCOPING.md`) — **G0 pass criterion**.

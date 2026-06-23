@@ -1,5 +1,14 @@
 # Live2D Rig Design Brief — KindredPaws (P0 deliverable)
 
+> **⚠️ RUNTIME UPDATE (P1-0, D-053):** the rig **runtime** is now **Rive**, not
+> Live2D — the P1-0 animation spike found Live2D has no first-party Flutter
+> runtime (`docs/ANIMATION_SPIKE_REPORT.md`). The **art direction** below still
+> holds (the same cozy Live2D-Cubism-*style*, ADR-002), but the contractor now
+> delivers **`.riv` artboards** (a Rive state machine `PetStateMachine` exposing
+> `mood` 0–3 + `lifeStage` 0–2 inputs — see `lib/render/rive_pet_renderer.dart`)
+> instead of `.cmo3/.moc3`. Read "Live2D" below as "the rig" and the export
+> format as `.riv`.
+
 The concept-lock spec + contractor scope for the two hero rigs. The **G0 pass
 criterion** "rig contractor secured" is a founder action; this brief is what you
 hand the contractor and what locks the AI concept BEFORE paying for a rig

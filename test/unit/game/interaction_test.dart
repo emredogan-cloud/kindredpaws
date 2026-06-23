@@ -30,6 +30,23 @@ void main() {
       expect(e.rawBondPoints, closeTo(1.2, 1e-9)); // 2 * 0.6
     });
 
+    test(
+      'diminishing returns: 3rd feed = ×0.6² = 0.36 (tap-spam is pointless)',
+      () {
+        // Start above the floor so the diminished restore is observable.
+        const m = CareMeters(
+          hunger: 30,
+          energy: 80,
+          hygiene: 80,
+          happiness: 50,
+        );
+        const session = SessionInteractions(feed: 2); // fed twice already
+        final e = engine.apply(m, CareInteraction.feed, session);
+        expect(e.meters.hunger, closeTo(42.6, 1e-9)); // 30 + 35*0.36
+        expect(e.rawBondPoints, closeTo(0.72, 1e-9)); // 2 * 0.36
+      },
+    );
+
     test('feeding a full pet is "petting-equivalent" only', () {
       const m = CareMeters(hunger: 100, energy: 80, hygiene: 80, happiness: 80);
       final e = engine.apply(

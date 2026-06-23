@@ -47,10 +47,11 @@ class MemoryBookScreen extends StatelessWidget {
             const SizedBox(height: 8),
           ],
           if (facts.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(24),
+            Padding(
+              padding: const EdgeInsets.all(24),
               child: Text(
-                'New memories will appear here as you spend time together.',
+                'As you feed, clean, and play with ${pet?.name ?? 'your pet'}, '
+                'the moments you share will appear here.',
               ),
             )
           else
@@ -58,9 +59,11 @@ class MemoryBookScreen extends StatelessWidget {
               (f) => Card(
                 key: Key('memory-${f.key.name}-${f.createdAtMs}'),
                 child: ListTile(
-                  leading: Text(
-                    _emojiFor(f.key),
-                    style: const TextStyle(fontSize: 22),
+                  leading: ExcludeSemantics(
+                    child: Text(
+                      _emojiFor(f.key),
+                      style: const TextStyle(fontSize: 22),
+                    ),
                   ),
                   title: Text(_lineFor(pet?.name ?? 'Your pet', f)),
                 ),
