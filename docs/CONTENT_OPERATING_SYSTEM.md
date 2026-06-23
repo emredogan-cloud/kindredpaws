@@ -93,3 +93,29 @@ and seasonal events ride the same Remote Config + validation path.
 - Remote content is validated before it can take effect; the bundled bank is the
   safe floor.
 - The never-guilt + banned-topic rules are non-negotiable (Risk R1/R6/R10).
+
+## Content expansion system (P4-0)
+
+The pipeline scales to a large production corpus while staying safe + clean:
+
+- **Versioning + localization-ready format.** `DialogueBank` now carries a
+  `schemaVersion` + BCP-47 `locale` and (de)serializes a wrapper
+  `{schemaVersion, locale, entries:[…]}` — *and* still accepts the legacy bare
+  array (Remote Config top-ups). The dialogue corpus stays EN(+1–2) at launch;
+  non-`en` locales ship as separate locale-tagged banks (UI strings localize
+  first — brief §6, OD-6).
+- **Manifest + categorization** (`lib/content/bank_manifest.dart`). `BankManifest`
+  summarizes a bank — entry/line totals, the per-dimension line breakdown
+  (intent · mood · bond · life-stage), and the memory-callback line count — for
+  the content ledger + `just content-validate` output. Run it to see exactly what
+  a bank contains before shipping.
+- **Duplicate detection.** The validator now runs a bank-wide pass: a repeated
+  entry **key** is an error (ambiguous selection — buckets must be merged), a
+  repeated **line** (normalized) is a warning (it weakens the anti-repetition
+  rotation that guards the "noticed AI repetition" churn signal, R3).
+- **Stronger unsafe-content detection.** The never-guilt scan adds accusatory /
+  shaming phrases (`where were you`, `bad pet`) on top of the banned-topic
+  `SafetyFilter`. Every line is scanned with its `{fact:…}` slots rendered.
+
+The one slot-token pattern (`{fact:snake_case}`) is now a single shared source of
+truth (`kFactSlot`) used by the injector, validator, and manifest.

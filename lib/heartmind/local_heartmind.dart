@@ -158,14 +158,11 @@ DialogueBank defaultDialogueBank() {
     e('idle', 'low', ['*curls up in a cozy spot*', '*slow, sleepy blink*']),
 
     // ---- Memory callbacks (slots; only chosen when the fact exists) ----
+    // One bucket per key — the selector pools + rotates the lines within it.
     e('memoryCallback', '*', [
       'I still think about how you like {fact:likes_activity}! 🐾',
       'Hey — {fact:likes_activity} is the best, right? 💛',
-    ]),
-    e('memoryCallback', '*', [
       'Our {fact:important_date} will always be special to me. 🌟',
-    ]),
-    e('memoryCallback', '*', [
       'I remembered: your favorite color is {fact:favorite_color}! ✨',
     ]),
     // A greeting variant that *references* memory when available.

@@ -124,6 +124,62 @@ void main() {
     });
   });
 
+  group('ContentValidator — duplicate detection (P4-0)', () {
+    test('a duplicate entry key is an error (ambiguous selection)', () {
+      final report = validator.validateBank(
+        DialogueBank([
+          _entry(intent: 'greeting', mood: 'joyful', lines: ['Hi!']),
+          _entry(intent: 'greeting', mood: 'joyful', lines: ['Hello!']),
+        ]),
+      );
+      expect(report.ok, isFalse);
+      expect(
+        report.errors.any((e) => e.message.contains('duplicate entry key')),
+        isTrue,
+      );
+    });
+
+    test('a duplicate line (normalized) is a warning, not a blocker', () {
+      final report = validator.validateBank(
+        DialogueBank([
+          _entry(intent: 'greeting', lines: ['Hi friend! 🐾']),
+          _entry(
+            intent: 'idle',
+            lines: ['  hi FRIEND! 🐾  '],
+          ), // same, normalized
+        ]),
+      );
+      expect(report.ok, isTrue); // warning only
+      expect(
+        report.warnings.any((w) => w.message.contains('duplicate line')),
+        isTrue,
+      );
+    });
+
+    test('the new accusatory/shaming phrases are caught (P4-0)', () {
+      expect(
+        validator
+            .validateBank(
+              DialogueBank([
+                _entry(lines: ['Where were you all day?']),
+              ]),
+            )
+            .ok,
+        isFalse,
+      );
+      expect(
+        validator
+            .validateBank(
+              DialogueBank([
+                _entry(lines: ['You are a bad pet parent.']),
+              ]),
+            )
+            .ok,
+        isFalse,
+      );
+    });
+  });
+
   group('mergeRemoteContent — validated, fail-safe Remote Config top-ups', () {
     final bundled = DialogueBank([_entry()]);
 
