@@ -13,10 +13,12 @@ import '../game/model/species.dart';
 import '../game/model/wallet.dart';
 import '../game/sim/bond_engine.dart';
 import '../heartmind/memory_fact.dart';
+import '../keepsake/keepsake.dart';
 import 'migration.dart';
 import 'migrations/v1_to_v2.dart';
 import 'migrations/v2_to_v3.dart';
 import 'migrations/v3_to_v4.dart';
+import 'migrations/v4_to_v5.dart';
 import 'save_envelope.dart';
 
 class KindredSaveState {
@@ -24,29 +26,38 @@ class KindredSaveState {
     required this.pet,
     required this.ledger,
     required this.facts,
+    this.keepsakes = const [],
     this.nestCosmeticIds = const [],
   });
 
   /// Schema version this app writes. Bump + add a migration on change.
-  static const int currentSchemaVersion = 4;
+  static const int currentSchemaVersion = 5;
 
   /// Ordered migration chain → [currentSchemaVersion].
-  static const List<Migration> migrations = [V1ToV2(), V2ToV3(), V3ToV4()];
+  static const List<Migration> migrations = [
+    V1ToV2(),
+    V2ToV3(),
+    V3ToV4(),
+    V4ToV5(),
+  ];
 
   final PetState pet;
   final BondLedger ledger;
   final List<MemoryFact> facts;
+  final List<Keepsake> keepsakes;
   final List<String> nestCosmeticIds;
 
   KindredSaveState copyWith({
     PetState? pet,
     BondLedger? ledger,
     List<MemoryFact>? facts,
+    List<Keepsake>? keepsakes,
     List<String>? nestCosmeticIds,
   }) => KindredSaveState(
     pet: pet ?? this.pet,
     ledger: ledger ?? this.ledger,
     facts: facts ?? this.facts,
+    keepsakes: keepsakes ?? this.keepsakes,
     nestCosmeticIds: nestCosmeticIds ?? this.nestCosmeticIds,
   );
 
@@ -68,10 +79,11 @@ class KindredSaveState {
       'lastSimTimestampMs': pet.lastSimTimestampMs,
       'bondLedger': ledger.toMap(),
       'memoryFacts': facts.map((f) => f.toJson()).toList(),
+      'keepsakes': keepsakes.map((k) => k.toJson()).toList(),
     },
   );
 
-  /// Reads a v4 envelope. Upgrade older envelopes with [MigrationRunner] first.
+  /// Reads a v5 envelope. Upgrade older envelopes with [MigrationRunner] first.
   factory KindredSaveState.fromEnvelope(SaveEnvelope env) {
     if (env.schemaVersion != currentSchemaVersion) {
       throw StateError(
@@ -113,6 +125,9 @@ class KindredSaveState {
         (d['bondLedger'] as Map?)?.cast<String, dynamic>() ?? const {},
       ),
       facts: factsList,
+      keepsakes: (d['keepsakes'] as List? ?? const [])
+          .map((e) => Keepsake.fromJson((e as Map).cast<String, dynamic>()))
+          .toList(),
       nestCosmeticIds: (nest['cosmeticIds'] as List? ?? const [])
           .map((e) => e as String)
           .toList(),

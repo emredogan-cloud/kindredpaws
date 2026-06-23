@@ -34,7 +34,7 @@ void main() {
 
   group('versioned save + migration (Risk R4)', () {
     test(
-      'upgrades v1 -> current (v4), adding wallet/careStreak/bond/ledger',
+      'upgrades v1 -> current (v5), adding wallet/careStreak/bond/ledger/keepsakes',
       () {
         final up = runner.upgrade(_v1(), KindredSaveState.currentSchemaVersion);
         expect(up.schemaVersion, KindredSaveState.currentSchemaVersion);
@@ -43,6 +43,7 @@ void main() {
         expect(up.data['bond'], isNotNull); // nested in v4
         expect(up.data['bondLedger'], isNotNull); // new in v4
         expect(up.data['memoryFacts'], isNotNull);
+        expect(up.data['keepsakes'], isNotNull); // new in v5
 
         final state = KindredSaveState.fromEnvelope(up);
         expect(state.pet.name, 'Biscuit');
@@ -50,6 +51,7 @@ void main() {
         expect(state.pet.careStreak.count, 0);
         expect(state.pet.activeDays, 1);
         expect(state.facts, isEmpty);
+        expect(state.keepsakes, isEmpty);
       },
     );
 
