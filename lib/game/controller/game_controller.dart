@@ -194,6 +194,11 @@ class GameController extends ChangeNotifier {
         'stage': outcome.state.lifeStage.id,
       });
     }
+    if (outcome.state.bond.stage != preStage) {
+      observability.event(AnalyticsEvent.bondStageUp, {
+        'stage': outcome.state.bond.stage.name,
+      });
+    }
     await _persist();
     notifyListeners();
   }
