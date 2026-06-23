@@ -49,6 +49,24 @@ class DefaultRemoteConfig implements RemoteConfigService {
     'heartmind.live_chat_enabled': false,
     'heartmind.live_daily_turn_cap': 20,
     'heartmind.output_token_cap': 90,
+    // LiveOps (P4-3): emergency kill-switches (false = feature lives) — the
+    // founder's no-app-update incident "off switch" (Risk R8).
+    'killswitch.live_chat': false,
+    'killswitch.rewarded_ads': false,
+    'killswitch.keepsake_share': false,
+    'killswitch.notifications': false,
+    'killswitch.beta_feedback': false,
+    'killswitch.rescue_bundles': false,
+    // LiveOps rollout percentages (0..100; 100 = fully rolled out).
+    'rollout.live_chat.pct': 100,
+    'rollout.rewarded_ads.pct': 100,
+    'rollout.keepsake_share.pct': 100,
+    'rollout.notifications.pct': 100,
+    'rollout.beta_feedback.pct': 100,
+    'rollout.rescue_bundles.pct': 100,
+    // Content-hotfix coordination: the dialogue-bank version the live config
+    // expects (bumped when a Remote Config top-up ships; see Content OS).
+    'liveops.content_version': 1,
   };
 
   @override

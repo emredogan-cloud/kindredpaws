@@ -22,6 +22,7 @@ import '../services/logger.dart';
 import '../services/notification_scheduler.dart';
 import '../services/observability.dart';
 import '../services/performance_monitor.dart';
+import '../services/live_ops.dart';
 import '../services/remote_config_service.dart';
 import '../services/home_widget_service.dart';
 import '../services/share_service.dart';
@@ -53,6 +54,8 @@ AppConfig bootstrap({ServiceLocator? locator}) {
         : InMemoryBackendService(),
   );
   sl.registerSingleton<RemoteConfigService>(const DefaultRemoteConfig());
+  // LiveOps control plane (P4-3): kill-switches + %-rollout over Remote Config.
+  sl.registerSingleton<LiveOps>(LiveOps(sl.get<RemoteConfigService>()));
   // The on-device hybrid Heartmind (P2-2): reviewed bank + closed-set memory
   // injection + safety. $0 runtime tokens, no network. Replaces the P0 stub.
   final heartmind = LocalHeartmind();
