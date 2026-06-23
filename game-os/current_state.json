@@ -127,14 +127,14 @@
       "passCriteria": "Loop 'fun' qualitative pass; deterministic sim + offline-catch-up tests green; zero neglect-guilt.",
       "status": "in-progress",
       "criteriaProgress": {
-        "loopFunQualitative": "PENDING — internal playtest after the vertical slice merges; founder qualitative call.",
-        "deterministicSimOfflineCatchupGreen": "IN PROGRESS — implemented + unit-tested in the core simulation engine PR (decay/floor/offline-grace/MAX_CATCHUP).",
-        "zeroNeglectGuilt": "BY CONSTRUCTION — no-death floor 15, monotonic Bond, longing-not-guilt return, Streak Warmth; enforced in engine + UI copy.",
+        "loopFunQualitative": "PENDING (founder action) — the playable vertical slice is delivered; the 'feels alive & cozy' qualitative call is a founder/internal playtest.",
+        "deterministicSimOfflineCatchupGreen": "MET — deterministic engine + offline catch-up implemented and unit-tested (decay/floor/grace/MAX_CATCHUP determinism); on-device integration test green.",
+        "zeroNeglectGuilt": "MET (by construction + tested) — no-death floor 15, monotonic Bond, longing-not-guilt return, Streak Warmth, never-guilt copy; asserted in tests.",
         "rigRuntimeResolved": "MET — P1-0 spike locked Rive (D-053); RivePetRenderer seam wired."
       },
-      "note": "Phase 1 builds the playable core loop. Heartmind live-LLM stays DEFERRED/off; any dialogue/Memory Book content is templated + child-safe (R1)."
+      "note": "Phase 1 ENGINEERING complete: playable vertical slice (Rescue Day → care loop → persist) merged. Heartmind live-LLM stays DEFERRED/off; Memory Book content is templated + child-safe (R1). G1 sign-off needs only the founder qualitative playtest."
     },
-    "status": "in-progress — P1-0 (animation spike) complete; core loop + vertical slice in progress"
+    "status": "engineering-complete — playable vertical slice merged; G1 qualitative playtest pending founder"
   },
   "phases": [
     {
