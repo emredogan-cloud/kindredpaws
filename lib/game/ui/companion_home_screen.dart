@@ -283,6 +283,8 @@ class _SpeechBubble extends StatelessWidget {
         child: Text(
           text,
           textAlign: TextAlign.center,
+          maxLines: 3,
+          overflow: TextOverflow.ellipsis,
           style: Theme.of(context).textTheme.bodyLarge,
         ),
       ),

@@ -46,8 +46,14 @@ class PetStatusSnapshot {
   final int nextSuggestedCareAtMs;
   final int updatedAtMs;
 
+  /// Fallback when no meter is decaying (hours) + the minimum lead time so a
+  /// suggestion is never effectively "now".
+  static const double _defaultCareHours = 12.0;
+  static const double _minCareLeadHours = 0.5;
+
   /// Builds the snapshot from the runtime [pet] + its derived [mood], estimating
-  /// [nextSuggestedCareAtMs] from the fastest-decaying meter under [config].
+  /// [nextSuggestedCareAtMs] from the meter that will reach the needs-care
+  /// threshold soonest under [config].
   factory PetStatusSnapshot.fromPet({
     required PetState pet,
     required Mood mood,
@@ -79,8 +85,10 @@ class PetStatusSnapshot {
       final hours = (m.of(need) - config.needsCareThreshold) / rate;
       if (hours < soonestHours) soonestHours = hours;
     }
-    if (!soonestHours.isFinite) soonestHours = 12; // safe default
-    final clamped = soonestHours < 0.5 ? 0.5 : soonestHours;
+    if (!soonestHours.isFinite) soonestHours = _defaultCareHours;
+    final clamped = soonestHours < _minCareLeadHours
+        ? _minCareLeadHours
+        : soonestHours;
     return nowMs + (clamped * Duration.millisecondsPerHour).round();
   }
 

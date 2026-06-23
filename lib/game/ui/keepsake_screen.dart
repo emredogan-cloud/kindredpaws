@@ -76,7 +76,12 @@ class _KeepsakeCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(keepsake.title, style: theme.textTheme.titleSmall),
+                Text(
+                  keepsake.title,
+                  style: theme.textTheme.titleSmall,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 const SizedBox(height: 2),
                 Text(
                   keepsake.caption,
@@ -88,7 +93,7 @@ class _KeepsakeCard extends StatelessWidget {
                   alignment: Alignment.centerRight,
                   child: IconButton(
                     key: Key('keepsake-share-${keepsake.id}'),
-                    icon: const Icon(Icons.ios_share, size: 18),
+                    icon: const Icon(Icons.ios_share),
                     tooltip: 'Share',
                     onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(

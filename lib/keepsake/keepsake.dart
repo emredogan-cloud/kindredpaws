@@ -75,8 +75,20 @@ class Keepsake {
       other.kind == kind &&
       other.title == title &&
       other.caption == caption &&
+      other.petName == petName &&
+      other.species == species &&
+      other.lifeStage == lifeStage &&
       other.createdAtMs == createdAtMs;
 
   @override
-  int get hashCode => Object.hash(id, kind, title, caption, createdAtMs);
+  int get hashCode => Object.hash(
+    id,
+    kind,
+    title,
+    caption,
+    petName,
+    species,
+    lifeStage,
+    createdAtMs,
+  );
 }

@@ -110,31 +110,33 @@
     "homeCustomization": "The Nest"
   },
   "currentPhase": {
-    "id": "P1",
-    "name": "Core-loop prototype",
-    "duration": "8 wks",
-    "startState": "Phase 1 START (founder approval 2026-06-23). Phase 0 (G0 engineering) complete and merged. Building the first playable vertical slice on the Phase-0 skeleton. Execution is broken into verified micro-PRs (P1-0 spike → Firebase/observability seams → core simulation engine → vertical-slice UI), each merged green into develop before the next.",
-    "goal": "Prove the cozy daily core loop is alive & fun on placeholder assets; deterministic sim + offline catch-up; zero neglect-guilt. (Note: founder pulled Rescue Day onboarding + a templated, child-safe Memory Book foundation forward from P2 into the P1 vertical slice — documented deviation; no deferred live-LLM is built.)",
+    "id": "P2",
+    "name": "Vertical slice (Heartmind + presence + collectibles)",
+    "duration": "10 wks",
+    "startState": "Phase 2 START (founder approval 2026-06-23). Phase 1 (core-loop prototype) engineering complete and merged. Built on the playable slice in verified micro-PRs (P2-0 status snapshot → P2-1 renderer state machine → P2-2 Heartmind engine → P2-3 memory v2 + ≥95% callback → P2-4 presence → P2-5 keepsakes → P2-6 home widget), each merged green into develop before the next.",
+    "goal": "Make the companion feel emotionally alive: hybrid Heartmind (pre-gen bank + structured memory, $0 runtime tokens), ≥95% callback reliability (G2), Companion Presence, Keepsake scrapbook, home-widget foundation, and the Rive renderer state machine — all child-safe + never-guilt, NO live free-form LLM.",
     "keyDeliverables": [
-      "P1-0 animation spike → rig runtime LOCKED to Rive (DONE; docs/ANIMATION_SPIKE_REPORT.md, D-053)",
-      "Firebase + observability (Crashlytics/Perf/Analytics/structured-log) seams + mocks (no creds)",
-      "Core simulation engine: 4 Care Meters + decay + no-death floor + offline catch-up; The Bond; mood; Care Streak + Streak Warmth; life-stage dual gate (deterministic, tested)",
-      "Vertical-slice UI: Rescue Day onboarding, Companion shell, feed/clean/play, Memory Book (templated), local persistence across restart",
-      "Full save state (§3.4 shape) + v3->v4 migration"
+      "PetStatusSnapshot shared payload (feeds notifications + home widget) + Firebase activation readiness behind flags",
+      "Pet renderer state machine (Rive PetStateMachine: mood/lifeStage/emotion) + expressive placeholder (12 emotion motions)",
+      "On-device hybrid Heartmind: deterministic dialogue selection + closed-set memory injection + anti-repetition + safety fail-closed (NO live LLM)",
+      "Memory System v2: categorized Memory Book + AUTOMATED ≥95% callback reliability (zero hallucination) — G2 evidence",
+      "Companion Presence: contextual greetings/returns/goodbyes/care-acks/comfort/milestones + daypart-aware ambient idle; never guilt",
+      "Keepsake Cards + emotional scrapbook (persisted, v4->v5 migration; cloud-mirror seam)",
+      "Home Widget Foundation (Android AppWidget built; iOS WidgetKit scaffold; one shared payload)"
     ],
     "exitGate": {
-      "id": "G1",
-      "passCriteria": "Loop 'fun' qualitative pass; deterministic sim + offline-catch-up tests green; zero neglect-guilt.",
+      "id": "G2",
+      "passCriteria": "Persona 'tell a friend' qualitative pass; AI memory callback reliability >=95% (no hallucinated facts); first-AI-line latency = 0 spinner; rig cost on-budget (else cut 2nd species).",
       "status": "in-progress",
       "criteriaProgress": {
-        "loopFunQualitative": "PENDING (founder action) — the playable vertical slice is delivered; the 'feels alive & cozy' qualitative call is a founder/internal playtest.",
-        "deterministicSimOfflineCatchupGreen": "MET — deterministic engine + offline catch-up implemented and unit-tested (decay/floor/grace/MAX_CATCHUP determinism); on-device integration test green.",
-        "zeroNeglectGuilt": "MET (by construction + tested) — no-death floor 15, monotonic Bond, longing-not-guilt return, Streak Warmth, never-guilt copy; asserted in tests.",
-        "rigRuntimeResolved": "MET — P1-0 spike locked Rive (D-053); RivePetRenderer seam wired."
+        "callbackReliability95": "MET (engineering) — automated harness proves accuracy >=95% with ZERO hallucination / unfilled-slots / false-callbacks; a control test proves the harness detects a bad bank.",
+        "firstAiLineZeroSpinner": "MET (by architecture) — lines are bank-selected on-device, $0 tokens, no network/spinner.",
+        "tellAFriendQualitative": "PENDING (founder action) — the emotional vertical slice is delivered; the persona playtest is a founder call.",
+        "rigCostOnBudget": "PENDING (founder action) — rig runtime de-risked (Rive); the commissioned .riv + 2nd-species ship/cut decision is the founder/contractor step."
       },
-      "note": "Phase 1 ENGINEERING complete: playable vertical slice (Rescue Day → care loop → persist) merged. Heartmind live-LLM stays DEFERRED/off; Memory Book content is templated + child-safe (R1). G1 sign-off needs only the founder qualitative playtest."
+      "note": "Phase 2 ENGINEERING complete. Heartmind is hybrid + local only (live free-form LLM stays DEFERRED/gated/off). All companion content is closed-set/templated + child-safe (R1) + never-guilt (R6)."
     },
-    "status": "engineering-complete — playable vertical slice merged; G1 qualitative playtest pending founder"
+    "status": "engineering-complete — Heartmind/presence/keepsake/widget/renderer merged; G2 qualitative + rig-commission pending founder"
   },
   "phases": [
     {
@@ -145,27 +147,27 @@
       "keyDeliverables": ["This brief -> 6 docs", "current_state.json", "Live2D rig design locked via AI concept", "tech stack provisioned", "legal child-directedness determination scoped", "LLM unit-economics model v1"],
       "exitGateId": "G0",
       "exitGateSummary": "Brief ratified; rig contractor secured; LLM cost/DAU model shows < ARPDAU at projected mix; legal review booked.",
-      "status": "engineering-complete (2 founder actions pending); P1 underway"
+      "status": "engineering-complete; G0 exit-gate in-progress (rig-contractor + legal-review are founder actions). P1 + P2 engineering since merged."
     },
     {
       "id": "P1",
       "name": "Core-loop prototype",
       "duration": "8 wks",
       "goal": "Prove the daily loop is fun on cheap assets.",
-      "keyDeliverables": ["1 rig seam (Rive, puppy+kitten placeholder)", "4 Care Meters w/ no-death floor", "feed/clean/play", "The Bond", "1 placeholder Nest", "local notifications", "Rescue Day onboarding + templated Memory Book (pulled forward from P2, child-safe)"],
+      "keyDeliverables": ["1 rig SEAM (Rive runtime + expressive placeholder; no commissioned .riv yet — that is P2)", "4 Care Meters w/ no-death floor", "feed/clean/play", "The Bond", "1 placeholder Nest", "local notifications", "Rescue Day onboarding + templated Memory Book (pulled forward from P2 per D-054, child-safe)"],
       "exitGateId": "G1",
       "exitGateSummary": "Internal playtest: core loop 'feels alive & cozy'; sim deterministic + offline-catch-up tested; no neglect-guilt present.",
-      "status": "in-progress"
+      "status": "engineering-complete (G1 qualitative playtest pending founder)"
     },
     {
       "id": "P2",
       "name": "Vertical slice",
       "duration": "10 wks",
       "goal": "One polished, emotionally complete experience incl. AI.",
-      "keyDeliverables": ["Rescue Day", "Heartmind hybrid (pre-gen bank + structured memory + Memory Book)", "3 life-stages", "home widget", "Keepsake Cards", "2nd species OR cut decision"],
+      "keyDeliverables": ["Heartmind hybrid (pre-gen bank + structured memory + Memory Book v2, >=95% callback)", "Pet renderer state machine (Rive) + expressive emotions", "Companion Presence (greetings/returns/idle/celebrations, never guilt)", "home widget foundation", "Keepsake Cards + scrapbook", "3 life-stages (engine)", "2nd species OR cut decision (founder/contractor)"],
       "exitGateId": "G2",
       "exitGateSummary": "Hand-test of personas (Maya/Tom/David) hit 'would tell a friend'; AI memory callback lands reliably; rig pipeline cost on-budget (else cut 2nd species); spinner-free first AI line.",
-      "status": "planned"
+      "status": "engineering-complete (G2 qualitative + rig-commission pending founder)"
     },
     {
       "id": "P3",
@@ -262,9 +264,9 @@
     "rule": "Always specify the CHEAPEST VIABLE VERSION that preserves the emotional core."
   },
   "gates": [
-    {"id": "G0", "phase": "P0", "name": "Pre-production gate", "passCriteria": "Brief ratified; rig contractor secured; LLM cost/DAU model shows < ARPDAU at projected mix; legal review booked.", "status": "open"},
-    {"id": "G1", "phase": "P1", "name": "Core-loop prototype gate", "passCriteria": "Loop 'fun' qualitative pass; deterministic sim + offline-catch-up tests green; zero neglect-guilt.", "status": "in-progress"},
-    {"id": "G2", "phase": "P2", "name": "Vertical-slice gate", "passCriteria": "Persona 'tell a friend' qualitative pass; AI memory callback reliability >=95% (no hallucinated facts); first-AI-line latency = 0 spinner; rig cost on-budget (else cut 2nd species).", "status": "planned"},
+    {"id": "G0", "phase": "P0", "name": "Pre-production gate", "passCriteria": "Brief ratified; rig contractor secured; LLM cost/DAU model shows < ARPDAU at projected mix; legal review booked.", "status": "in-progress (engineering-complete; rig-contractor + legal-review pending founder)"},
+    {"id": "G1", "phase": "P1", "name": "Core-loop prototype gate", "passCriteria": "Loop 'fun' qualitative pass; deterministic sim + offline-catch-up tests green; zero neglect-guilt.", "status": "in-progress (engineering-complete; qualitative playtest pending founder)"},
+    {"id": "G2", "phase": "P2", "name": "Vertical-slice gate", "passCriteria": "Persona 'tell a friend' qualitative pass; AI memory callback reliability >=95% (no hallucinated facts); first-AI-line latency = 0 spinner; rig cost on-budget (else cut 2nd species).", "status": "in-progress (engineering-complete: callback>=95% + 0-spinner MET; persona playtest + rig commission pending founder)"},
     {"id": "G3", "phase": "P3", "name": "Closed-beta gate", "passCriteria": "D1 >=40% · D7 >=18%; 0 child-safety incidents; cloud-restore proven; LLM cost/DAU within model; crash-free >=99%; legal green-light.", "status": "planned"},
     {"id": "G4", "phase": "P4", "name": "Soft-launch gate", "passCriteria": "D1 >=42% · D7 >=20% · D30 >=10%; ARPDAU >=$0.03; LLM cost/DAU < 35% ARPDAU; >=1 viral share / DAU-week; clean donation reconciliation.", "status": "planned"},
     {"id": "G5", "phase": "P5", "name": "Global-launch gate", "passCriteria": "Soft KPIs held 4 wks at scale; infra cost/DAU stable; crash-free >=99.5%; transparency badge live.", "status": "planned"},
@@ -438,6 +440,14 @@
     "All cross-links use the real on-disk filenames recorded in canonicalFilenameMap; retired/invented aliases must not appear."
   ],
   "decisionLog": [
+    {
+      "ts": "2026-06-23T00:00:00Z",
+      "owner_doc": "GAME_DECISION_LOG.md",
+      "decision": "P2 engineering complete; currentPhase advanced P1->P2. Phase-partition deviation (Rescue Day + Memory Book foundation pulled forward P2->P1) formalized as D-054.",
+      "old": "currentPhase = P1; P2 deliverables still listed Rescue Day; deviation only narrated in currentPhase.goal.",
+      "new": "currentPhase = P2 (engineering-complete; G2 gate). Built (D-054): PetStatusSnapshot; Rive renderer state machine + 12 emotions; on-device hybrid Heartmind (deterministic selection + closed-set memory injection + safety, NO live LLM); Memory v2 + AUTOMATED >=95% callback reliability (zero hallucination) = G2 evidence; Companion Presence (never-guilt); Keepsake scrapbook (v4->v5 migration); home-widget foundation (Android AppWidget built + iOS WidgetKit scaffold). Phases array P1/P2 deliverables corrected (Rescue Day moved to P1; P1 rig wording clarified as a placeholder seam, aligning with the roadmap's 'puppy only' real-rig scope).",
+      "rationale": "Hybrid + local Heartmind keeps runtime tokens at $0 and child-safety by construction (R1/R2). >=95% callback is bounded by template/slot correctness (a control test proves the harness detects a bad bank). The P1/P2 deviation (Rescue Day forward) gave the prototype its emotional anchor; recorded formally as D-054 to keep the decision-log audit trail complete."
+    },
     {
       "ts": "2026-06-23T00:00:00Z",
       "owner_doc": "GAME_DECISION_LOG.md",
