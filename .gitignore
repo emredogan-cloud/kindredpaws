@@ -93,3 +93,4 @@ videos/
 # ── Allow committed golden references ──────────────────────────────────────
 !test/golden/goldens/
 !test/golden/goldens/*.png
+prompt.txt

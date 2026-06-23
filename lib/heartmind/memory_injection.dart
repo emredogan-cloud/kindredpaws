@@ -19,7 +19,9 @@ const Map<String, FactKey> kSlotToFactKey = {
   'important_date': FactKey.importantDate,
 };
 
-final RegExp _slotPattern = RegExp(r'\{fact:([a-z_]+)\}');
+/// The memory-slot token pattern, `{fact:snake_case}`. Shared by the injector,
+/// the content validator, and the bank manifest (one source of truth).
+final RegExp kFactSlot = RegExp(r'\{fact:([a-z_]+)\}');
 
 class InjectionResult {
   const InjectionResult({
@@ -42,7 +44,7 @@ class InjectionResult {
 class MemoryInjector {
   const MemoryInjector();
 
-  bool hasSlots(String line) => _slotPattern.hasMatch(line);
+  bool hasSlots(String line) => kFactSlot.hasMatch(line);
 
   /// Best stored fact for [key]: highest confidence, then most recent.
   MemoryFact? bestFact(FactKey key, List<MemoryFact> facts) {
@@ -67,7 +69,7 @@ class MemoryInjector {
     }
     final surfaced = <FactKey>[];
     var ok = true;
-    final text = line.replaceAllMapped(_slotPattern, (m) {
+    final text = line.replaceAllMapped(kFactSlot, (m) {
       final slot = m.group(1)!;
       final key = kSlotToFactKey[slot];
       if (key == null) {

@@ -58,18 +58,57 @@ class DialogueBankEntry {
 }
 
 class DialogueBank {
-  const DialogueBank(this.entries);
+  const DialogueBank(
+    this.entries, {
+    this.schemaVersion = currentSchemaVersion,
+    this.locale = 'en',
+  });
 
   final List<DialogueBankEntry> entries;
 
+  /// Content-versioning (P4-0): the bank-format version + the BCP-47 language
+  /// tag of these lines. Localization-ready — non-`en` locales ship as separate
+  /// locale-tagged banks selected at load; the dialogue corpus stays EN(+1–2)
+  /// at launch (brief §6, Open Decision #6) while UI strings localize first.
+  final int schemaVersion;
+  final String locale;
+
+  /// The current bank-format version. Bump when the entry shape changes so the
+  /// validator/loader can gate an incompatible payload.
+  static const int currentSchemaVersion = 1;
+
+  /// Accepts BOTH the legacy bare-array form (a `[ {entry}, … ]`) AND the
+  /// versioned/localized wrapper `{ "schemaVersion", "locale", "entries":[…] }`.
+  /// Remote Config top-ups (`mergeRemoteContent`) still push bare arrays.
   factory DialogueBank.fromJsonString(String s) {
-    final list = jsonDecode(s) as List;
+    final decoded = jsonDecode(s);
+    if (decoded is List) {
+      return DialogueBank(
+        decoded
+            .map((e) => DialogueBankEntry.fromJson(e as Map<String, dynamic>))
+            .toList(),
+      );
+    }
+    final obj = decoded as Map<String, dynamic>;
+    final entries = (obj['entries'] as List)
+        .map((e) => DialogueBankEntry.fromJson(e as Map<String, dynamic>))
+        .toList();
     return DialogueBank(
-      list
-          .map((e) => DialogueBankEntry.fromJson(e as Map<String, dynamic>))
-          .toList(),
+      entries,
+      schemaVersion: obj['schemaVersion'] as int? ?? currentSchemaVersion,
+      locale: obj['locale'] as String? ?? 'en',
     );
   }
+
+  /// The total reviewed line count across all entries.
+  int get lineCount => entries.fold(0, (n, e) => n + e.lines.length);
+
+  /// Serializes to the versioned/localized wrapper form.
+  String toJsonString() => jsonEncode({
+    'schemaVersion': schemaVersion,
+    'locale': locale,
+    'entries': entries.map((e) => e.toJson()).toList(),
+  });
 
   /// A tiny seed bank used to validate the format + loader in Phase 0. The
   /// real bank is produced offline + human-reviewed (CONTENT_FACTORY §10.2).

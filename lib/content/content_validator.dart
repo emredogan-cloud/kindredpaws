@@ -88,6 +88,8 @@ class ContentValidator {
     'neglect',
     'punish',
     'lonely without',
+    'where were you', // accusatory (P4-0)
+    'bad pet', // shaming (P4-0)
   ];
 
   // SSOT vocabularies (derived from the canonical enums; `*` is a wildcard).
@@ -107,16 +109,55 @@ class ContentValidator {
     'chatty',
   };
 
-  static final RegExp _slot = RegExp(r'\{fact:([a-z_]+)\}');
-
-  /// Validates every entry + line in [bank].
+  /// Validates every entry + line in [bank], then runs the bank-wide
+  /// duplicate-detection pass (P4-0).
   ContentReport validateBank(DialogueBank bank) {
     final issues = <ContentIssue>[];
     for (final e in bank.entries) {
       _validateEntry(e, issues);
     }
+    _checkDuplicates(bank, issues);
     return ContentReport(issues);
   }
+
+  /// Bank-wide duplicate detection (P4-0): a repeated entry **key** makes
+  /// selection ambiguous → error; a repeated **line** (normalized) weakens the
+  /// anti-repetition rotation that protects against the "noticed AI repetition"
+  /// leading-churn signal (R3) → warning.
+  void _checkDuplicates(DialogueBank bank, List<ContentIssue> out) {
+    final seenKeys = <String>{};
+    final lineFirstSeen = <String, String>{};
+    for (final e in bank.entries) {
+      if (!seenKeys.add(e.key)) {
+        out.add(
+          ContentIssue(
+            ContentSeverity.error,
+            e.key,
+            'duplicate entry key (ambiguous selection)',
+          ),
+        );
+      }
+      for (final line in e.lines) {
+        final norm = line.trim().toLowerCase().replaceAll(_whitespace, ' ');
+        if (norm.isEmpty) continue;
+        final first = lineFirstSeen[norm];
+        if (first == null) {
+          lineFirstSeen[norm] = e.key;
+        } else {
+          out.add(
+            ContentIssue(
+              ContentSeverity.warning,
+              e.key,
+              'duplicate line (also in "$first")',
+              line: line,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  static final RegExp _whitespace = RegExp(r'\s+');
 
   void _validateEntry(DialogueBankEntry e, List<ContentIssue> out) {
     final key = e.key;
@@ -153,7 +194,7 @@ class ContentValidator {
         err('empty line', line: line);
         continue;
       }
-      for (final m in _slot.allMatches(line)) {
+      for (final m in kFactSlot.allMatches(line)) {
         final slot = m.group(1)!;
         if (!kSlotToFactKey.containsKey(slot)) {
           err('unknown memory slot "{fact:$slot}"', line: line);
@@ -177,5 +218,5 @@ class ContentValidator {
   /// scan runs on realistic text (and so the fail-closed unfilled-slot check in
   /// [SafetyFilter] doesn't mask the real content).
   String _renderForScan(String line) =>
-      line.replaceAll(_slot, 'something nice');
+      line.replaceAll(kFactSlot, 'something nice');
 }

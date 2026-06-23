@@ -11,6 +11,7 @@ library;
 
 import 'dart:io';
 
+import 'package:kindredpaws/content/bank_manifest.dart';
 import 'package:kindredpaws/content/content_validator.dart';
 import 'package:kindredpaws/heartmind/dialogue_bank.dart';
 import 'package:kindredpaws/heartmind/local_heartmind.dart';
@@ -39,12 +40,12 @@ void main(List<String> args) {
   }
 
   final report = validator.validateBank(bank);
-  final lineCount = bank.entries.fold<int>(0, (n, e) => n + e.lines.length);
 
   stdout.writeln('content: validating $source');
+  stdout.writeln(BankManifest.of(bank).describe());
   for (final issue in report.issues) {
     stdout.writeln('  $issue');
   }
-  stdout.writeln(report.summary(bank.entries.length, lineCount));
+  stdout.writeln(report.summary(bank.entries.length, bank.lineCount));
   exit(report.ok ? 0 : 1);
 }
