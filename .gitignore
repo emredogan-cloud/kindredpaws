@@ -9,6 +9,12 @@
 **/key.properties
 **/google-services.json
 **/GoogleService-Info.plist
+# FlutterFire client config: non-secret per Google, but we keep ALL real
+# project identifiers/keys out of this public repo. Supplied per-build by the
+# founder (gitignored, local) or decoded from a CI secret. The app inits via
+# argless Firebase.initializeApp() reading the native config above.
+lib/firebase_options.dart
+/firebase.json
 **/*serviceaccount*.json
 **/*service-account*.json
 **/*-firebase-adminsdk-*.json

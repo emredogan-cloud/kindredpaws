@@ -1,8 +1,29 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <application
         android:label="kindredpaws"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+
+        <!-- ── Firebase is GATED (KP_FIREBASE_PROVISIONED + explicit
+             Firebase.initializeApp() in Dart, P3-0) ──────────────────────────
+             The firebase_* native SDKs otherwise auto-initialise at process
+             launch via FirebaseInitProvider (before any Dart runs), reading the
+             baked-in google-services.json. In gated/CI builds that (a) installs
+             Crashlytics' uncaught-exception handler + starts Analytics/Perf/
+             Installations against a build-only placeholder, crashing the process
+             at startup, and (b) defeats the runtime gate. So we remove the
+             auto-init provider and disable all auto-collection; the adapters in
+             firebase_services.dart re-enable collection programmatically only on
+             the provisioned path. -->
+        <meta-data android:name="firebase_crashlytics_collection_enabled" android:value="false" />
+        <meta-data android:name="firebase_analytics_collection_enabled" android:value="false" />
+        <meta-data android:name="firebase_performance_collection_enabled" android:value="false" />
+        <provider
+            android:name="com.google.firebase.provider.FirebaseInitProvider"
+            android:authorities="${applicationId}.firebaseinitprovider"
+            android:exported="false"
+            tools:node="remove" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
