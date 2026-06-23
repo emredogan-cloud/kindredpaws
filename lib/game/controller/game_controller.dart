@@ -101,6 +101,10 @@ class GameController extends ChangeNotifier {
   Mood get mood => _mood;
   List<MemoryFact> get facts => _save?.facts ?? const [];
 
+  /// The pet's evolving personality (drifts with care; persisted across restarts
+  /// from save v6 — P3-4). Read-only; drift happens via [interact].
+  PersonalityProfile get personality => _personality;
+
   /// Load the local save (migrating forward), resolve offline catch-up, and
   /// surface the pet. If there's no save, [hasPet] stays false → Rescue Day.
   Future<void> load() async {
@@ -108,6 +112,8 @@ class GameController extends ChangeNotifier {
     final state = res.valueOrNull;
     if (state != null) {
       _save = state;
+      _personality =
+          state.personality; // restore drift (P3-4; was reset before)
       _resumeSession();
       await _persist();
     }
@@ -174,6 +180,9 @@ class GameController extends ChangeNotifier {
     ambientEmotion = null; // a reaction takes over from any ambient idle
     lastMessage = _warmLine(interaction, outcome);
     _driftPersonality(interaction);
+    _save = _save?.copyWith(
+      personality: _personality,
+    ); // persist the drift (P3-4)
     // The pet speaks: a milestone celebration if it grew, else a care ack.
     _say(outcome.grew ? HeartmindIntent.milestone : HeartmindIntent.careAck);
 
