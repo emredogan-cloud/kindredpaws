@@ -8,7 +8,13 @@ import 'package:flutter/foundation.dart';
 
 import '../../data/kindred_save_state.dart';
 import '../../data/save_repository.dart';
+import '../../heartmind/dialogue_selector.dart';
+import '../../heartmind/heartmind_intent.dart';
+import '../../heartmind/local_heartmind.dart';
 import '../../heartmind/memory_fact.dart';
+import '../../heartmind/personality.dart';
+import '../../heartmind/presence.dart';
+import '../../render/pet_renderer.dart';
 import '../../services/analytics_service.dart';
 import '../../services/notification_scheduler.dart';
 import '../../services/observability.dart';
@@ -30,6 +36,7 @@ class GameController extends ChangeNotifier {
     required this.observability,
     required this.notifications,
     required this.snapshots,
+    required this.heartmind,
     int Function()? clock,
     String Function()? idGenerator,
   }) : _now = clock ?? (() => DateTime.now().millisecondsSinceEpoch),
@@ -43,8 +50,21 @@ class GameController extends ChangeNotifier {
   final ObservabilityFacade observability;
   final NotificationScheduler notifications;
   final StatusSnapshotService snapshots;
+  final Heartmind heartmind;
   final int Function() _now;
   final String Function() _idGenerator;
+
+  static const AmbientScheduler _ambient = AmbientScheduler();
+  PersonalityProfile _personality = PersonalityProfile.neutral;
+  int _ambientTick = 0;
+
+  /// The pet's current spoken line (from Heartmind — greeting/return/care/
+  /// callback/idle). Warm, never guilt. Null before the pet first speaks.
+  String? petLine;
+
+  /// A transient ambient idle expression (set by [nudgeAmbient]); cleared by a
+  /// care interaction.
+  PetEmotion? ambientEmotion;
 
   KindredSaveState? _save;
   SessionInteractions _session = SessionInteractions.empty;
@@ -99,6 +119,8 @@ class GameController extends ChangeNotifier {
     );
     _session = SessionInteractions.empty;
     lastInteraction = null;
+    ambientEmotion = null;
+    _personality = PersonalityProfile.neutral;
     _mood = sim.moodOf(pet.meters, recentAttentionBonus: 100);
     observability.event(AnalyticsEvent.rescueDayComplete, {
       'species': species.id,
@@ -106,6 +128,7 @@ class GameController extends ChangeNotifier {
     await notifications.scheduleDailyPresence(petName: pet.name, fromMs: now);
     await _persist();
     lastMessage = 'Welcome home, ${pet.name}! 💛';
+    _say(HeartmindIntent.greeting); // the pet's first words
     notifyListeners();
   }
 
@@ -131,7 +154,11 @@ class GameController extends ChangeNotifier {
     _mood = outcome.mood;
     lastOutcome = outcome;
     lastInteraction = interaction;
+    ambientEmotion = null; // a reaction takes over from any ambient idle
     lastMessage = _warmLine(interaction, outcome);
+    _driftPersonality(interaction);
+    // The pet speaks: a milestone celebration if it grew, else a care ack.
+    _say(outcome.grew ? HeartmindIntent.milestone : HeartmindIntent.careAck);
 
     observability.event(AnalyticsEvent.careAction, {
       'verb': interaction.id,
@@ -173,10 +200,17 @@ class GameController extends ChangeNotifier {
     );
     _session = SessionInteractions.empty;
     lastInteraction = null;
+    ambientEmotion = null;
     _mood = resume.mood;
     observability.event(AnalyticsEvent.sessionStart, {
       'offline_hours': resume.offlineHours.round(),
     });
+    // The pet greets you back — a "returning" beat after a real absence,
+    // otherwise a normal greeting; a memory callback when one is available.
+    final intent = resume.offlineHours >= config.graceHours
+        ? HeartmindIntent.returning
+        : HeartmindIntent.greeting;
+    _say(intent, tryCallback: true);
   }
 
   Future<void> _persist() async {
@@ -255,5 +289,78 @@ class GameController extends ChangeNotifier {
       CareInteraction.clean => '$name feels fresh and happy 🫧',
       CareInteraction.play => '$name had the best time playing! 🎾',
     };
+  }
+
+  // ---- Companion Presence (P2-4) ----
+
+  /// The current coarse mood mapped to the render layer.
+  PetMood get petMood => switch (_mood) {
+    Mood.joyful => PetMood.joyful,
+    Mood.content => PetMood.content,
+    Mood.wistful => PetMood.wistful,
+    Mood.low => PetMood.low,
+  };
+
+  DayPart get dayPart =>
+      DayPart.fromHour((_now() ~/ Duration.millisecondsPerHour) % 24);
+
+  HeartmindContext _contextFor(HeartmindIntent intent) {
+    final pet = _save!.pet;
+    return HeartmindContext(
+      intent: intent,
+      lifeStage: pet.lifeStage.id,
+      mood: _mood.name,
+      bondStage: pet.bond.stage.displayName,
+      personalityKey: _personality.bankKey,
+      facts: _save!.facts,
+    );
+  }
+
+  /// The pet says something for [intent]. With [tryCallback], it first attempts
+  /// the "it remembered me" beat (a real memory callback) when a fact exists,
+  /// falling back to the requested intent. Sets [petLine].
+  void _say(HeartmindIntent intent, {bool tryCallback = false}) {
+    if (_save == null) return;
+    if (tryCallback && _save!.facts.isNotEmpty) {
+      final callback = heartmind.speak(
+        _contextFor(HeartmindIntent.memoryCallback),
+      );
+      if (callback.isCallback && !callback.isFallback) {
+        petLine = callback.text;
+        if (callback.surfacedFacts.isNotEmpty) {
+          observability.event(AnalyticsEvent.memoryCallback, {
+            'facts': callback.surfacedFacts.length,
+          });
+        }
+        return;
+      }
+    }
+    petLine = heartmind.speak(_contextFor(intent)).text;
+  }
+
+  /// Tap-the-pet ambient life: a fresh idle expression (weighted by mood +
+  /// daypart) + an idle line. Makes the pet feel alive between care actions.
+  void nudgeAmbient() {
+    if (_save == null) return;
+    _ambientTick++;
+    lastInteraction = null; // ambient idle takes over from a stale reaction
+    ambientEmotion = _ambient.idleEmotion(
+      mood: petMood,
+      dayPart: dayPart,
+      tick: _ambientTick,
+    );
+    _say(HeartmindIntent.idle);
+    notifyListeners();
+  }
+
+  /// Personality drifts slowly with how you play (deterministic, bounded).
+  void _driftPersonality(CareInteraction interaction) {
+    final dial = switch (interaction) {
+      CareInteraction.play => PersonalityDial.playfulness,
+      CareInteraction.feed => PersonalityDial.cuddliness,
+      CareInteraction.clean => PersonalityDial.bravery,
+    };
+    // Slow drift: nudge only occasionally (every few like-actions).
+    _personality = _personality.nudge(dial);
   }
 }

@@ -25,8 +25,8 @@ PetEmotion petEmotionForReaction(
   CareInteraction.play => PetEmotion.playful,
 };
 
-/// The pet's current expression: a reaction to the last care verb, else the
-/// resting expression for the current mood.
+/// The pet's current expression: a reaction to the last care verb, else an
+/// ambient idle expression, else the resting expression for the current mood.
 PetEmotion currentPetEmotion(GameController c) {
   final last = c.lastInteraction;
   if (last != null) {
@@ -35,7 +35,7 @@ PetEmotion currentPetEmotion(GameController c) {
       comfort: c.lastOutcome?.comfortBeat ?? false,
     );
   }
-  return PetEmotion.restingFor(petMoodFor(c.mood));
+  return c.ambientEmotion ?? PetEmotion.restingFor(petMoodFor(c.mood));
 }
 
 /// Warm, invitational mood line (§5.2: invitational, never accusatory).

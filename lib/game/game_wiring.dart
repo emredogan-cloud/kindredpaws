@@ -10,6 +10,7 @@ import '../services/notification_scheduler.dart';
 import '../services/observability.dart';
 import '../services/remote_config_service.dart';
 import '../services/status_snapshot_service.dart';
+import '../heartmind/local_heartmind.dart';
 import 'controller/game_controller.dart';
 import 'sim/game_simulation.dart';
 import 'sim/sim_config.dart';
@@ -28,6 +29,7 @@ GameController createGameController({
     observability: sl.get<ObservabilityFacade>(),
     notifications: sl.get<NotificationScheduler>(),
     snapshots: sl.get<StatusSnapshotService>(),
+    heartmind: sl.get<Heartmind>(),
     clock: clock,
   );
 }
