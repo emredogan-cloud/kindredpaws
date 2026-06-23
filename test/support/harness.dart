@@ -7,6 +7,7 @@ import 'package:kindredpaws/core/service_locator.dart';
 import 'package:kindredpaws/data/save_repository.dart';
 import 'package:kindredpaws/game/controller/game_controller.dart';
 import 'package:kindredpaws/game/game_wiring.dart';
+import 'package:kindredpaws/services/share_service.dart';
 
 /// A clean midnight-UTC epoch (day 20000) used as a deterministic base clock.
 const int kDay0 = 20000 * 86400000;
@@ -14,9 +15,16 @@ const int kDay0 = 20000 * 86400000;
 /// A fresh in-memory save store (share one across controllers to test reopen).
 LocalSaveStore makeStore() => InMemoryLocalSaveStore();
 
-GameController makeController({LocalSaveStore? store, int Function()? clock}) {
+GameController makeController({
+  LocalSaveStore? store,
+  int Function()? clock,
+  ShareService? share,
+}) {
   ServiceLocator.instance.reset();
   bootstrap();
+  if (share != null) {
+    ServiceLocator.instance.registerSingleton<ShareService>(share);
+  }
   return createGameController(
     sl: ServiceLocator.instance,
     store: store ?? InMemoryLocalSaveStore(),

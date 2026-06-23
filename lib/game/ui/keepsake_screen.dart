@@ -8,6 +8,7 @@ library;
 import 'package:flutter/material.dart';
 
 import '../../keepsake/keepsake.dart';
+import '../../services/share_service.dart';
 import '../controller/game_controller.dart';
 
 class KeepsakeScreen extends StatelessWidget {
@@ -38,16 +39,26 @@ class KeepsakeScreen extends StatelessWidget {
               mainAxisSpacing: 12,
               crossAxisSpacing: 12,
               childAspectRatio: 0.85,
-              children: [for (final k in cards) _KeepsakeCard(keepsake: k)],
+              children: [
+                for (final k in cards)
+                  _KeepsakeCard(
+                    keepsake: k,
+                    onShare: () => controller.shareKeepsake(k),
+                  ),
+              ],
             ),
     );
   }
 }
 
 class _KeepsakeCard extends StatelessWidget {
-  const _KeepsakeCard({required this.keepsake});
+  const _KeepsakeCard({required this.keepsake, required this.onShare});
 
   final Keepsake keepsake;
+
+  /// Shares the card (records the `keepsakeShare` virality event in the
+  /// controller) and reports the outcome for the snackbar.
+  final Future<ShareOutcome> Function() onShare;
 
   @override
   Widget build(BuildContext context) {
@@ -95,12 +106,22 @@ class _KeepsakeCard extends StatelessWidget {
                     key: Key('keepsake-share-${keepsake.id}'),
                     icon: const Icon(Icons.ios_share),
                     tooltip: 'Share',
-                    onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Keepsake ready to share! 💛'),
-                        duration: Duration(seconds: 1),
-                      ),
-                    ),
+                    onPressed: () async {
+                      // Capture the messenger before the await (no use of a
+                      // stale BuildContext across the async gap).
+                      final messenger = ScaffoldMessenger.of(context);
+                      final outcome = await onShare();
+                      messenger.showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            outcome.shared
+                                ? 'Keepsake shared! 💛'
+                                : 'Maybe next time. 💛',
+                          ),
+                          duration: const Duration(seconds: 1),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ],

@@ -7,8 +7,19 @@ import 'package:kindredpaws/game/model/species.dart';
 import 'package:kindredpaws/game/sim/bond_engine.dart';
 import 'package:kindredpaws/game/sim/interaction.dart';
 import 'package:kindredpaws/services/analytics_service.dart';
+import 'package:kindredpaws/services/share_service.dart';
 
 import '../../support/harness.dart';
+
+/// A share seam that always reports the user dismissed the sheet.
+class _DismissingShare implements ShareService {
+  @override
+  Future<ShareOutcome> shareKeepsake({
+    required String title,
+    required String caption,
+    required String imageRef,
+  }) async => ShareOutcome.dismissed;
+}
 
 void main() {
   group('GameController', () {
@@ -120,6 +131,46 @@ void main() {
       // Staying within the same stage does not re-emit the milestone.
       await c.interact(CareInteraction.play);
       expect(analytics.countOf(AnalyticsEvent.bondStageUp), 1);
+      c.dispose();
+    });
+
+    test(
+      'sharing a Keepsake emits keepsakeShare {moment_type, platform}',
+      () async {
+        final c = makeController(clock: () => kDay0);
+        await c.load();
+        await c.adopt(
+          species: Species.puppy,
+          name: 'Biscuit',
+        ); // → Rescue Day card
+        final card = c.keepsakes.first;
+
+        final outcome = await c.shareKeepsake(card);
+        expect(outcome.shared, isTrue); // NoopShareService → system sheet
+
+        final analytics = c.observability.analytics as InMemoryAnalyticsService;
+        expect(analytics.countOf(AnalyticsEvent.keepsakeShare), 1);
+        final rec = analytics.recorded.firstWhere(
+          (e) => e.$1 == AnalyticsEvent.keepsakeShare,
+        );
+        expect(rec.$2['moment_type'], card.kind.name);
+        expect(rec.$2['platform'], 'system_sheet');
+        c.dispose();
+      },
+    );
+
+    test('a dismissed share does NOT emit keepsakeShare', () async {
+      final c = makeController(clock: () => kDay0, share: _DismissingShare());
+      await c.load();
+      await c.adopt(species: Species.kitten, name: 'Mochi');
+      final outcome = await c.shareKeepsake(c.keepsakes.first);
+      expect(outcome.shared, isFalse);
+      expect(
+        (c.observability.analytics as InMemoryAnalyticsService).countOf(
+          AnalyticsEvent.keepsakeShare,
+        ),
+        0,
+      );
       c.dispose();
     });
 

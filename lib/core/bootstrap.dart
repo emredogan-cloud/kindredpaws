@@ -21,6 +21,7 @@ import '../services/observability.dart';
 import '../services/performance_monitor.dart';
 import '../services/remote_config_service.dart';
 import '../services/home_widget_service.dart';
+import '../services/share_service.dart';
 import '../services/status_snapshot_service.dart';
 import '../heartmind/heartmind_service.dart';
 import '../heartmind/local_heartmind.dart';
@@ -45,6 +46,7 @@ AppConfig bootstrap({ServiceLocator? locator}) {
   sl.registerSingleton<NotificationScheduler>(InMemoryNotificationScheduler());
   sl.registerSingleton<StatusSnapshotService>(InMemoryStatusSnapshotService());
   sl.registerSingleton<HomeWidgetService>(NoopHomeWidgetService());
+  sl.registerSingleton<ShareService>(const NoopShareService());
 
   // Observability (P1-2). In-memory/console impls are fully functional for
   // dev/CI; the Firebase-backed bodies drop in once provisioned (see
