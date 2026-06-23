@@ -4,6 +4,7 @@ import 'package:kindredpaws/monetization/entitlements.dart';
 import 'package:kindredpaws/monetization/monetization_controller.dart';
 import 'package:kindredpaws/monetization/product_catalog.dart';
 import 'package:kindredpaws/services/analytics_service.dart';
+import 'package:kindredpaws/services/backend_service.dart';
 import 'package:kindredpaws/services/crash_reporter.dart';
 import 'package:kindredpaws/services/logger.dart';
 import 'package:kindredpaws/services/observability.dart';
@@ -100,6 +101,7 @@ void main() {
         final c = MonetizationController(
           billing: NoopBillingService(),
           observability: obs,
+          backend: InMemoryBackendService(),
         );
         final r = await c.purchase(kForeverFriendsAnnual);
         expect(r.success, isTrue);
@@ -119,6 +121,7 @@ void main() {
       final c = MonetizationController(
         billing: _CancellingBilling(),
         observability: obs,
+        backend: InMemoryBackendService(),
       );
       final r = await c.purchase(kForeverFriendsMonthly);
       expect(r.success, isFalse);
@@ -135,11 +138,108 @@ void main() {
     test('load + restore reflect store entitlements', () async {
       final billing = NoopBillingService();
       await billing.purchase(kForeverFriendsMonthly);
-      final c = MonetizationController(billing: billing, observability: _obs());
+      final c = MonetizationController(
+        billing: billing,
+        observability: _obs(),
+        backend: InMemoryBackendService(),
+      );
       await c.load();
       expect(c.entitlements.foreverFriends, isTrue);
       await c.restore();
       expect(c.entitlements.foreverFriends, isTrue);
+    });
+  });
+
+  group('Rescue Bundles — commercial, disclosed donation slice (P3-5b)', () {
+    test('bundles disclose a donation slice and are still cosmetic/QoL', () {
+      expect(kRescueBundles, isNotEmpty);
+      for (final b in kRescueBundles) {
+        expect(b.isRescueBundle, isTrue);
+        expect(b.donationSliceUsd, greaterThan(0)); // disclosed
+        expect(b.donationSliceUsd, lessThan(b.priceUsd)); // a slice, not all
+        expect(grantsOnlyCosmeticOrQoL(b), isTrue); // never pay-to-win
+      }
+    });
+
+    test('non-bundle products disclose no donation slice', () {
+      expect(kForeverFriendsMonthly.isRescueBundle, isFalse);
+      expect(kForeverFriendsMonthly.donationSliceUsd, 0);
+      expect(kHeartstoneBundles.first.isRescueBundle, isFalse);
+    });
+  });
+
+  group('Compassion Coins mint — anti-fraud gated impact ledger (P3-5b)', () {
+    MonetizationController build(InMemoryBackendService backend) =>
+        MonetizationController(
+          billing: NoopBillingService(),
+          observability: _obs(),
+          backend: backend,
+        );
+
+    test(
+      'a VALIDATED mint appends to the ledger + emits + returns coins',
+      () async {
+        final backend = InMemoryBackendService();
+        final c = build(backend);
+        final minted = await c.mintCompassionCoins(
+          source: 'sub',
+          amount: 50,
+          validated: true,
+        );
+        expect(minted, 50);
+        final ledger = backend.entriesOf(
+          MonetizationController.impactLedgerStream,
+        );
+        expect(ledger, hasLength(1));
+        expect(ledger.single['amount'], 50);
+        expect(ledger.single['validated'], true);
+        final a = c.observability.analytics as InMemoryAnalyticsService;
+        final rec = a.recorded.single;
+        expect(rec.$1, AnalyticsEvent.compassionCoinMint);
+        expect(rec.$2['source'], 'sub');
+        expect(rec.$2['amount'], 50);
+        expect(rec.$2['validated'], true);
+      },
+    );
+
+    test(
+      'an UNVALIDATED mint is rejected: no ledger write, mints nothing',
+      () async {
+        final backend = InMemoryBackendService();
+        final c = build(backend);
+        final minted = await c.mintCompassionCoins(
+          source: 'ad',
+          amount: 50,
+          validated: false, // fraudulent / unconfirmed
+        );
+        expect(minted, 0);
+        expect(
+          backend.entriesOf(MonetizationController.impactLedgerStream),
+          isEmpty,
+        );
+        // The attempt is still recorded for fraud monitoring (validated:false).
+        final rec = (c.observability.analytics as InMemoryAnalyticsService)
+            .recorded
+            .single;
+        expect(rec.$2['validated'], false);
+        expect(rec.$2['amount'], 0);
+      },
+    );
+
+    test('free players mint via ads — impact never requires payment', () async {
+      final backend = InMemoryBackendService();
+      final minted = await build(backend).mintCompassionCoins(
+        source: 'ad',
+        amount: 5,
+        validated: true, // a signed S2S ad postback
+      );
+      expect(minted, 5);
+      expect(
+        backend
+            .entriesOf(MonetizationController.impactLedgerStream)
+            .single['source'],
+        'ad',
+      );
     });
   });
 }

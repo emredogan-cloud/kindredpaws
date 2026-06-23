@@ -58,8 +58,19 @@ Connect / Play Console, obtain `REVENUECAT_PUBLIC_SDK_KEY_IOS/_ANDROID`, then ad
 the Noop. Receipt validation is the SDK's (server-side) job. Until then the Noop
 seam keeps the app fully functional offline.
 
-## 5. Deferred to P3-5b
+## 5. Impact / Compassion Coins (P3-5b)
 
-Compassion Coins mint flow (append to the impact ledger, `validated` anti-fraud
-gating), `compassionCoinMint` telemetry, and Rescue Bundles (commercial purchase
-with a disclosed donation split — **not** a donation IAP).
+- **`MonetizationController.mintCompassionCoins({source, amount, validated})`** is
+  the mint seam + **anti-fraud gate**: only a `validated` mint (a signed S2S
+  rewarded-ad postback, or a server-validated receipt) appends to the append-only
+  `impact_ledger` stream and returns coins; an unvalidated request is rejected
+  (records a `validated:false` `compassionCoinMint` for fraud monitoring, mints
+  nothing). In production this is driven server-side; the client never self-mints.
+- **Free players mint via `ad`** — impact never requires payment (hard ethical wall).
+- **Rescue Bundles** (`kRescueBundles`) are commercial cosmetic purchases with a
+  **disclosed** `donationSliceUsd` (≈70%, shown pre-purchase + on the receipt) —
+  **not** a charitable-donation IAP (D-047). Buying one emits `monetizationEvent`;
+  the represented Coins are minted server-side after receipt validation.
+- The exact USD→Coin rate and the net-revenue % split are illustrative and **to
+  finalize before G4** (brief §9); the ledger is the source of truth for real
+  giving, and the player's wallet `compassionCoins` is a display credited from it.

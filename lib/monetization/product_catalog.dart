@@ -55,6 +55,7 @@ class Product {
     required this.priceUsd,
     required this.stream,
     required this.grants,
+    this.donationSliceUsd = 0.0,
   });
 
   /// Store product id (must match App Store Connect / Play Console).
@@ -66,7 +67,15 @@ class Product {
   /// What this product grants — must be ⊆ [kAllowedMonetizationGrants].
   final List<Grant> grants;
 
+  /// For Rescue Bundles: the **disclosed** portion of [priceUsd] routed to the
+  /// impact pool (shown pre-purchase + on the receipt). 0 for other products.
+  /// A Rescue Bundle is a *commercial* cosmetic purchase with a transparent
+  /// giving split — NOT a charitable-donation IAP (brief §9, D-047).
+  final double donationSliceUsd;
+
   bool get isSubscription => stream == MonetizationStream.subscription;
+  bool get isRescueBundle =>
+      stream == MonetizationStream.bundle && donationSliceUsd > 0;
 }
 
 /// Forever Friends — the single subscription tier (LOCKED: $5.99/mo, $39.99/yr).
@@ -131,12 +140,36 @@ const List<Product> kHeartstoneBundles = [
   ),
 ];
 
-/// The full catalogue (Rescue Bundles + their disclosed donation slice land in
-/// P3-5b, against the impact ledger).
+/// Rescue Bundles — commercial cosmetic purchases with a **disclosed** donation
+/// slice (≈70% to the impact pool). NOT donation IAPs; the cosmetic is the
+/// product, the giving split is transparent (brief §9, D-047). The Coins they
+/// represent are minted server-side after receipt validation (see
+/// `MonetizationController.mintCompassionCoins`), never client-self-minted.
+const List<Product> kRescueBundles = [
+  Product(
+    sku: 'rescue_bundle_meal',
+    displayName: 'Rescue Meal Bundle',
+    priceUsd: 4.99,
+    stream: MonetizationStream.bundle,
+    grants: [Grant.cosmeticDrip],
+    donationSliceUsd: 3.49, // ~70% disclosed
+  ),
+  Product(
+    sku: 'rescue_bundle_shelter',
+    displayName: 'Rescue Shelter Bundle',
+    priceUsd: 9.99,
+    stream: MonetizationStream.bundle,
+    grants: [Grant.cosmeticDrip],
+    donationSliceUsd: 6.99, // ~70% disclosed
+  ),
+];
+
+/// The full catalogue.
 const List<Product> kProductCatalog = [
   kForeverFriendsMonthly,
   kForeverFriendsAnnual,
   ...kHeartstoneBundles,
+  ...kRescueBundles,
 ];
 
 /// True iff [p] confers only allowed (cosmetic/QoL) grants — the ethical wall.
