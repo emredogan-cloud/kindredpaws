@@ -16,6 +16,7 @@ import '../services/analytics_service.dart';
 import '../services/auth_service.dart';
 import '../services/backend_service.dart';
 import '../services/crash_reporter.dart';
+import '../services/feedback_service.dart';
 import '../services/firebase_backend.dart';
 import '../services/logger.dart';
 import '../services/notification_scheduler.dart';
@@ -61,6 +62,9 @@ AppConfig bootstrap({ServiceLocator? locator}) {
   sl.registerSingleton<StatusSnapshotService>(InMemoryStatusSnapshotService());
   sl.registerSingleton<HomeWidgetService>(NoopHomeWidgetService());
   sl.registerSingleton<ShareService>(const NoopShareService());
+  // Closed-beta feedback hook (P3-7). Noop default keeps dev/CI offline; the
+  // backend-backed impl is swapped in once a real backend is wired (below).
+  sl.registerSingleton<FeedbackService>(const NoopFeedbackService());
   // Billing seam (P3-5). Noop default = offline/deterministic; the real
   // RevenueCat impl is a post-provisioning swap (no SDK dependency yet).
   sl.registerSingleton<BillingService>(NoopBillingService());
