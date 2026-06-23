@@ -1,12 +1,14 @@
-/// The Memory Book (GAMEPLAY_AND_PROGRESSION_BIBLE.md §7.2): the player-visible,
-/// tangible record of what the pet remembers — the provable trust signal that
-/// the memory is real (Risk R3). P1 surfaces the closed-set, templated facts the
-/// game seeds from gameplay events; NO free-text from the player (Risk R1).
+/// The Memory Book v2 (GAMEPLAY_AND_PROGRESSION_BIBLE.md §7.2, P2-3): the
+/// player-visible, tangible record of what the pet remembers — the provable
+/// trust signal that the memory is real (Risk R3). Organized into warm
+/// categories (Rescue / Favorites / Milestones / Our Bond / Growing Up). All
+/// content is closed-set + templated; NO free-text from the player (Risk R1).
 library;
 
 import 'package:flutter/material.dart';
 
-import '../../heartmind/memory_fact.dart';
+import '../../heartmind/memory_book.dart';
+import '../../heartmind/memory_category.dart';
 import '../controller/game_controller.dart';
 
 class MemoryBookScreen extends StatelessWidget {
@@ -17,8 +19,24 @@ class MemoryBookScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pet = controller.pet;
-    final facts = controller.facts;
     final theme = Theme.of(context);
+
+    if (pet == null) {
+      return Scaffold(
+        key: const Key('memory-book'),
+        appBar: AppBar(title: const Text('The Memory Book')),
+        body: const SizedBox.shrink(),
+      );
+    }
+
+    final book = MemoryBook.build(
+      facts: controller.facts,
+      petName: pet.name,
+      speciesLabel: pet.species.displayName,
+      bondStageLabel: pet.bond.stage.displayName,
+      lifeStageLabel: pet.lifeStage.displayName,
+      createdAtMs: pet.createdAtMs,
+    );
 
     return Scaffold(
       key: const Key('memory-book'),
@@ -26,69 +44,59 @@ class MemoryBookScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          if (pet != null) ...[
-            Text('Our Story', style: theme.textTheme.headlineSmall),
-            const SizedBox(height: 8),
-            Card(
-              child: ListTile(
-                leading: const Text('🐾', style: TextStyle(fontSize: 24)),
-                title: Text(pet.name),
-                subtitle: Text(
-                  'A ${pet.species.displayName.toLowerCase()} I met on Rescue Day. '
-                  'We are ${pet.bond.stage.displayName}s.',
-                ),
+          Text('Our Story', style: theme.textTheme.headlineSmall),
+          const SizedBox(height: 8),
+          Card(
+            child: ListTile(
+              leading: const ExcludeSemantics(
+                child: Text('🐾', style: TextStyle(fontSize: 24)),
+              ),
+              title: Text(pet.name),
+              subtitle: Text(
+                'A ${pet.species.displayName.toLowerCase()} I met on Rescue Day. '
+                'We are ${pet.bond.stage.displayName}s.',
               ),
             ),
-            const SizedBox(height: 16),
-            Text(
-              'What ${pet.name} remembers',
-              style: theme.textTheme.titleLarge,
-            ),
-            const SizedBox(height: 8),
-          ],
-          if (facts.isEmpty)
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Text(
-                'As you feed, clean, and play with ${pet?.name ?? 'your pet'}, '
-                'the moments you share will appear here.',
-              ),
-            )
-          else
-            ...facts.map(
-              (f) => Card(
-                key: Key('memory-${f.key.name}-${f.createdAtMs}'),
-                child: ListTile(
-                  leading: ExcludeSemantics(
-                    child: Text(
-                      _emojiFor(f.key),
-                      style: const TextStyle(fontSize: 22),
-                    ),
-                  ),
-                  title: Text(_lineFor(pet?.name ?? 'Your pet', f)),
-                ),
-              ),
+          ),
+          const SizedBox(height: 8),
+          for (final category in book.populatedCategories)
+            _CategorySection(
+              category: category,
+              entries: book.inCategory(category),
             ),
         ],
       ),
     );
   }
+}
 
-  String _emojiFor(FactKey key) => switch (key) {
-    FactKey.importantDate => '📅',
-    FactKey.likesActivity => '🎾',
-    FactKey.favoriteThing => '⭐',
-    FactKey.favoriteColor => '🎨',
-    FactKey.namedPetAfter => '💭',
-    FactKey.hadAHardDayOn => '🤍',
-  };
+class _CategorySection extends StatelessWidget {
+  const _CategorySection({required this.category, required this.entries});
 
-  String _lineFor(String name, MemoryFact f) => switch (f.key) {
-    FactKey.importantDate => f.value,
-    FactKey.likesActivity => '$name loves ${f.value}',
-    FactKey.favoriteThing => "$name's favorite is ${f.value}",
-    FactKey.favoriteColor => 'Favorite color: ${f.value}',
-    FactKey.namedPetAfter => 'Named after ${f.value}',
-    FactKey.hadAHardDayOn => 'Was there for you on ${f.value}',
-  };
+  final MemoryCategory category;
+  final List<MemoryEntry> entries;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      key: Key('memory-category-${category.name}'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            ExcludeSemantics(
+              child: Text(category.emoji, style: const TextStyle(fontSize: 20)),
+            ),
+            const SizedBox(width: 6),
+            Text(category.displayName, style: theme.textTheme.titleLarge),
+          ],
+        ),
+        const SizedBox(height: 6),
+        for (final e in entries)
+          Card(child: ListTile(dense: true, title: Text(e.text))),
+      ],
+    );
+  }
 }
