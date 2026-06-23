@@ -1,7 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kindredpaws/core/bootstrap.dart';
+import 'package:kindredpaws/core/compliance_config.dart';
 import 'package:kindredpaws/core/kindred_terms.dart';
 import 'package:kindredpaws/core/service_locator.dart';
+import 'package:kindredpaws/monetization/ad_config.dart';
 import 'package:kindredpaws/render/pet_renderer.dart';
 import 'package:kindredpaws/services/analytics_service.dart';
 import 'package:kindredpaws/services/auth_service.dart';
@@ -42,6 +44,23 @@ void main() {
       // is configured (KP_RIV_ASSET unset ⇒ the Rive seam's stand-in).
       expect(sl.get<PetRenderer>().backendId, 'placeholder');
       expect(config.riveAssetPath, isNull);
+    });
+
+    test('registers the protective child-safe compliance default (P3-6a)', () {
+      bootstrap();
+      final sl = ServiceLocator.instance;
+
+      // Ships fully protective: unknown band ⇒ treated as a child (D-007).
+      final compliance = sl.get<ComplianceConfig>();
+      expect(compliance.ageBand, AgeBand.unknown);
+      expect(compliance.isChildSafe, isTrue);
+      expect(compliance.freeTextInputAllowed, isFalse);
+      expect(compliance.mayUseGenerativeDialogue, isFalse);
+      expect(compliance.behavioralAdsAllowed, isFalse);
+
+      // The ad kids-config is derived from it: COPPA/GDPR-K flags on, G-rated,
+      // contextual-only.
+      expect(sl.get<AdConfig>().isFullyChildSafe, isTrue);
     });
 
     test('service locator throws for unregistered types', () {

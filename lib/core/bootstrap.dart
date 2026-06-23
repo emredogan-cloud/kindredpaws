@@ -6,7 +6,9 @@
 library;
 
 import 'app_config.dart';
+import 'compliance_config.dart';
 import 'service_locator.dart';
+import '../monetization/ad_config.dart';
 import '../render/pet_renderer.dart';
 import '../render/pet_renderer_factory.dart';
 import '../render/rive_pet_renderer.dart' show RiveDiagnostic;
@@ -32,6 +34,17 @@ AppConfig bootstrap({ServiceLocator? locator}) {
   final config = AppConfig.fromEnvironment();
 
   sl.registerSingleton<AppConfig>(config);
+
+  // Compliance policy (P3-6a). Ships as the fully-protective child-safe default
+  // (unknown band ⇒ treated as under-13, D-007): no free-text, templated-only
+  // dialogue, COPPA/GDPR-K ad flags on. The flow that establishes a real age
+  // band is the G3 legal-gated deliverable (Open Decision #9) — until then every
+  // user is treated as a child. The ad-network kids-config is derived from it so
+  // the COPPA posture is decided in exactly one place.
+  const compliance = ComplianceConfig();
+  sl.registerSingleton<ComplianceConfig>(compliance);
+  sl.registerSingleton<AdConfig>(AdConfig.fromCompliance(compliance));
+
   sl.registerSingleton<AuthService>(GuestAuthService());
   sl.registerSingleton<BackendService>(
     config.backendMode == BackendMode.firebase
