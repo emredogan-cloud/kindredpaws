@@ -62,7 +62,11 @@ class SaveRepository {
     try {
       final env = state.toEnvelope();
       await _local.write(env.toJsonString());
-      await _backend?.writeDocument(_collection, state.petId, env.toJsonMap());
+      await _backend?.writeDocument(
+        _collection,
+        state.pet.petId,
+        env.toJsonMap(),
+      );
       return const Ok(null);
     } catch (e, st) {
       return Err(e, st);

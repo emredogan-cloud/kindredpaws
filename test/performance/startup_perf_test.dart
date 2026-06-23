@@ -1,19 +1,23 @@
 @Tags(['performance'])
 library;
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kindredpaws/core/bootstrap.dart';
-import 'package:kindredpaws/core/service_locator.dart';
-import 'package:kindredpaws/main.dart';
+import 'package:kindredpaws/game/ui/game_root.dart';
+
+import '../support/harness.dart';
 
 /// Coarse host-side performance guard (CI-safe budget). Real frame/jank
 /// profiling runs on-device via integration_test + flutter drive --profile.
 void main() {
   testWidgets('cold widget build stays within budget', (tester) async {
-    ServiceLocator.instance.reset();
+    final controller = makeController();
+    await controller.load(); // no save → Rescue Day, deterministic
+
     final sw = Stopwatch()..start();
-    final config = bootstrap();
-    await tester.pumpWidget(KindredPawsApp(config: config));
+    await tester.pumpWidget(
+      MaterialApp(home: GameRoot(controller: controller, autoLoad: false)),
+    );
     await tester.pump();
     sw.stop();
 
