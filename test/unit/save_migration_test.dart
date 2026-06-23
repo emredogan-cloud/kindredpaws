@@ -8,6 +8,7 @@ import 'package:kindredpaws/data/save_repository.dart';
 import 'package:kindredpaws/game/model/bond.dart';
 import 'package:kindredpaws/game/model/life_stage.dart';
 import 'package:kindredpaws/game/model/species.dart';
+import 'package:kindredpaws/heartmind/personality.dart';
 
 SaveEnvelope _v1() => const SaveEnvelope(
   schemaVersion: 1,
@@ -34,7 +35,7 @@ void main() {
 
   group('versioned save + migration (Risk R4)', () {
     test(
-      'upgrades v1 -> current (v5), adding wallet/careStreak/bond/ledger/keepsakes',
+      'upgrades v1 -> current, adding wallet/careStreak/bond/ledger/keepsakes/personality',
       () {
         final up = runner.upgrade(_v1(), KindredSaveState.currentSchemaVersion);
         expect(up.schemaVersion, KindredSaveState.currentSchemaVersion);
@@ -44,6 +45,7 @@ void main() {
         expect(up.data['bondLedger'], isNotNull); // new in v4
         expect(up.data['memoryFacts'], isNotNull);
         expect(up.data['keepsakes'], isNotNull); // new in v5
+        expect(up.data['personality'], isNotNull); // new in v6
 
         final state = KindredSaveState.fromEnvelope(up);
         expect(state.pet.name, 'Biscuit');
@@ -52,8 +54,27 @@ void main() {
         expect(state.pet.activeDays, 1);
         expect(state.facts, isEmpty);
         expect(state.keepsakes, isEmpty);
+        // An old save with no personality upgrades to the neutral default.
+        expect(state.personality, PersonalityProfile.neutral);
       },
     );
+
+    test('a drifted personality round-trips losslessly (v6)', () {
+      final s =
+          KindredSaveState.newPet(
+            petId: 'p3',
+            species: 'puppy',
+            name: 'Biscuit',
+            nowMs: 1,
+          ).copyWith(
+            personality: const PersonalityProfile(playfulness: 4, bravery: 3),
+          );
+      final back = KindredSaveState.fromEnvelope(s.toEnvelope());
+      expect(back.personality.playfulness, 4);
+      expect(back.personality.bravery, 3);
+      expect(back.personality.cuddliness, 2); // untouched dials stay neutral
+      expect(back.personality.bankKey, 'playful'); // dominant dial preserved
+    });
 
     test('current-schema save round-trips losslessly', () {
       final s = KindredSaveState.newPet(

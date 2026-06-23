@@ -6,6 +6,7 @@ import 'package:kindredpaws/game/model/pet_state.dart';
 import 'package:kindredpaws/game/model/species.dart';
 import 'package:kindredpaws/game/sim/bond_engine.dart';
 import 'package:kindredpaws/game/sim/interaction.dart';
+import 'package:kindredpaws/heartmind/personality.dart';
 import 'package:kindredpaws/services/analytics_service.dart';
 import 'package:kindredpaws/services/share_service.dart';
 
@@ -172,6 +173,28 @@ void main() {
         0,
       );
       c.dispose();
+    });
+
+    test('personality drift persists across SAVE → REOPEN (P3-4)', () async {
+      final store = InMemoryLocalSaveStore();
+      final first = makeController(store: store, clock: () => kDay0);
+      await first.load();
+      await first.adopt(species: Species.puppy, name: 'Biscuit');
+      expect(first.personality, PersonalityProfile.neutral); // starts neutral
+      // Lots of play drifts playfulness up (deterministic, bounded).
+      await first.interact(CareInteraction.play);
+      await first.interact(CareInteraction.play);
+      final drifted = first.personality;
+      expect(drifted.playfulness, greaterThan(2)); // moved off neutral
+      expect(drifted.bankKey, 'playful');
+      first.dispose();
+
+      // Reopen over the same store: the personality is RESTORED, not reset.
+      final second = makeController(store: store, clock: () => kDay0);
+      await second.load();
+      expect(second.personality.playfulness, drifted.playfulness);
+      expect(second.personality.bankKey, 'playful');
+      second.dispose();
     });
 
     test('reopening a day later greets warmly (Bond never drops)', () async {

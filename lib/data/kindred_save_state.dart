@@ -1,7 +1,8 @@
-/// The persisted save (schema v4), mirroring GAME_TECHNICAL_SYSTEMS.md §3.4.
-/// Holds the full runtime [PetState] plus the daily Bond [BondLedger] and the
-/// Memory Book facts. Versioned + migrated forward (Risk R4: no update may
-/// orphan a pet). Serialization only — the simulation lives in `lib/game`.
+/// The persisted save (schema v6), mirroring GAME_TECHNICAL_SYSTEMS.md §3.4.
+/// Holds the full runtime [PetState], the daily Bond [BondLedger], the Memory
+/// Book facts, Keepsakes, and the pet's evolving [PersonalityProfile].
+/// Versioned + migrated forward (Risk R4: no update may orphan a pet).
+/// Serialization only — the simulation lives in `lib/game`.
 library;
 
 import '../game/model/bond.dart';
@@ -13,12 +14,14 @@ import '../game/model/species.dart';
 import '../game/model/wallet.dart';
 import '../game/sim/bond_engine.dart';
 import '../heartmind/memory_fact.dart';
+import '../heartmind/personality.dart';
 import '../keepsake/keepsake.dart';
 import 'migration.dart';
 import 'migrations/v1_to_v2.dart';
 import 'migrations/v2_to_v3.dart';
 import 'migrations/v3_to_v4.dart';
 import 'migrations/v4_to_v5.dart';
+import 'migrations/v5_to_v6.dart';
 import 'save_envelope.dart';
 
 class KindredSaveState {
@@ -28,10 +31,11 @@ class KindredSaveState {
     required this.facts,
     this.keepsakes = const [],
     this.nestCosmeticIds = const [],
+    this.personality = PersonalityProfile.neutral,
   });
 
   /// Schema version this app writes. Bump + add a migration on change.
-  static const int currentSchemaVersion = 5;
+  static const int currentSchemaVersion = 6;
 
   /// Ordered migration chain → [currentSchemaVersion].
   static const List<Migration> migrations = [
@@ -39,6 +43,7 @@ class KindredSaveState {
     V2ToV3(),
     V3ToV4(),
     V4ToV5(),
+    V5ToV6(),
   ];
 
   final PetState pet;
@@ -47,18 +52,24 @@ class KindredSaveState {
   final List<Keepsake> keepsakes;
   final List<String> nestCosmeticIds;
 
+  /// The pet's evolving personality (drifts with care; persisted from v6 so it
+  /// survives app restarts — "Only MY pet" must be stable, not reset each open).
+  final PersonalityProfile personality;
+
   KindredSaveState copyWith({
     PetState? pet,
     BondLedger? ledger,
     List<MemoryFact>? facts,
     List<Keepsake>? keepsakes,
     List<String>? nestCosmeticIds,
+    PersonalityProfile? personality,
   }) => KindredSaveState(
     pet: pet ?? this.pet,
     ledger: ledger ?? this.ledger,
     facts: facts ?? this.facts,
     keepsakes: keepsakes ?? this.keepsakes,
     nestCosmeticIds: nestCosmeticIds ?? this.nestCosmeticIds,
+    personality: personality ?? this.personality,
   );
 
   SaveEnvelope toEnvelope() => SaveEnvelope(
@@ -80,10 +91,11 @@ class KindredSaveState {
       'bondLedger': ledger.toMap(),
       'memoryFacts': facts.map((f) => f.toJson()).toList(),
       'keepsakes': keepsakes.map((k) => k.toJson()).toList(),
+      'personality': personality.toMap(),
     },
   );
 
-  /// Reads a v5 envelope. Upgrade older envelopes with [MigrationRunner] first.
+  /// Reads a v6 envelope. Upgrade older envelopes with [MigrationRunner] first.
   factory KindredSaveState.fromEnvelope(SaveEnvelope env) {
     if (env.schemaVersion != currentSchemaVersion) {
       throw StateError(
@@ -131,6 +143,9 @@ class KindredSaveState {
       nestCosmeticIds: (nest['cosmeticIds'] as List? ?? const [])
           .map((e) => e as String)
           .toList(),
+      personality: PersonalityProfile.fromMap(
+        (d['personality'] as Map?)?.cast<String, dynamic>() ?? const {},
+      ),
     );
   }
 
