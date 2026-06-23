@@ -144,9 +144,6 @@ class GameController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Clears [lastMessage] after the UI shows it.
-  void consumeMessage() => lastMessage = null;
-
   void _resumeSession() {
     final save = _save!;
     final resume = sim.resolveOnResume(

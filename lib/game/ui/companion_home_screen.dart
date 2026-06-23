@@ -40,21 +40,24 @@ class CompanionHomeScreen extends StatelessWidget {
         return Scaffold(
           key: const Key('companion-home'),
           appBar: AppBar(
-            title: Text(pet.name),
+            title: Text(pet.name, maxLines: 1, overflow: TextOverflow.ellipsis),
             backgroundColor: scheme.surface,
             actions: [
               Center(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Row(
-                    key: const Key('kibble-count'),
-                    children: [
-                      const Text('🦴 '),
-                      Text(
-                        '${pet.wallet.kibble}',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                    ],
+                  child: Semantics(
+                    label: 'Kibble: ${pet.wallet.kibble}',
+                    child: Row(
+                      key: const Key('kibble-count'),
+                      children: [
+                        const Text('🦴 '),
+                        Text(
+                          '${pet.wallet.kibble}',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -95,17 +98,26 @@ class CompanionHomeScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                  Text(
-                    moodLine(pet.name, controller.mood),
-                    key: const Key('mood-line'),
-                    style: Theme.of(context).textTheme.titleMedium,
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Text(
+                      moodLine(pet.name, controller.mood),
+                      key: const Key('mood-line'),
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
                   ),
                   if (controller.lastMessage != null)
                     Padding(
-                      padding: const EdgeInsets.only(top: 8),
+                      padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
                       child: Text(
                         controller.lastMessage!,
                         key: const Key('feedback-message'),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(color: scheme.primary),
                       ),
                     ),
@@ -139,11 +151,14 @@ class CompanionHomeScreen extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Text('💖 '),
-              Text(
-                bond.stage.displayName,
-                key: const Key('bond-stage'),
-                style: Theme.of(context).textTheme.titleMedium,
+              const ExcludeSemantics(child: Text('💖 ')),
+              Semantics(
+                label: 'Bond level: ${bond.stage.displayName}',
+                child: Text(
+                  bond.stage.displayName,
+                  key: const Key('bond-stage'),
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
               ),
               const Spacer(),
               if (next != null)
@@ -206,14 +221,21 @@ class CompanionHomeScreen extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        FilledButton.tonal(
-          key: Key(key),
-          onPressed: () => controller.interact(interaction),
-          style: FilledButton.styleFrom(
-            shape: const CircleBorder(),
-            padding: const EdgeInsets.all(20),
+        Tooltip(
+          message: label,
+          child: FilledButton.tonal(
+            key: Key(key),
+            onPressed: () => controller.interact(interaction),
+            style: FilledButton.styleFrom(
+              shape: const CircleBorder(),
+              padding: const EdgeInsets.all(20),
+            ),
+            child: Semantics(
+              label: label,
+              button: true,
+              child: Icon(icon, size: 28),
+            ),
           ),
-          child: Icon(icon, size: 28),
         ),
         const SizedBox(height: 4),
         Text(label, style: Theme.of(context).textTheme.bodyMedium),

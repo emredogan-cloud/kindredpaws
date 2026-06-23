@@ -31,7 +31,9 @@ class MemoryFact {
     required this.createdAtMs,
     this.lastSurfacedAtMs,
   }) {
-    if (value.trim().isEmpty || value.length > maxValueLength) {
+    // Validate the trimmed length consistently (whitespace is not content).
+    final trimmedLength = value.trim().length;
+    if (trimmedLength == 0 || trimmedLength > maxValueLength) {
       throw ArgumentError('MemoryFact value must be 1..$maxValueLength chars');
     }
     if (confidence < 0 || confidence > 1) {

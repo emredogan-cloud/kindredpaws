@@ -24,7 +24,7 @@
     }
   },
   "version": "1.0.0",
-  "lastUpdated": "2026-06-22",
+  "lastUpdated": "2026-06-23",
   "canonicalSource": {
     "name": "KINDREDPAWS — CANONICAL DECISION BRIEF",
     "file": "KINDREDPAWS_CANONICAL_DECISION_BRIEF.md",
@@ -152,10 +152,10 @@
       "name": "Core-loop prototype",
       "duration": "8 wks",
       "goal": "Prove the daily loop is fun on cheap assets.",
-      "keyDeliverables": ["1 rig (puppy)", "4 Care Meters w/ no-death floor", "feed/clean/play", "The Bond", "1 placeholder room", "local notifications"],
+      "keyDeliverables": ["1 rig seam (Rive, puppy+kitten placeholder)", "4 Care Meters w/ no-death floor", "feed/clean/play", "The Bond", "1 placeholder Nest", "local notifications", "Rescue Day onboarding + templated Memory Book (pulled forward from P2, child-safe)"],
       "exitGateId": "G1",
       "exitGateSummary": "Internal playtest: core loop 'feels alive & cozy'; sim deterministic + offline-catch-up tested; no neglect-guilt present.",
-      "status": "planned"
+      "status": "in-progress"
     },
     {
       "id": "P2",
@@ -263,7 +263,7 @@
   },
   "gates": [
     {"id": "G0", "phase": "P0", "name": "Pre-production gate", "passCriteria": "Brief ratified; rig contractor secured; LLM cost/DAU model shows < ARPDAU at projected mix; legal review booked.", "status": "open"},
-    {"id": "G1", "phase": "P1", "name": "Core-loop prototype gate", "passCriteria": "Loop 'fun' qualitative pass; deterministic sim + offline-catch-up tests green; zero neglect-guilt.", "status": "planned"},
+    {"id": "G1", "phase": "P1", "name": "Core-loop prototype gate", "passCriteria": "Loop 'fun' qualitative pass; deterministic sim + offline-catch-up tests green; zero neglect-guilt.", "status": "in-progress"},
     {"id": "G2", "phase": "P2", "name": "Vertical-slice gate", "passCriteria": "Persona 'tell a friend' qualitative pass; AI memory callback reliability >=95% (no hallucinated facts); first-AI-line latency = 0 spinner; rig cost on-budget (else cut 2nd species).", "status": "planned"},
     {"id": "G3", "phase": "P3", "name": "Closed-beta gate", "passCriteria": "D1 >=40% · D7 >=18%; 0 child-safety incidents; cloud-restore proven; LLM cost/DAU within model; crash-free >=99%; legal green-light.", "status": "planned"},
     {"id": "G4", "phase": "P4", "name": "Soft-launch gate", "passCriteria": "D1 >=42% · D7 >=20% · D30 >=10%; ARPDAU >=$0.03; LLM cost/DAU < 35% ARPDAU; >=1 viral share / DAU-week; clean donation reconciliation.", "status": "planned"},
