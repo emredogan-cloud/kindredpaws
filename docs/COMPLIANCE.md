@@ -88,5 +88,31 @@ ADR-011). This subsystem is the downstream **enforcement** of whatever that
 determination yields, not the gate itself. Until it ships, the band stays
 `unknown` and the protective default above is in force.
 
-Related deletion / right-to-be-forgotten path (GDPR/COPPA §8.3) and the free-text
-PII/profanity filter land in **P3-6b**.
+## 6. Right-to-be-forgotten (`SaveRepository.deleteAccount`, P3-6b)
+
+GDPR / COPPA deletion (§8.3). `deleteAccount({petId})` runs **on-device-first** so
+the visible data is gone even if the network fails:
+
+1. **Erase the local save** (`LocalSaveStore.delete`).
+2. **Reset analytics identifiers** (`AnalyticsService.resetIdentifiers` → Firebase
+   `resetAnalyticsData`) so future telemetry can't link to the deleted account
+   (§11.2). Wired via an `onIdentityReset` hook in `createGameController`.
+3. **Best-effort delete the cloud save** (`BackendService.deleteDocument`).
+
+Deleting the cloud save is the **trigger** for the server-side cascade that purges
+the memory-fact store and **anonymizes** ledger entries (retain the financial
+fact, drop the personal link) so donation-audit integrity survives deletion
+(§8.3). That cascade is enforced **server-side** (a Cloud Function), never
+client-trusted — the client cannot rewrite the append-only impact ledger.
+
+## 7. The one free-text field (`NameInputValidator`, P3-6b)
+
+The pet's name (Rescue Day) is the **only** free-text surface in MVP. It stays
+usable by everyone *because* every value passes `NameInputValidator`
+(`lib/core/name_input_validator.dart`): trim/normalize → **PII** scan (email /
+URL / 7+ digit run) → **profanity** scan (leet- and space-normalized). A rejected
+name shows a warm, in-character nudge (never a scolding — cozy tone, §18) and
+blocks the adopt. This is the concrete enforcement of "no free-text from minors"
+(§11.1): the field is *constrained* input, not an open text store. The seed word
+lists are replaced in production by the maintained moderation service the Deferred
+live-chat path uses (§4.5) — the architecture stays, only the lists grow.

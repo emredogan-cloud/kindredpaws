@@ -26,4 +26,10 @@ class PrefsSaveStore implements LocalSaveStore {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(prefsName, json);
   }
+
+  @override
+  Future<void> delete() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(prefsName);
+  }
 }

@@ -37,4 +37,38 @@ void main() {
     expect(find.text('Biscuit'), findsWidgets);
     expect(controller.hasPet, isTrue);
   });
+
+  testWidgets('a disallowed name is gently blocked, then a clean one adopts', (
+    tester,
+  ) async {
+    final controller = makeController();
+    await tester.pumpWidget(
+      MaterialApp(home: GameRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    for (var i = 0; i < 3; i++) {
+      await tester.tap(find.byKey(const Key('rescue-next')));
+      await tester.pumpAndSettle();
+    }
+    await tester.tap(find.byKey(const Key('choose-puppy')));
+    await tester.pumpAndSettle();
+
+    // A profane name is rejected: a warm nudge shows + no pet is adopted.
+    await tester.enterText(find.byKey(const Key('name-field')), 'shithead');
+    await tester.tap(find.byKey(const Key('confirm-adopt')));
+    await tester.pumpAndSettle();
+    expect(controller.hasPet, isFalse);
+    expect(find.byKey(const Key('rescue-day')), findsOneWidget);
+    expect(find.textContaining('kinder name'), findsOneWidget);
+
+    // Fixing the name clears the nudge and lets the adopt go through.
+    await tester.enterText(find.byKey(const Key('name-field')), 'Biscuit');
+    await tester.pumpAndSettle();
+    expect(find.textContaining('kinder name'), findsNothing);
+    await tester.tap(find.byKey(const Key('confirm-adopt')));
+    await tester.pumpAndSettle();
+    expect(controller.hasPet, isTrue);
+    expect(find.byKey(const Key('companion-home')), findsOneWidget);
+  });
 }

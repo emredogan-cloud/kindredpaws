@@ -5,6 +5,7 @@ library;
 
 import '../core/service_locator.dart';
 import '../data/save_repository.dart';
+import '../services/analytics_service.dart';
 import '../services/backend_service.dart';
 import '../services/home_widget_service.dart';
 import '../services/notification_scheduler.dart';
@@ -23,7 +24,13 @@ GameController createGameController({
   int Function()? clock,
 }) {
   final config = SimConfig.fromRemoteConfig(sl.get<RemoteConfigService>());
-  final repo = SaveRepository(local: store, backend: sl.get<BackendService>());
+  final repo = SaveRepository(
+    local: store,
+    backend: sl.get<BackendService>(),
+    // Right-to-be-forgotten: deleteAccount resets the analytics identifiers so
+    // post-deletion telemetry can't link back to the wiped account (§11.2).
+    onIdentityReset: () async => sl.get<AnalyticsService>().resetIdentifiers(),
+  );
   return GameController(
     sim: GameSimulation(config),
     config: config,
