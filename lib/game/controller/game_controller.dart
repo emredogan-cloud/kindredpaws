@@ -18,6 +18,7 @@ import '../../keepsake/keepsake.dart';
 import '../../keepsake/keepsake_factory.dart';
 import '../../render/pet_renderer.dart';
 import '../../services/analytics_service.dart';
+import '../../services/home_widget_service.dart';
 import '../../services/notification_scheduler.dart';
 import '../../services/observability.dart';
 import '../../services/status_snapshot_service.dart';
@@ -39,6 +40,7 @@ class GameController extends ChangeNotifier {
     required this.observability,
     required this.notifications,
     required this.snapshots,
+    required this.homeWidget,
     required this.heartmind,
     int Function()? clock,
     String Function()? idGenerator,
@@ -53,6 +55,7 @@ class GameController extends ChangeNotifier {
   final ObservabilityFacade observability;
   final NotificationScheduler notifications;
   final StatusSnapshotService snapshots;
+  final HomeWidgetService homeWidget;
   final Heartmind heartmind;
   final int Function() _now;
   final String Function() _idGenerator;
@@ -248,6 +251,7 @@ class GameController extends ChangeNotifier {
       nowMs: _now(),
     );
     await snapshots.write(snapshot);
+    await homeWidget.update(snapshot); // push to the native home widget
   }
 
   /// The latest published status snapshot (for the in-app status surfaces).

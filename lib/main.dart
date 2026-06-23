@@ -9,10 +9,16 @@ import 'game/controller/game_controller.dart';
 import 'game/game_wiring.dart';
 import 'game/ui/game_root.dart';
 import 'services/firebase_provisioning.dart';
+import 'services/home_widget_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final config = bootstrap();
+  // Production native bridges (the prefs-backed home-widget writer feeds the
+  // OS widget; bootstrap's defaults are the test-safe in-memory versions).
+  ServiceLocator.instance.registerSingleton<HomeWidgetService>(
+    PrefsHomeWidgetService(),
+  );
   // Best-effort Firebase init (no-op until provisioned; never throws).
   await FirebaseProvisioning.initialize();
   final controller = createGameController(
