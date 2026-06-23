@@ -141,6 +141,35 @@ void main() {
     });
   });
 
+  group('RivePetRenderer reactive binding (P4-2)', () {
+    testWidgets('the asset-free seam reflects emotion changes on rebuild', (
+      tester,
+    ) async {
+      Widget tree(PetEmotion e) => MaterialApp(
+        home: Builder(
+          builder: (context) => const RivePetRenderer().build(
+            context,
+            mood: PetMood.joyful,
+            lifeStage: 'grown',
+            emotion: e,
+          ),
+        ),
+      );
+      // No assetPath ⇒ the synchronous expressive stand-in; it must re-render
+      // the new emotion when gameplay state changes (the reactive contract that
+      // the real rig honors via didUpdateWidget → _apply).
+      await tester.pumpWidget(tree(PetEmotion.happy));
+      await tester.pumpAndSettle();
+      expect(find.byIcon(PetEmotion.happy.icon), findsOneWidget);
+
+      await tester.pumpWidget(tree(PetEmotion.playful));
+      await tester.pumpAndSettle();
+      expect(find.byIcon(PetEmotion.playful.icon), findsOneWidget);
+      expect(find.byIcon(PetEmotion.happy.icon), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
   group('createPetRenderer factory', () {
     test('returns PlaceholderPetRenderer for the placeholder backend', () {
       final r = createPetRenderer(PetRendererBackend.placeholder);
