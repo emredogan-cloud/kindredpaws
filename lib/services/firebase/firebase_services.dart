@@ -7,6 +7,8 @@
 /// see REQUIRED_ENVIRONMENTS.md; cannot be run in the autonomous sandbox).
 library;
 
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -38,12 +40,22 @@ Future<bool> initFirebase() async {
 
 /// Registers the production Firebase adapters over the mock defaults. Call after
 /// [initFirebase] returns true.
+///
+/// Firebase native auto-collection is disabled in `AndroidManifest.xml` so the
+/// SDKs stay fully dormant until we're provisioned (otherwise they'd start at
+/// process launch, before this gate). Now that we are, re-enable collection.
 void registerFirebaseServices(ServiceLocator sl) {
   sl.registerSingleton<BackendService>(FirestoreBackendService());
   sl.registerSingleton<AnalyticsService>(FirebaseAnalyticsAdapter());
   sl.registerSingleton<CrashReporter>(FirebaseCrashReporterAdapter());
   sl.registerSingleton<PerformanceMonitor>(FirebasePerformanceAdapter());
   sl.registerSingleton<RemoteConfigService>(FirebaseRemoteConfigAdapter());
+  // Fire-and-forget; enabling collection must never block or throw into boot.
+  unawaited(
+    FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(true),
+  );
+  unawaited(FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(true));
+  unawaited(FirebasePerformance.instance.setPerformanceCollectionEnabled(true));
 }
 
 /// Authoritative cloud save (Firestore).
