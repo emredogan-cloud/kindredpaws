@@ -1,8 +1,12 @@
 /// Analytics taxonomy + abstraction (GAME_TECHNICAL_SYSTEMS.md §10,
 /// GAMEPLAY_AND_PROGRESSION_BIBLE.md §17): ~15 events mapped to funnel gates,
 /// privacy-by-design, NO PII. This defines the canonical event set and a mock
-/// sink; wiring Firebase/GameAnalytics is a provisioning step.
+/// sink; the per-event parameter contract + KPI mapping live in `Telemetry`
+/// (`telemetry.dart`) and `docs/TELEMETRY.md`. Wiring Firebase is a
+/// provisioning step.
 library;
+
+import 'logger.dart' show LogRecord;
 
 /// The canonical ~15-event set. The two mandatory leading-churn indicators
 /// (`aiRepetitionFlag`, `guiltFlag`) are non-optional (brief §10).
@@ -30,12 +34,19 @@ abstract interface class AnalyticsService {
 }
 
 /// In-memory sink: records events for tests/inspection; emits no PII anywhere.
+/// Strips [LogRecord.blockedKeys] on write as a defense-in-depth backstop, so
+/// even a direct `log()` (bypassing the [ObservabilityFacade] sanitizer) can
+/// never rest PII in the buffer.
 class InMemoryAnalyticsService implements AnalyticsService {
   final List<(AnalyticsEvent, Map<String, Object?>)> recorded = [];
 
   @override
   void log(AnalyticsEvent event, [Map<String, Object?> params = const {}]) {
-    recorded.add((event, Map.unmodifiable(params)));
+    final clean = {
+      for (final e in params.entries)
+        if (!LogRecord.blockedKeys.contains(e.key)) e.key: e.value,
+    };
+    recorded.add((event, Map.unmodifiable(clean)));
   }
 
   int countOf(AnalyticsEvent event) =>

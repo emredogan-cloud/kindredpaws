@@ -20,6 +20,7 @@ import '../../core/service_locator.dart';
 import '../analytics_service.dart';
 import '../backend_service.dart';
 import '../crash_reporter.dart';
+import '../logger.dart' show LogRecord;
 import '../performance_monitor.dart';
 import '../remote_config_service.dart';
 
@@ -93,6 +94,7 @@ class FirebaseAnalyticsAdapter implements AnalyticsService {
   void log(AnalyticsEvent event, [Map<String, Object?> params = const {}]) {
     final clean = <String, Object>{};
     for (final e in params.entries) {
+      if (LogRecord.blockedKeys.contains(e.key)) continue; // never ship PII
       final v = e.value;
       if (v is num) {
         clean[e.key] = v;

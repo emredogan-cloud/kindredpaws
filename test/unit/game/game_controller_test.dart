@@ -1,7 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kindredpaws/data/kindred_save_state.dart';
 import 'package:kindredpaws/data/save_repository.dart';
+import 'package:kindredpaws/game/model/bond.dart';
+import 'package:kindredpaws/game/model/pet_state.dart';
 import 'package:kindredpaws/game/model/species.dart';
+import 'package:kindredpaws/game/sim/bond_engine.dart';
 import 'package:kindredpaws/game/sim/interaction.dart';
+import 'package:kindredpaws/services/analytics_service.dart';
 
 import '../../support/harness.dart';
 
@@ -83,6 +88,40 @@ void main() {
         second.dispose();
       },
     );
+
+    test('crossing a Bond stage emits bondStageUp exactly once', () async {
+      // Seed a save one point below the Friend threshold (250). Same-day clock
+      // ⇒ resume awards no greeting bond, so the pet loads still a Stranger.
+      final store = InMemoryLocalSaveStore();
+      final seeded = PetState.newlyRescued(
+        petId: 'p1',
+        species: Species.puppy,
+        name: 'Biscuit',
+        nowMs: kDay0,
+      ).copyWith(bond: const Bond(value: 249, stage: BondStage.stranger));
+      await store.write(
+        KindredSaveState(
+          pet: seeded,
+          ledger: BondLedger.empty,
+          facts: const [],
+          keepsakes: const [],
+        ).toEnvelope().toJsonString(),
+      );
+
+      final c = makeController(store: store, clock: () => kDay0);
+      await c.load();
+      expect(c.pet!.bond.stage, BondStage.stranger); // not yet crossed
+
+      final analytics = c.observability.analytics as InMemoryAnalyticsService;
+      await c.interact(CareInteraction.feed); // pushes Bond over 250
+      expect(c.pet!.bond.stage, BondStage.friend);
+      expect(analytics.countOf(AnalyticsEvent.bondStageUp), 1);
+
+      // Staying within the same stage does not re-emit the milestone.
+      await c.interact(CareInteraction.play);
+      expect(analytics.countOf(AnalyticsEvent.bondStageUp), 1);
+      c.dispose();
+    });
 
     test('reopening a day later greets warmly (Bond never drops)', () async {
       final store = InMemoryLocalSaveStore();
