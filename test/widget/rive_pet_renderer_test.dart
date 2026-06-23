@@ -61,6 +61,86 @@ void main() {
     });
   });
 
+  group('Rive state-machine input mappings (the rig contract, in code)', () {
+    test('mood / emotion / lifeStage map to the documented input ranges', () {
+      expect(riveMoodValue(PetMood.joyful), 0);
+      expect(riveMoodValue(PetMood.content), 1);
+      expect(riveMoodValue(PetMood.wistful), 2);
+      expect(riveMoodValue(PetMood.low), 3);
+
+      expect(riveEmotionValue(PetEmotion.happy), PetEmotion.happy.index);
+      expect(
+        riveEmotionValue(PetEmotion.comforted),
+        PetEmotion.comforted.index,
+      );
+
+      expect(riveLifeStageValue('pupKit'), 0);
+      expect(riveLifeStageValue('youngOne'), 1);
+      expect(riveLifeStageValue('grown'), 2);
+      expect(riveLifeStageValue('unknown'), 0); // safe default = infancy
+    });
+  });
+
+  group('RivePetRenderer graceful degradation (P3-2)', () {
+    testWidgets(
+      'a missing/unloadable asset falls back to the stand-in + reports a '
+      'diagnostic (never crashes play)',
+      (tester) async {
+        final codes = <String>[];
+        final renderer = RivePetRenderer(
+          assetPath: 'assets/rigs/__does_not_exist__.riv',
+          onDiagnostic: (code, {Map<String, Object?> fields = const {}}) =>
+              codes.add(code),
+        );
+        // runAsync lets the real async asset load (and its failure) complete.
+        await tester.runAsync(() async {
+          await tester.pumpWidget(
+            MaterialApp(
+              home: Builder(
+                builder: (context) => renderer.build(
+                  context,
+                  mood: PetMood.content,
+                  lifeStage: 'grown',
+                  emotion: PetEmotion.calm,
+                ),
+              ),
+            ),
+          );
+          await Future<void>.delayed(const Duration(milliseconds: 100));
+        });
+        await tester.pump();
+
+        expect(codes, contains('rive_load_failed'));
+        // Degraded gracefully: still the expressive stand-in, no exception.
+        expect(find.byKey(const Key('pet-renderer')), findsOneWidget);
+        expect(find.text('rive'), findsOneWidget);
+        expect(find.byIcon(PetEmotion.calm.icon), findsOneWidget);
+      },
+    );
+
+    testWidgets('rebuilds without error when state changes while degraded', (
+      tester,
+    ) async {
+      Widget tree(PetMood mood) => MaterialApp(
+        home: Builder(
+          builder: (context) => const RivePetRenderer(
+            assetPath: 'assets/rigs/__does_not_exist__.riv',
+          ).build(context, mood: mood, lifeStage: 'grown'),
+        ),
+      );
+      await tester.runAsync(() async {
+        await tester.pumpWidget(tree(PetMood.joyful));
+        await Future<void>.delayed(const Duration(milliseconds: 80));
+      });
+      // Changing gameplay state rebuilds the rig widget (didUpdateWidget) — must
+      // stay graceful (no exception) even though the rig never loaded.
+      await tester.pumpWidget(tree(PetMood.low));
+      await tester.pump();
+      expect(find.byKey(const Key('pet-renderer')), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
   group('createPetRenderer factory', () {
     test('returns PlaceholderPetRenderer for the placeholder backend', () {
       final r = createPetRenderer(PetRendererBackend.placeholder);
