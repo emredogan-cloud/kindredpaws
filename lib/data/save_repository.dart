@@ -12,10 +12,18 @@ import 'kindred_save_state.dart';
 import 'migration_runner.dart';
 import 'save_envelope.dart';
 
+/// A hook that resets analytics identifiers on account deletion (§11.2). Wired
+/// in `createGameController` to the registered `AnalyticsService`; null in
+/// persistence-only tests.
+typedef IdentityResetHook = Future<void> Function();
+
 /// Pluggable local persistence (SQLite/Hive in production; in-memory for tests).
 abstract interface class LocalSaveStore {
   Future<String?> read();
   Future<void> write(String json);
+
+  /// Erase the local save — the on-device half of right-to-be-forgotten (§8.3).
+  Future<void> delete();
 }
 
 class InMemoryLocalSaveStore implements LocalSaveStore {
@@ -24,6 +32,8 @@ class InMemoryLocalSaveStore implements LocalSaveStore {
   Future<String?> read() async => _blob;
   @override
   Future<void> write(String json) async => _blob = json;
+  @override
+  Future<void> delete() async => _blob = null;
 }
 
 class SaveRepository {
@@ -31,13 +41,16 @@ class SaveRepository {
     required LocalSaveStore local,
     BackendService? backend,
     MigrationRunner? runner,
+    IdentityResetHook? onIdentityReset,
   }) : _local = local,
        _backend = backend,
-       _runner = runner ?? MigrationRunner(KindredSaveState.migrations);
+       _runner = runner ?? MigrationRunner(KindredSaveState.migrations),
+       _onIdentityReset = onIdentityReset;
 
   final LocalSaveStore _local;
   final BackendService? _backend;
   final MigrationRunner _runner;
+  final IdentityResetHook? _onIdentityReset;
 
   static const String _collection = 'saves';
 
@@ -88,6 +101,33 @@ class SaveRepository {
       final state = KindredSaveState.fromEnvelope(upgraded);
       await _local.write(upgraded.toJsonString());
       return Ok(state);
+    } catch (e, st) {
+      return Err(e, st);
+    }
+  }
+
+  /// Right-to-be-forgotten (GDPR / COPPA, §8.3): erase the player's data.
+  ///
+  /// On-device-first so the visible data is gone even if the network fails:
+  /// 1. erase the local save,
+  /// 2. reset analytics identifiers (so future telemetry can't link to the
+  ///    deleted account, §11.2),
+  /// 3. best-effort delete the authoritative cloud save.
+  ///
+  /// Deleting the cloud save is the **trigger** for the server-side cascade that
+  /// purges the memory-fact store and **anonymizes** ledger entries (retain the
+  /// financial fact, drop the personal link) so donation-audit integrity
+  /// survives deletion — that cascade is enforced server-side (a Cloud
+  /// Function), never client-trusted. [petId] is the cloud save key; omit it for
+  /// a guest with no cloud save (steps 1–2 still run).
+  Future<Result<void>> deleteAccount({String? petId}) async {
+    try {
+      await _local.delete();
+      await _onIdentityReset?.call();
+      if (petId != null) {
+        await _backend?.deleteDocument(_collection, petId);
+      }
+      return const Ok(null);
     } catch (e, st) {
       return Err(e, st);
     }

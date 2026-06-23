@@ -43,4 +43,7 @@ class FirebaseBackendService implements BackendService {
   @override
   Future<void> append(String s, Map<String, dynamic> e) async =>
       _notProvisioned();
+
+  @override
+  Future<void> deleteDocument(String c, String k) async => _notProvisioned();
 }

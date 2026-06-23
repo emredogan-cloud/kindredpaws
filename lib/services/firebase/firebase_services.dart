@@ -80,6 +80,10 @@ class FirestoreBackendService implements BackendService {
   @override
   Future<void> append(String s, Map<String, dynamic> e) =>
       _db.collection(s).add(e).then((_) {});
+
+  @override
+  Future<void> deleteDocument(String c, String k) =>
+      _db.collection(c).doc(k).delete();
 }
 
 /// Analytics → Firebase Analytics. Privacy-by-design: only num/String/bool
@@ -109,6 +113,13 @@ class FirebaseAnalyticsAdapter implements AnalyticsService {
       name: event.name,
       parameters: clean.isEmpty ? null : clean,
     );
+  }
+
+  @override
+  void resetIdentifiers() {
+    // Resets the app-instance id + clears collected data (§11.2). Fire-and-
+    // forget; deletion must never block or throw into the game.
+    unawaited(_analytics.resetAnalyticsData());
   }
 }
 

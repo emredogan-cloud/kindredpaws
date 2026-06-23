@@ -6,6 +6,7 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../../core/name_input_validator.dart';
 import '../controller/game_controller.dart';
 import '../model/species.dart';
 
@@ -22,6 +23,10 @@ class _RescueDayScreenState extends State<RescueDayScreen> {
   int _beat = 0;
   Species? _species;
   final TextEditingController _name = TextEditingController();
+  // The single free-text surface in the app is filtered for PII + profanity so
+  // it is child-safe for ALL users (§11.1, no free-text from minors).
+  final NameInputValidator _validator = const NameInputValidator();
+  String? _nameError;
   bool _adopting = false;
 
   static const _beats = [
@@ -169,8 +174,15 @@ class _RescueDayScreenState extends State<RescueDayScreen> {
             key: const Key('name-field'),
             controller: _name,
             textAlign: TextAlign.center,
-            maxLength: 16,
-            decoration: const InputDecoration(border: OutlineInputBorder()),
+            maxLength: NameInputValidator.maxLength,
+            decoration: InputDecoration(
+              border: const OutlineInputBorder(),
+              errorText: _nameError,
+            ),
+            // Clear the gentle nudge as soon as they start fixing the name.
+            onChanged: (_) {
+              if (_nameError != null) setState(() => _nameError = null);
+            },
           ),
         ),
         const SizedBox(height: 16),
@@ -185,9 +197,38 @@ class _RescueDayScreenState extends State<RescueDayScreen> {
   }
 
   Future<void> _adopt() async {
-    setState(() => _adopting = true);
-    await widget.controller.adopt(species: _species!, name: _name.text);
+    // Filter the one free-text field before it is ever stored (child-safe for
+    // ALL, §11.1). A rejected name shows a gentle, in-character nudge — never a
+    // scolding (cozy-game tone, no guilt §18) — and blocks the adopt.
+    final result = _validator.validate(_name.text);
+    if (!result.isValid) {
+      setState(() {
+        _nameError = _nudgeFor(result.rejection!);
+        _adopting = false;
+      });
+      return;
+    }
+    setState(() {
+      _adopting = true;
+      _nameError = null;
+    });
+    await widget.controller.adopt(species: _species!, name: result.sanitized);
     // The app routes to the Nest automatically when the controller gains a pet.
+  }
+
+  /// Warm, in-character copy for a rejected name (never harsh).
+  String _nudgeFor(NameRejection reason) {
+    switch (reason) {
+      case NameRejection.empty:
+        return 'Your new friend needs a name 💛';
+      case NameRejection.tooLong:
+        return 'That name is a little long — try a shorter one.';
+      case NameRejection.containsPii:
+        return "Let's keep personal details out — pick a fun name!";
+      case NameRejection.containsProfanity:
+      case NameRejection.invalidChars:
+        return "Let's pick a kinder name for your new friend 💛";
+    }
   }
 }
 

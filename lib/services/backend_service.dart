@@ -21,6 +21,11 @@ abstract interface class BackendService {
   /// Append-only write (Impact-Pool ledger, Coin-mint requests). The mock
   /// keeps an in-memory list; the real backend enforces append-only server-side.
   Future<void> append(String stream, Map<String, dynamic> entry);
+
+  /// Delete a cloud document — the right-to-be-forgotten cascade (§8.3). The
+  /// real backend additionally triggers the server-side cascade (memory-fact
+  /// purge + ledger anonymization); the mock just drops the local doc.
+  Future<void> deleteDocument(String collection, String key);
 }
 
 /// Offline default. Authoritative=false so callers know value/trust objects are
@@ -50,6 +55,11 @@ class InMemoryBackendService implements BackendService {
   @override
   Future<void> append(String stream, Map<String, dynamic> entry) async {
     (_streams[stream] ??= []).add(Map<String, dynamic>.from(entry));
+  }
+
+  @override
+  Future<void> deleteDocument(String collection, String key) async {
+    _docs[collection]?.remove(key);
   }
 
   /// Test/inspection helper.

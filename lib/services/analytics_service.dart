@@ -31,6 +31,12 @@ enum AnalyticsEvent {
 abstract interface class AnalyticsService {
   /// Log an event. Implementations MUST drop any PII from [params].
   void log(AnalyticsEvent event, [Map<String, Object?> params = const {}]);
+
+  /// Reset the analytics identifiers (app-instance / advertising id) so no
+  /// future event can be linked back to a deleted account. Part of the
+  /// right-to-be-forgotten path (§8.3, §11.2) — called by
+  /// `SaveRepository.deleteAccount`.
+  void resetIdentifiers();
 }
 
 /// In-memory sink: records events for tests/inspection; emits no PII anywhere.
@@ -40,6 +46,9 @@ abstract interface class AnalyticsService {
 class InMemoryAnalyticsService implements AnalyticsService {
   final List<(AnalyticsEvent, Map<String, Object?>)> recorded = [];
 
+  /// How many times [resetIdentifiers] has run (test/inspection hook).
+  int resetCount = 0;
+
   @override
   void log(AnalyticsEvent event, [Map<String, Object?> params = const {}]) {
     final clean = {
@@ -47,6 +56,13 @@ class InMemoryAnalyticsService implements AnalyticsService {
         if (!LogRecord.blockedKeys.contains(e.key)) e.key: e.value,
     };
     recorded.add((event, Map.unmodifiable(clean)));
+  }
+
+  @override
+  void resetIdentifiers() {
+    resetCount++;
+    // Mirror the real reset: drop buffered events tied to the old identity.
+    recorded.clear();
   }
 
   int countOf(AnalyticsEvent event) =>
