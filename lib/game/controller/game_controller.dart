@@ -12,19 +12,24 @@ import '../../heartmind/memory_fact.dart';
 import '../../services/analytics_service.dart';
 import '../../services/notification_scheduler.dart';
 import '../../services/observability.dart';
+import '../../services/status_snapshot_service.dart';
 import '../model/mood.dart';
 import '../model/pet_state.dart';
+import '../model/pet_status_snapshot.dart';
 import '../model/species.dart';
 import '../sim/bond_engine.dart';
 import '../sim/game_simulation.dart';
 import '../sim/interaction.dart';
+import '../sim/sim_config.dart';
 
 class GameController extends ChangeNotifier {
   GameController({
     required this.sim,
+    required this.config,
     required this.repo,
     required this.observability,
     required this.notifications,
+    required this.snapshots,
     int Function()? clock,
     String Function()? idGenerator,
   }) : _now = clock ?? (() => DateTime.now().millisecondsSinceEpoch),
@@ -33,9 +38,11 @@ class GameController extends ChangeNotifier {
            (() => 'pet-${DateTime.now().microsecondsSinceEpoch}');
 
   final GameSimulation sim;
+  final SimConfig config;
   final SaveRepository repo;
   final ObservabilityFacade observability;
   final NotificationScheduler notifications;
+  final StatusSnapshotService snapshots;
   final int Function() _now;
   final String Function() _idGenerator;
 
@@ -176,7 +183,23 @@ class GameController extends ChangeNotifier {
         context: 'persist',
       );
     }
+    await _publishSnapshot(save);
   }
+
+  /// Writes the single shared status snapshot (§6.1) that feeds the notification
+  /// scheduler and the home widget. Best-effort; never blocks the game.
+  Future<void> _publishSnapshot(KindredSaveState save) async {
+    final snapshot = PetStatusSnapshot.fromPet(
+      pet: save.pet,
+      mood: _mood,
+      config: config,
+      nowMs: _now(),
+    );
+    await snapshots.write(snapshot);
+  }
+
+  /// The latest published status snapshot (for the in-app status surfaces).
+  PetStatusSnapshot? get statusSnapshot => snapshots.latest;
 
   /// Seeds the first Memory Book entries (templated, closed-set, child-safe —
   /// never free-text from the player). This is the "it remembers" seed (§13.2).

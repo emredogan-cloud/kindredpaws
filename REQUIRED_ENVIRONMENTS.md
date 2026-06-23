@@ -25,6 +25,15 @@ Analytics, **Crashlytics**, **Performance Monitoring**). The code seams exist �
 (init + observability adapters) — and the app runs fully on in-memory/console
 observability until wired. Activation is a credentialed step.
 
+> **P2-0 status:** the production paths are **prepared behind the
+> `KP_FIREBASE_PROVISIONED` flag** (no credentials in this environment). The
+> local-first save already mirrors to the backend seam (`SaveRepository`), and
+> the single shared **`PetStatusSnapshot`** (§6.1 — feeds notifications + the
+> home widget) is written on every change via `StatusSnapshotService` (in-memory
+> default; the prefs/app-group bridge for the native widget lands in P2-6).
+> Flipping Firebase on remains the steps below — no app rewrite, only adapter
+> bodies + deps.
+
 | Item | Value/var | Mandatory? | Where used | How to get it |
 |---|---|---|---|---|
 | Firebase project | (console project) | MANDATORY (P1) | all backend | console.firebase.google.com → **Add project** → name "KindredPaws" |
