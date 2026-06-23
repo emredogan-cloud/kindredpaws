@@ -20,6 +20,7 @@ class AppConfig {
   const AppConfig({
     required this.backendMode,
     required this.petRendererBackend,
+    required this.riveAssetPath,
     required this.heartmindLiveChatEnabled,
     required this.anthropicProxyConfigured,
     required this.environmentLabel,
@@ -36,6 +37,8 @@ class AppConfig {
       petRendererBackend: _renderer == 'rive'
           ? PetRendererBackend.rive
           : PetRendererBackend.placeholder,
+      // Empty `--dart-define` ⇒ null ⇒ the Rive seam paints its stand-in.
+      riveAssetPath: _riveAsset == '' ? null : _riveAsset,
       heartmindLiveChatEnabled: _liveChat,
       anthropicProxyConfigured: _proxy,
       environmentLabel: _env,
@@ -48,6 +51,11 @@ class AppConfig {
   /// Selected pet-render backend (Rive is the locked rig runtime; placeholder
   /// until the commissioned `.riv` asset arrives at P2).
   final PetRendererBackend petRendererBackend;
+
+  /// Path to the bundled `.riv` rig (from `KP_RIV_ASSET`), or null to run the
+  /// Rive seam's native-free stand-in. Only consulted when [petRendererBackend]
+  /// is `rive`.
+  final String? riveAssetPath;
 
   /// Deferred feature #6b: live free-form LLM chat. MUST stay OFF for MVP
   /// (age-gated + subscriber-only, post-soft-launch). See the decision log.
@@ -69,6 +77,10 @@ class AppConfig {
   static const String _renderer = String.fromEnvironment(
     'KP_PET_RENDERER',
     defaultValue: 'placeholder',
+  );
+  static const String _riveAsset = String.fromEnvironment(
+    'KP_RIV_ASSET',
+    defaultValue: '',
   );
   static const bool _liveChat = bool.fromEnvironment('KP_HEARTMIND_LIVE_CHAT');
   static const bool _proxy = bool.fromEnvironment('KP_ANTHROPIC_PROXY');

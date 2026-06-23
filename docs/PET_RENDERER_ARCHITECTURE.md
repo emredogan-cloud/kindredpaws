@@ -78,3 +78,26 @@ Behaviour the rig must implement:
 Until these land, the placeholder renderer exercises the entire mood × emotion ×
 life-stage state machine end-to-end, so dropping in the `.riv` is a backend swap
 with zero gameplay change.
+
+## 5. Production integration (P3-2)
+
+`RivePetRenderer` is now the real integration, not just a seam:
+
+- **Reactive binding.** The loaded artboard's `PetStateMachine` inputs are cached
+  once, then re-driven from `PetMood` / `PetEmotion` / life stage on **every
+  rebuild** (`didUpdateWidget`). (The earlier seam bound inputs once at `onInit`,
+  so the rig would freeze on the first expression — fixed.) The pure input
+  mappings (`riveMoodValue` / `riveEmotionValue` / `riveLifeStageValue`) are
+  unit-tested; they ARE the contract in code.
+- **Graceful degradation.** Any failure — asset missing/unloadable, no
+  `PetStateMachine`, or a missing input — falls back to the expressive stand-in
+  and emits a `rive_*` diagnostic (`rive_load_failed` / `rive_state_machine_missing`
+  / `rive_inputs_missing`), wired to the structured log + a crash breadcrumb
+  (`riveDiagnosticSink`). A malformed rig surfaces loudly in dev and **never
+  crashes play**.
+- **Perf signal.** Asset-load duration is reported as `rive_loaded {ms}`.
+- **Asset config.** The rig is bundled from `assets/rigs/` and selected at build
+  time via `--dart-define=KP_PET_RENDERER=rive --dart-define=KP_RIV_ASSET=assets/rigs/<species>.riv`.
+  CI/golden tests keep the default `placeholder` backend, so they stay
+  deterministic and asset-free. (See `assets/rigs/README.md`,
+  `REQUIRED_ENVIRONMENTS.md §8`.)

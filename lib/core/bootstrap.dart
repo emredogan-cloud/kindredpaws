@@ -9,6 +9,7 @@ import 'app_config.dart';
 import 'service_locator.dart';
 import '../render/pet_renderer.dart';
 import '../render/pet_renderer_factory.dart';
+import '../render/rive_pet_renderer.dart' show RiveDiagnostic;
 import '../services/analytics_service.dart';
 import '../services/auth_service.dart';
 import '../services/backend_service.dart';
@@ -44,9 +45,6 @@ AppConfig bootstrap({ServiceLocator? locator}) {
   sl.registerSingleton<NotificationScheduler>(InMemoryNotificationScheduler());
   sl.registerSingleton<StatusSnapshotService>(InMemoryStatusSnapshotService());
   sl.registerSingleton<HomeWidgetService>(NoopHomeWidgetService());
-  sl.registerSingleton<PetRenderer>(
-    createPetRenderer(config.petRendererBackend),
-  );
 
   // Observability (P1-2). In-memory/console impls are fully functional for
   // dev/CI; the Firebase-backed bodies drop in once provisioned (see
@@ -68,5 +66,33 @@ AppConfig bootstrap({ServiceLocator? locator}) {
     ),
   );
 
+  // Pet renderer (P3-2). Registered after observability so the Rive seam's
+  // load-timing + failure diagnostics route to the structured log + a crash
+  // breadcrumb (an `error`-class code surfaces a malformed rig loudly in dev;
+  // it never crashes play — the seam falls back to the stand-in).
+  sl.registerSingleton<PetRenderer>(
+    createPetRenderer(
+      config.petRendererBackend,
+      riveAsset: config.riveAssetPath,
+      onDiagnostic: riveDiagnosticSink(logger, crash),
+    ),
+  );
+
   return config;
+}
+
+/// Routes [RivePetRenderer] rig diagnostics to the observability stack: every
+/// code drops a crash breadcrumb; `*_failed` / `*_missing` codes (a malformed
+/// or absent rig) log at `error` so they surface loudly in dev, everything else
+/// (e.g. `rive_loaded` timing) at `info`. Extracted + named so it is unit-tested
+/// even though CI runs the placeholder backend (the rive seam never activates).
+RiveDiagnostic riveDiagnosticSink(Logger logger, CrashReporter crash) {
+  return (String code, {Map<String, Object?> fields = const {}}) {
+    crash.addBreadcrumb('rive:$code');
+    if (code.endsWith('_failed') || code.endsWith('_missing')) {
+      logger.error('rive: $code', fields: fields);
+    } else {
+      logger.info('rive: $code', fields: fields);
+    }
+  };
 }

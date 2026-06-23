@@ -32,14 +32,16 @@ void main() {
     });
 
     test('registers the observability stack + render seam', () {
-      bootstrap();
+      final config = bootstrap();
       final sl = ServiceLocator.instance;
       expect(sl.get<Logger>(), isA<InMemoryLogger>());
       expect(sl.get<CrashReporter>(), isA<InMemoryCrashReporter>());
       expect(sl.get<PerformanceMonitor>(), isA<InMemoryPerformanceMonitor>());
       expect(sl.get<ObservabilityFacade>(), isA<ObservabilityFacade>());
-      // Default render backend is the deterministic placeholder.
+      // Default render backend is the deterministic placeholder; no rig asset
+      // is configured (KP_RIV_ASSET unset ⇒ the Rive seam's stand-in).
       expect(sl.get<PetRenderer>().backendId, 'placeholder');
+      expect(config.riveAssetPath, isNull);
     });
 
     test('service locator throws for unregistered types', () {
@@ -47,6 +49,35 @@ void main() {
         () => ServiceLocator.instance.get<AuthService>(),
         throwsStateError,
       );
+    });
+  });
+
+  group('riveDiagnosticSink (rig diagnostics → observability)', () {
+    test(
+      'failure/missing codes log at error; all codes leave a breadcrumb',
+      () {
+        final logger = InMemoryLogger();
+        final crash = InMemoryCrashReporter();
+        final sink = riveDiagnosticSink(logger, crash);
+
+        sink('rive_load_failed', fields: {'asset': 'a.riv'});
+        sink(
+          'rive_state_machine_missing',
+          fields: {'machine': 'PetStateMachine'},
+        );
+        expect(logger.countAtLeast(LogLevel.error), 2);
+        expect(crash.breadcrumbs, contains('rive:rive_load_failed'));
+        expect(crash.breadcrumbs, contains('rive:rive_state_machine_missing'));
+      },
+    );
+
+    test('non-failure codes (e.g. load timing) log at info, not error', () {
+      final logger = InMemoryLogger();
+      final crash = InMemoryCrashReporter();
+      riveDiagnosticSink(logger, crash)('rive_loaded', fields: {'ms': 12});
+      expect(logger.countAtLeast(LogLevel.error), 0);
+      expect(logger.countAtLeast(LogLevel.info), 1);
+      expect(crash.breadcrumbs, contains('rive:rive_loaded'));
     });
   });
 

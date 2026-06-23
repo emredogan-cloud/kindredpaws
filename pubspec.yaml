@@ -36,3 +36,9 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    # Commissioned Rive pet rigs (P2 art deliverable). The directory is bundled
+    # so dropping in `<species>.riv` needs no pubspec change; the active rig is
+    # selected at build time via `--dart-define=KP_RIV_ASSET=assets/rigs/<f>.riv`
+    # (see lib/render/rive_pet_renderer.dart, REQUIRED_ENVIRONMENTS.md §8).
+    - assets/rigs/

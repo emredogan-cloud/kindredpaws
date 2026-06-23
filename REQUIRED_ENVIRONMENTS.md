@@ -146,10 +146,13 @@ See `docs/IMPACT_PLEDGE.md`. No donation-IAP / no player tax-deductible donation
 | `KP_BACKEND` | `mock` | `mock` \| `firebase` |
 | `KP_FIREBASE_PROVISIONED` | `false` | `true` only after `flutterfire configure` + deps added |
 | `KP_PET_RENDERER` | `placeholder` | `placeholder` \| `rive` (rig runtime; default keeps goldens deterministic) |
+| `KP_RIV_ASSET` | _(empty)_ | bundled `.riv` rig path, e.g. `assets/rigs/puppy.riv`; empty ⇒ the Rive seam paints its native-free stand-in. Only read when `KP_PET_RENDERER=rive` (P3-2). |
 | `KP_HEARTMIND_LIVE_CHAT` | `false` | Deferred #6b — keep OFF for MVP |
 | `KP_ANTHROPIC_PROXY` | `false` | whether the server proxy is wired |
 
 Example live build: `flutter build apk --release --dart-define=KP_ENV=prod --dart-define=KP_BACKEND=firebase`
+
+Example Rive build (once a rig is delivered to `assets/rigs/`): `flutter build apk --release --dart-define=KP_PET_RENDERER=rive --dart-define=KP_RIV_ASSET=assets/rigs/puppy.riv`. If the asset/state-machine/inputs are missing the renderer falls back to the stand-in and logs a `rive_*` diagnostic — it never crashes play.
 
 ---
 
