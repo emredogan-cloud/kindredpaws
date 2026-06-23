@@ -44,6 +44,8 @@ jobs:
           channel: ${{ env.FLUTTER_CHANNEL }}
           cache: true
       - run: flutter pub get
+      - name: Generate google-services.json
+        run: python3 tool/gen_google_services.py
       - name: Decode signing keystore (if configured)
         id: signing
         if: ${{ env.ANDROID_KEYSTORE_BASE64 != '' }}

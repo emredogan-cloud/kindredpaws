@@ -19,6 +19,13 @@ dependencies:
   # 0.14.x at P2 when the real .riv rig lands. Do not bump to ^0.14 unintentionally.
   rive: ^0.13.0
   shared_preferences: ^2.5.5
+  firebase_core: ^4.11.0
+  cloud_firestore: ^6.6.0
+  firebase_auth: ^6.5.4
+  firebase_remote_config: ^6.5.3
+  firebase_analytics: ^12.4.3
+  firebase_crashlytics: ^5.2.4
+  firebase_performance: ^0.11.4+3
 
 dev_dependencies:
   flutter_test:

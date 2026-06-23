@@ -9,22 +9,30 @@ import 'game/controller/game_controller.dart';
 import 'game/game_wiring.dart';
 import 'game/ui/game_root.dart';
 import 'services/firebase_provisioning.dart';
+import 'services/firebase/firebase_services.dart';
 import 'services/home_widget_service.dart';
+import 'services/remote_config_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final config = bootstrap();
+  final sl = ServiceLocator.instance;
   // Production native bridges (the prefs-backed home-widget writer feeds the
   // OS widget; bootstrap's defaults are the test-safe in-memory versions).
-  ServiceLocator.instance.registerSingleton<HomeWidgetService>(
-    PrefsHomeWidgetService(),
-  );
-  // Best-effort Firebase init (no-op until provisioned; never throws).
-  await FirebaseProvisioning.initialize();
-  final controller = createGameController(
-    sl: ServiceLocator.instance,
-    store: PrefsSaveStore(),
-  );
+  sl.registerSingleton<HomeWidgetService>(PrefsHomeWidgetService());
+
+  // Real Firebase stack (P3-0): activates ONLY when provisioned
+  // (KP_FIREBASE_PROVISIONED + flutterfire configure). Otherwise the mock/
+  // in-memory adapters from bootstrap() stand — the app runs with zero creds.
+  if (FirebaseProvisioning.isProvisioned && await initFirebase()) {
+    registerFirebaseServices(sl);
+    await (sl.get<RemoteConfigService>() as FirebaseRemoteConfigAdapter)
+        .initialise();
+  } else {
+    await FirebaseProvisioning.initialize(); // records the unprovisioned status
+  }
+
+  final controller = createGameController(sl: sl, store: PrefsSaveStore());
   runApp(KindredPawsApp(config: config, controller: controller));
 }
 
