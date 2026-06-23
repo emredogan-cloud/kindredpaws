@@ -95,7 +95,12 @@ class _CategorySection extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         for (final e in entries)
-          Card(child: ListTile(dense: true, title: Text(e.text))),
+          Card(
+            child: ListTile(
+              dense: true,
+              title: Text(e.text, maxLines: 2, overflow: TextOverflow.ellipsis),
+            ),
+          ),
       ],
     );
   }

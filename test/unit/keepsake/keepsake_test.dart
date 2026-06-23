@@ -48,6 +48,20 @@ void main() {
       );
     });
 
+    test('growth + memoryCallback cards are well-formed', () {
+      final g = factory.growth(_pet(), _day0);
+      expect(g.kind, KeepsakeKind.beforeAfterGrowth);
+      expect(g.caption, contains('grew'));
+      // Stable per life stage (a given growth is captured once).
+      expect(g.id, factory.growth(_pet(), _day0 + 999).id);
+
+      final m = factory.memoryCallback(_pet(), 'you like rainy days', _day0);
+      expect(m.kind, KeepsakeKind.longMemoryCallback);
+      expect(m.caption, contains('remembered'));
+      // The card never leaks the raw remembered text (privacy-safe).
+      expect(m.caption, isNot(contains('rainy days')));
+    });
+
     test('serializes losslessly', () {
       final k = factory.rescueDay(_pet(), _day0);
       expect(Keepsake.fromJson(k.toJson()), k);
@@ -80,6 +94,24 @@ void main() {
         isTrue,
       );
       second.dispose();
+    });
+
+    test('a memory callback (on return) earns an It-Remembered card', () async {
+      final store = makeStore();
+      final first = makeController(store: store, clock: () => _day0);
+      await first.load();
+      // Adoption seeds memory facts (likesActivity), so a callback can fire.
+      await first.adopt(species: Species.puppy, name: 'Biscuit');
+      first.dispose();
+
+      // Reopen after a real absence → the "returning" beat tries a callback.
+      final next = makeController(store: store, clock: () => _day0 + 2 * _day);
+      await next.load();
+      expect(
+        next.keepsakes.any((k) => k.kind == KeepsakeKind.longMemoryCallback),
+        isTrue,
+      );
+      next.dispose();
     });
 
     test('a Comfort beat earns an Unprompted-Comfort card', () async {

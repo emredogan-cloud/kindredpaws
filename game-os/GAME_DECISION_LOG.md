@@ -671,6 +671,17 @@ Server-side mint-gating (S2S signed ad postbacks; Apple/Google receipt validatio
 
 > **ADR status updates (2026-06-23):** ADR-001 rig runtime **Live2D → Rive** (P1-0 spike, D-053).
 
+#### Phase-2 decisions (D-054 …) — added 2026-06-23 on founder approval to execute Phase 2
+
+### D-054 — Phase-partition deviation (Rescue Day + Memory Book P2 → P1) + P2 systems built
+- **Status:** ACCEPTED · **P1/P2** · **Basis:** founder Phase-1 + Phase-2 execution prompts; Risk R1/R2/R3/R6.
+- **Decision (deviation):** Rescue Day onboarding + a templated, child-safe Memory Book **foundation** were pulled forward from P2 into the P1 vertical slice (the prototype needs an emotional anchor), implemented templated-only — **no deferred live free-form LLM**. Recorded here to keep the decision-log audit trail complete (previously only narrated in `current_state.json`).
+- **Decision (P2 systems built):** on-device **hybrid Heartmind** (deterministic dialogue selection + closed-set memory injection + anti-repetition + fail-closed safety; $0 runtime tokens, no network — NO live LLM); **Memory System v2** (categorized Memory Book) with an **automated ≥95% callback-reliability harness** (zero hallucinated facts / zero unfilled slots / zero false callbacks; a control test proves the harness detects a bad bank) = **G2 evidence**; **Pet renderer state machine** (Rive `PetStateMachine`: mood/lifeStage/emotion + the 12 emotion motions) with an expressive, test-safe placeholder; **Companion Presence** (contextual greetings/returns/goodbyes/care-acks/comfort/milestones + daypart-aware ambient idle — never guilt, R6); **Keepsake Cards + scrapbook** (persisted; save **v4→v5** migration; cloud-mirror seam); **Home Widget Foundation** (one shared `PetStatusSnapshot`; Android AppWidget built + APK-verified; iOS WidgetKit scaffold + documented founder actions).
+- **Consequences:** `current_state.json` advanced P0→P1→**P2** (engineering-complete; G2 gate); the P2 phase deliverables were corrected to remove Rescue Day (now P1) and the P1 rig wording clarified as a placeholder **seam** (the commissioned `.riv` + 2nd-species ship/cut remain P2 founder/contractor work, aligning with the roadmap's "puppy-only" real-rig scope). Heartmind live free-form chat (#6b) stays **DEFERRED/gated/off**.
+- **Cross-link:** D-048, D-053, ADR-004 (Heartmind hybrid), ADR-006 (memory), `docs/PET_RENDERER_ARCHITECTURE.md`, `docs/HOME_WIDGET_FOUNDATION.md`, `PHASE2_COMPLETION_REPORT.md`.
+
+> **ADR status updates (2026-06-23, P2):** ADR-004 Heartmind hybrid — runtime selection + memory injection **BUILT** (local, $0 tokens, no live LLM); ADR-006 structured memory — **≥95% callback reliability proven** (automated, zero hallucination). Live free-form chat (#6b) remains Deferred.
+
 ---
 
 ## 12. Open Decisions / To-Be-Resolved
@@ -698,6 +709,7 @@ Server-side mint-gating (S2S signed ad postbacks; Apple/Google receipt validatio
 |---|---|---|---|---|---|
 | CHG-001 | 2026-06-22 | Initial decision log authored from brief v1.0 | — → v1.0 baseline | P0 seed | All D-001…D-047, ADR-001…011 |
 | CHG-002 | 2026-06-22 | Phase 0 launched on founder approval; locked engine/backend/LLM; G0 engineering deliverables complete | OD-1 open→resolved; OD-3 model open→resolved; ADR-001 PROPOSED→LOCKED; ADR-003 ACCEPTED→LOCKED | Founder decision + P0 execution | D-048…D-052, ADR-001, ADR-003, OD-1, OD-3 |
+| CHG-003 | 2026-06-23 | Phases 1 + 2 executed (founder approval). P1 vertical slice + P2 Heartmind/memory/presence/keepsake/widget/renderer built. Rescue Day pulled P2→P1 (deviation). | currentPhase P0→P1→P2 (engineering-complete); ADR-001 runtime Live2D→Rive; ADR-004/006 Heartmind hybrid + ≥95% callback BUILT; phases[1]/[2] deliverables corrected; G1/G2 in-progress | Founder decision + P1/P2 execution | D-053, D-054, ADR-001, ADR-004, ADR-006 |
 
 **Reconciled conflicts already resolved in brief v1.0 (recorded for audit, no further action):**
 - **RC-1** AI dialogue: live LLM vs hybrid → **Hybrid-first canonical for MVP**; live LLM gated/deferred. (→ D-015, D-016, ADR-004)
