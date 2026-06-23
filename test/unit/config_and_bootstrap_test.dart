@@ -12,6 +12,7 @@ import 'package:kindredpaws/services/observability.dart';
 import 'package:kindredpaws/services/performance_monitor.dart';
 import 'package:kindredpaws/services/remote_config_service.dart';
 import 'package:kindredpaws/heartmind/heartmind_service.dart';
+import 'package:kindredpaws/heartmind/local_heartmind.dart';
 
 void main() {
   setUp(ServiceLocator.instance.reset);
@@ -25,7 +26,7 @@ void main() {
       final sl = ServiceLocator.instance;
       expect(sl.get<AuthService>(), isA<GuestAuthService>());
       expect(sl.get<BackendService>().isAuthoritative, isFalse);
-      expect(sl.get<HeartmindService>(), isA<StubHeartmind>());
+      expect(sl.get<HeartmindService>(), isA<LocalHeartmind>());
       expect(sl.get<AnalyticsService>(), isA<InMemoryAnalyticsService>());
       expect(sl.get<RemoteConfigService>(), isA<DefaultRemoteConfig>());
     });

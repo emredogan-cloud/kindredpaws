@@ -21,6 +21,7 @@ import '../services/performance_monitor.dart';
 import '../services/remote_config_service.dart';
 import '../services/status_snapshot_service.dart';
 import '../heartmind/heartmind_service.dart';
+import '../heartmind/local_heartmind.dart';
 
 AppConfig bootstrap({ServiceLocator? locator}) {
   final sl = locator ?? ServiceLocator.instance;
@@ -34,7 +35,11 @@ AppConfig bootstrap({ServiceLocator? locator}) {
         : InMemoryBackendService(),
   );
   sl.registerSingleton<RemoteConfigService>(const DefaultRemoteConfig());
-  sl.registerSingleton<HeartmindService>(const StubHeartmind());
+  // The on-device hybrid Heartmind (P2-2): reviewed bank + closed-set memory
+  // injection + safety. $0 runtime tokens, no network. Replaces the P0 stub.
+  final heartmind = LocalHeartmind();
+  sl.registerSingleton<HeartmindService>(heartmind);
+  sl.registerSingleton<Heartmind>(heartmind);
   sl.registerSingleton<NotificationScheduler>(InMemoryNotificationScheduler());
   sl.registerSingleton<StatusSnapshotService>(InMemoryStatusSnapshotService());
   sl.registerSingleton<PetRenderer>(
