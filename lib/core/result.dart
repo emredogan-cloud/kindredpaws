@@ -6,11 +6,24 @@ sealed class Result<T> {
   const Result();
 
   bool get isOk => this is Ok<T>;
+  bool get isErr => this is Err<T>;
 
   /// Returns the value if [Ok], otherwise [fallback].
   T orElse(T fallback) => switch (this) {
     Ok<T>(:final value) => value,
     Err<T>() => fallback,
+  };
+
+  /// The value if [Ok], else null (handy when T is itself nullable).
+  T? get valueOrNull => switch (this) {
+    Ok<T>(:final value) => value,
+    Err<T>() => null,
+  };
+
+  /// The error if [Err], else null.
+  Object? get errorOrNull => switch (this) {
+    Ok<T>() => null,
+    Err<T>(:final error) => error,
   };
 }
 

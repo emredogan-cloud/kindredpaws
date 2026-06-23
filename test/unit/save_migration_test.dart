@@ -5,6 +5,9 @@ import 'package:kindredpaws/data/migration.dart';
 import 'package:kindredpaws/data/migration_runner.dart';
 import 'package:kindredpaws/data/save_envelope.dart';
 import 'package:kindredpaws/data/save_repository.dart';
+import 'package:kindredpaws/game/model/bond.dart';
+import 'package:kindredpaws/game/model/life_stage.dart';
+import 'package:kindredpaws/game/model/species.dart';
 
 SaveEnvelope _v1() => const SaveEnvelope(
   schemaVersion: 1,
@@ -30,17 +33,25 @@ void main() {
   final runner = MigrationRunner(KindredSaveState.migrations);
 
   group('versioned save + migration (Risk R4)', () {
-    test('upgrades v1 -> current, adding wallet + careStreak', () {
-      final up = runner.upgrade(_v1(), KindredSaveState.currentSchemaVersion);
-      expect(up.schemaVersion, KindredSaveState.currentSchemaVersion);
-      expect(up.data['wallet'], isNotNull);
-      expect(up.data['careStreak'], isNotNull);
+    test(
+      'upgrades v1 -> current (v4), adding wallet/careStreak/bond/ledger',
+      () {
+        final up = runner.upgrade(_v1(), KindredSaveState.currentSchemaVersion);
+        expect(up.schemaVersion, KindredSaveState.currentSchemaVersion);
+        expect(up.data['wallet'], isNotNull);
+        expect(up.data['careStreak'], isNotNull);
+        expect(up.data['bond'], isNotNull); // nested in v4
+        expect(up.data['bondLedger'], isNotNull); // new in v4
+        expect(up.data['memoryFacts'], isNotNull);
 
-      final state = KindredSaveState.fromEnvelope(up);
-      expect(state.name, 'Biscuit');
-      expect(state.wallet['kibble'], 0);
-      expect(state.careStreakCount, 0);
-    });
+        final state = KindredSaveState.fromEnvelope(up);
+        expect(state.pet.name, 'Biscuit');
+        expect(state.pet.wallet.kibble, 0);
+        expect(state.pet.careStreak.count, 0);
+        expect(state.pet.activeDays, 1);
+        expect(state.facts, isEmpty);
+      },
+    );
 
     test('current-schema save round-trips losslessly', () {
       final s = KindredSaveState.newPet(
@@ -50,10 +61,10 @@ void main() {
         nowMs: 123,
       );
       final back = KindredSaveState.fromEnvelope(s.toEnvelope());
-      expect(back.species, 'kitten');
-      expect(back.name, 'Mochi');
-      expect(back.lifeStage, 'Pup/Kit');
-      expect(back.bondStage, 'Stranger');
+      expect(back.pet.species, Species.kitten);
+      expect(back.pet.name, 'Mochi');
+      expect(back.pet.lifeStage, LifeStage.pupKit);
+      expect(back.pet.bond.stage, BondStage.stranger);
     });
 
     test('refuses to downgrade a newer save (no orphaned pet)', () {
@@ -77,8 +88,8 @@ void main() {
       final res = await repo.load();
       expect(res, isA<Ok<KindredSaveState?>>());
       final state = (res as Ok<KindredSaveState?>).value!;
-      expect(state.name, 'Biscuit');
-      expect(state.wallet['compassionCoins'], 0);
+      expect(state.pet.name, 'Biscuit');
+      expect(state.pet.wallet.compassionCoins, 0);
     });
 
     test('SaveRepository.load returns null when no save exists', () async {
