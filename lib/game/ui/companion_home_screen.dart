@@ -12,6 +12,7 @@ import '../controller/game_controller.dart';
 import '../model/bond.dart';
 import '../sim/interaction.dart';
 import 'care_ring.dart';
+import 'keepsake_screen.dart';
 import 'memory_book_screen.dart';
 import 'mood_visuals.dart';
 
@@ -58,6 +59,16 @@ class CompanionHomeScreen extends StatelessWidget {
                         ),
                       ],
                     ),
+                  ),
+                ),
+              ),
+              IconButton(
+                key: const Key('keepsakes-button'),
+                icon: const Icon(Icons.photo_album),
+                tooltip: 'Keepsakes',
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => KeepsakeScreen(controller: controller),
                   ),
                 ),
               ),

@@ -14,11 +14,14 @@ import '../../heartmind/local_heartmind.dart';
 import '../../heartmind/memory_fact.dart';
 import '../../heartmind/personality.dart';
 import '../../heartmind/presence.dart';
+import '../../keepsake/keepsake.dart';
+import '../../keepsake/keepsake_factory.dart';
 import '../../render/pet_renderer.dart';
 import '../../services/analytics_service.dart';
 import '../../services/notification_scheduler.dart';
 import '../../services/observability.dart';
 import '../../services/status_snapshot_service.dart';
+import '../model/bond.dart';
 import '../model/mood.dart';
 import '../model/pet_state.dart';
 import '../model/pet_status_snapshot.dart';
@@ -55,8 +58,13 @@ class GameController extends ChangeNotifier {
   final String Function() _idGenerator;
 
   static const AmbientScheduler _ambient = AmbientScheduler();
+  static const KeepsakeFactory _keepsakes = KeepsakeFactory();
   PersonalityProfile _personality = PersonalityProfile.neutral;
   int _ambientTick = 0;
+
+  /// The collected Keepsake cards (the emotional scrapbook), newest first.
+  List<Keepsake> get keepsakes =>
+      _save == null ? const [] : _save!.keepsakes.reversed.toList();
 
   /// The pet's current spoken line (from Heartmind — greeting/return/care/
   /// callback/idle). Warm, never guilt. Null before the pet first speaks.
@@ -116,6 +124,7 @@ class GameController extends ChangeNotifier {
       pet: pet,
       ledger: BondLedger.empty,
       facts: _seedMemories(pet, now),
+      keepsakes: [_keepsakes.rescueDay(pet, now)], // the first card
     );
     _session = SessionInteractions.empty;
     lastInteraction = null;
@@ -136,6 +145,7 @@ class GameController extends ChangeNotifier {
   Future<void> interact(CareInteraction interaction) async {
     final save = _save;
     if (save == null) return;
+    final preStage = save.pet.bond.stage;
     final outcome = sim.interact(
       state: save.pet,
       interaction: interaction,
@@ -150,6 +160,7 @@ class GameController extends ChangeNotifier {
           ? _withGrowthMemory(save.facts, outcome.state, _now())
           : save.facts,
     );
+    _captureKeepsakes(outcome, preStage);
     _session = outcome.session;
     _mood = outcome.mood;
     lastOutcome = outcome;
@@ -331,6 +342,10 @@ class GameController extends ChangeNotifier {
           observability.event(AnalyticsEvent.memoryCallback, {
             'facts': callback.surfacedFacts.length,
           });
+          // The "it remembered me" beat earns a Keepsake (Virality #2).
+          _collect(
+            _keepsakes.memoryCallback(_save!.pet, callback.text, _now()),
+          );
         }
         return;
       }
@@ -362,5 +377,32 @@ class GameController extends ChangeNotifier {
     };
     // Slow drift: nudge only occasionally (every few like-actions).
     _personality = _personality.nudge(dial);
+  }
+
+  // ---- Keepsakes (P2-5) ----
+
+  static const Set<int> _streakMilestones = {3, 7, 30, 100};
+
+  /// Adds [k] to the scrapbook if a card with that id isn't already collected.
+  void _collect(Keepsake k) {
+    final save = _save;
+    if (save == null) return;
+    if (save.keepsakes.any((e) => e.id == k.id)) return;
+    _save = save.copyWith(keepsakes: [...save.keepsakes, k]);
+  }
+
+  /// Captures the milestone cards an interaction may have earned.
+  void _captureKeepsakes(InteractionOutcome o, BondStage preStage) {
+    final now = _now();
+    final pet = o.state;
+    if (o.grew) _collect(_keepsakes.growth(pet, now));
+    if (pet.bond.stage != preStage) {
+      _collect(_keepsakes.bondMilestone(pet, pet.bond.stage, now));
+    }
+    if (o.streakIncremented &&
+        _streakMilestones.contains(pet.careStreak.count)) {
+      _collect(_keepsakes.streakMilestone(pet, pet.careStreak.count, now));
+    }
+    if (o.comfortBeat) _collect(_keepsakes.comfort(pet, now));
   }
 }
