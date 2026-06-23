@@ -11,6 +11,9 @@ import 'package:kindredpaws/game/game_wiring.dart';
 /// A clean midnight-UTC epoch (day 20000) used as a deterministic base clock.
 const int kDay0 = 20000 * 86400000;
 
+/// A fresh in-memory save store (share one across controllers to test reopen).
+LocalSaveStore makeStore() => InMemoryLocalSaveStore();
+
 GameController makeController({LocalSaveStore? store, int Function()? clock}) {
   ServiceLocator.instance.reset();
   bootstrap();

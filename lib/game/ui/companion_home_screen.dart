@@ -85,16 +85,22 @@ class CompanionHomeScreen extends StatelessWidget {
               child: Column(
                 children: [
                   _bondBar(context, pet.bond),
+                  if (controller.petLine != null)
+                    _SpeechBubble(text: controller.petLine!),
                   Expanded(
                     child: Center(
-                      child: CareRing(
-                        meters: pet.meters,
-                        size: 240,
-                        child: rig.build(
-                          context,
-                          mood: petMoodFor(controller.mood),
-                          lifeStage: pet.lifeStage.id,
-                          emotion: currentPetEmotion(controller),
+                      child: GestureDetector(
+                        key: const Key('pet-tap'),
+                        onTap: controller.nudgeAmbient,
+                        child: CareRing(
+                          meters: pet.meters,
+                          size: 240,
+                          child: rig.build(
+                            context,
+                            mood: petMoodFor(controller.mood),
+                            lifeStage: pet.lifeStage.id,
+                            emotion: currentPetEmotion(controller),
+                          ),
                         ),
                       ),
                     ),
@@ -241,6 +247,34 @@ class CompanionHomeScreen extends StatelessWidget {
         const SizedBox(height: 4),
         Text(label, style: Theme.of(context).textTheme.bodyMedium),
       ],
+    );
+  }
+}
+
+/// The pet's spoken line (Heartmind Companion Presence). Warm, never guilt.
+class _SpeechBubble extends StatelessWidget {
+  const _SpeechBubble({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+      child: Container(
+        key: const Key('pet-speech'),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: scheme.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Text(
+          text,
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.bodyLarge,
+        ),
+      ),
     );
   }
 }
