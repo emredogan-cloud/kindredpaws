@@ -57,6 +57,10 @@ class GameController extends ChangeNotifier {
   /// The most recent interaction's outcome (for transient UI flourishes).
   InteractionOutcome? lastOutcome;
 
+  /// The most recent care verb (drives the pet's reaction expression). Null
+  /// after adopt/resume (the pet shows its resting expression for the mood).
+  CareInteraction? lastInteraction;
+
   bool get loading => _loading;
   bool get hasPet => _save != null;
   PetState? get pet => _save?.pet;
@@ -94,6 +98,7 @@ class GameController extends ChangeNotifier {
       facts: _seedMemories(pet, now),
     );
     _session = SessionInteractions.empty;
+    lastInteraction = null;
     _mood = sim.moodOf(pet.meters, recentAttentionBonus: 100);
     observability.event(AnalyticsEvent.rescueDayComplete, {
       'species': species.id,
@@ -125,6 +130,7 @@ class GameController extends ChangeNotifier {
     _session = outcome.session;
     _mood = outcome.mood;
     lastOutcome = outcome;
+    lastInteraction = interaction;
     lastMessage = _warmLine(interaction, outcome);
 
     observability.event(AnalyticsEvent.careAction, {
@@ -166,6 +172,7 @@ class GameController extends ChangeNotifier {
           : save.facts,
     );
     _session = SessionInteractions.empty;
+    lastInteraction = null;
     _mood = resume.mood;
     observability.event(AnalyticsEvent.sessionStart, {
       'offline_hours': resume.offlineHours.round(),
