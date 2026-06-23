@@ -21,6 +21,7 @@ import '../../services/analytics_service.dart';
 import '../../services/home_widget_service.dart';
 import '../../services/notification_scheduler.dart';
 import '../../services/observability.dart';
+import '../../services/share_service.dart';
 import '../../services/status_snapshot_service.dart';
 import '../model/bond.dart';
 import '../model/mood.dart';
@@ -42,6 +43,7 @@ class GameController extends ChangeNotifier {
     required this.snapshots,
     required this.homeWidget,
     required this.heartmind,
+    required this.share,
     int Function()? clock,
     String Function()? idGenerator,
   }) : _now = clock ?? (() => DateTime.now().millisecondsSinceEpoch),
@@ -57,6 +59,7 @@ class GameController extends ChangeNotifier {
   final StatusSnapshotService snapshots;
   final HomeWidgetService homeWidget;
   final Heartmind heartmind;
+  final ShareService share;
   final int Function() _now;
   final String Function() _idGenerator;
 
@@ -391,6 +394,25 @@ class GameController extends ChangeNotifier {
   // ---- Keepsakes (P2-5) ----
 
   static const Set<int> _streakMilestones = {3, 7, 30, 100};
+
+  /// Shares a Keepsake card via the platform share seam and — only if the user
+  /// actually shared — emits the `keepsakeShare` virality event (P3-1 taxonomy;
+  /// G4 KPI ≥1 share/DAU-week). `moment_type` is the canonical card kind; never
+  /// PII. Returns the outcome so the UI can react. Never throws into the loop.
+  Future<ShareOutcome> shareKeepsake(Keepsake k) async {
+    final outcome = await share.shareKeepsake(
+      title: k.title,
+      caption: k.caption,
+      imageRef: k.imageRef,
+    );
+    if (outcome.shared) {
+      observability.event(AnalyticsEvent.keepsakeShare, {
+        'moment_type': k.kind.name,
+        'platform': outcome.platform,
+      });
+    }
+    return outcome;
+  }
 
   /// Adds [k] to the scrapbook if a card with that id isn't already collected.
   void _collect(Keepsake k) {

@@ -10,6 +10,7 @@ import '../services/home_widget_service.dart';
 import '../services/notification_scheduler.dart';
 import '../services/observability.dart';
 import '../services/remote_config_service.dart';
+import '../services/share_service.dart';
 import '../services/status_snapshot_service.dart';
 import '../heartmind/local_heartmind.dart';
 import 'controller/game_controller.dart';
@@ -32,6 +33,7 @@ GameController createGameController({
     snapshots: sl.get<StatusSnapshotService>(),
     homeWidget: sl.get<HomeWidgetService>(),
     heartmind: sl.get<Heartmind>(),
+    share: sl.get<ShareService>(),
     clock: clock,
   );
 }
