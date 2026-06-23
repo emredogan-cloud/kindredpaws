@@ -50,8 +50,8 @@ ready; emission lands with that system, by design / scope discipline).
 | `bondStageUp` | progression | Bond crossed a stage boundary | **stage** | ✅ |
 | `lifeStageUp` | progression | Pet grew a life stage | **stage** | ✅ |
 | `memoryCallback` | aiReliability | "It remembered me" beat fired | **facts**, _landed_ | ✅ |
-| `aiRepetitionFlag` | leadingChurn | Player noticed AI repetition | _(open context, PII-stripped)_ | ✅ `flagAiRepetition()` |
-| `guiltFlag` | leadingChurn | Player felt guilt-tripped (~0 by design) | _(open context, PII-stripped)_ | ✅ `flagGuilt()` |
+| `aiRepetitionFlag` | leadingChurn | Player noticed AI repetition | _(open coarse context; non-String values only)_ | ✅ `flagAiRepetition()` |
+| `guiltFlag` | leadingChurn | Player felt guilt-tripped (~0 by design) | _(open coarse context; non-String values only)_ | ✅ `flagGuilt()` |
 | `streakEvent` | engagement | Care-streak advanced | **count** | ✅ |
 | `monetizationEvent` | monetization | Purchase / restore / subscription | **stream, sku, value** | ⏳ P3-5 (RevenueCat) |
 | `compassionCoinMint` | impact | Compassion Coins minted | **source, amount, validated** | ⏳ impact ledger |

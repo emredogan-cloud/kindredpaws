@@ -96,20 +96,36 @@ class NameInputValidator {
     r'[a-z0-9._%+-]+@[a-z0-9.-]+',
     caseSensitive: false,
   );
+  // A scheme or `www.` is an unambiguous URL signal; a bare `label.tld` only
+  // counts for the clearest web TLDs, so short playful names ("Mochi.co",
+  // "Jojo.gg", "Bo.io") are not mistaken for contact info (P3-8 audit).
   static final RegExp _url = RegExp(
-    r'(https?://|www\.|\b[a-z0-9-]+\.(?:com|net|org|io|app|co|gg|me)\b)',
+    r'(https?://|www\.|\b[a-z0-9-]+\.(?:com|net|org)\b)',
     caseSensitive: false,
   );
 
   // --- Profanity: normalize away common evasions, then substring-match. -----
 
   bool _hasProfanity(String s) {
-    final norm = _normalize(s);
-    return _profanityRoots.any(norm.contains);
+    final tokens = s.split(_whitespace).where((t) => t.isNotEmpty).toList();
+    // Per-token so intra-word evasions ("sh1t", "f.u.c.k") are caught WITHOUT
+    // fusing distinct words across spaces — "Bass Hitter" must stay clean
+    // (P3-8 audit: whitespace-collapse manufactured cross-word roots).
+    for (final t in tokens) {
+      if (_matchesRoot(_normalize(t))) return true;
+    }
+    // Letter-by-letter spacing ("f u c k"): if every token folds to ≤1 letter,
+    // collapse them and re-check (an evasion the per-token pass would miss).
+    if (tokens.length > 1 && tokens.every((t) => _normalize(t).length <= 1)) {
+      return _matchesRoot(tokens.map(_normalize).join());
+    }
+    return false;
   }
 
-  /// Lowercase, fold common leetspeak, then strip every non-letter so spaced /
-  /// punctuated evasions ("f.u.c.k", "f u c k") collapse onto the root.
+  bool _matchesRoot(String folded) => _profanityRoots.any(folded.contains);
+
+  /// Lowercase, fold common leetspeak, then strip every non-letter so an
+  /// intra-token evasion ("f.u.c.k", "sh1t") collapses onto the root.
   String _normalize(String s) {
     final buf = StringBuffer();
     for (final ch in s.toLowerCase().split('')) {

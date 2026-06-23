@@ -6,6 +6,7 @@ library;
 
 import 'package:flutter/foundation.dart';
 
+import '../../core/name_input_validator.dart';
 import '../../data/kindred_save_state.dart';
 import '../../data/save_repository.dart';
 import '../../heartmind/dialogue_selector.dart';
@@ -134,11 +135,15 @@ class GameController extends ChangeNotifier {
   /// warm notifications, persist. The emotional core of onboarding (§13).
   Future<void> adopt({required Species species, required String name}) async {
     final now = _now();
-    final cleaned = name.trim();
+    // Re-validate at the persistence boundary so the controller — not just the
+    // Rescue Day widget — is the chokepoint keeping PII/profanity out of the save
+    // (defense in depth, §11.1; P3-8 audit). A rejected name falls back to the
+    // species default rather than blocking adoption here.
+    final validated = const NameInputValidator().validate(name);
     final pet = PetState.newlyRescued(
       petId: _idGenerator(),
       species: species,
-      name: cleaned.isEmpty ? species.defaultName : cleaned,
+      name: validated.isValid ? validated.sanitized : species.defaultName,
       nowMs: now,
     );
     _save = KindredSaveState(
@@ -257,9 +262,11 @@ class GameController extends ChangeNotifier {
 
   /// App returned to the foreground (P3-7). Starts a fresh session: re-resolves
   /// offline catch-up, greets, and re-arms the session clock. No-op on Rescue
-  /// Day (no pet yet) — onboarding owns its own first session.
+  /// Day (no pet yet), and — critically — a no-op when a session is still active
+  /// (`_sessionStartMs != null`): a transient `resumed` after `inactive` (no real
+  /// background) must not re-resolve catch-up or re-greet (P3-8 audit finding).
   void onAppForegrounded() {
-    if (!hasPet) return;
+    if (!hasPet || _sessionStartMs != null) return;
     _resumeSession();
     notifyListeners();
   }

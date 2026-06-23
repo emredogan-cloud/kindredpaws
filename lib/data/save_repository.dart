@@ -123,7 +123,15 @@ class SaveRepository {
   Future<Result<void>> deleteAccount({String? petId}) async {
     try {
       await _local.delete();
-      await _onIdentityReset?.call();
+      // Isolate the identity reset: a non-critical reset failure must NOT skip
+      // the cloud delete, which is the trigger for the server-side purge +
+      // ledger-anonymization cascade — the right-to-be-forgotten guarantee
+      // (§8.3; P3-8 audit).
+      try {
+        await _onIdentityReset?.call();
+      } catch (_) {
+        // best-effort: a failed analytics-id reset never blocks the cascade.
+      }
       if (petId != null) {
         await _backend?.deleteDocument(_collection, petId);
       }

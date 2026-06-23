@@ -28,6 +28,17 @@ void main() {
       );
     });
 
+    test('capping never splits a surrogate pair at the boundary (P3-8 fix)', () {
+      // 279 ASCII + a single emoji (2 code units) sits across the 280 boundary.
+      final comment = '${'a' * 279}😀extra';
+      final capped = BetaFeedback(rating: 5, comment: comment).comment!;
+      // Capped on runes: exactly 280 runes, and the last rune is the whole emoji
+      // (not a lone surrogate) — so the string round-trips cleanly.
+      expect(capped.runes.length, BetaFeedback.maxCommentLength);
+      expect(capped.runes.last, '😀'.runes.first);
+      expect(capped, '${'a' * 279}😀');
+    });
+
     test('toJson carries only rating + (present) comment — no identifiers', () {
       expect(BetaFeedback(rating: 4).toJson(), {'rating': 4});
       expect(BetaFeedback(rating: 4, comment: 'nice').toJson(), {

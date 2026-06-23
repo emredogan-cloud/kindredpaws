@@ -79,6 +79,21 @@ void main() {
       expect(clean.containsKey('dialogue'), isFalse);
     });
 
+    test('drops ANY String value on a schema-less event (P3-8 fix)', () {
+      // A free-text value is the one way PII could ride an un-declared key on the
+      // open-ended leading-churn flags — so non-blocked String values are
+      // dropped too; coarse num/bool context still flows.
+      final clean = Telemetry.sanitize(AnalyticsEvent.guiltFlag, {
+        'note':
+            'the pet said something sad', // non-blocked KEY, free-text VALUE
+        'count': 2,
+        'flagged': true,
+      });
+      expect(clean.containsKey('note'), isFalse);
+      expect(clean['count'], 2);
+      expect(clean['flagged'], isTrue);
+    });
+
     test('missingRequired reports the absent required params', () {
       final missing = Telemetry.missingRequired(AnalyticsEvent.careAction, {
         'verb': 'feed',

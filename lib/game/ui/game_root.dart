@@ -44,13 +44,18 @@ class _GameRootState extends State<GameRoot> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     switch (state) {
+      // Only a real background ends the session. `inactive`/`hidden` fire on
+      // transient interruptions (notification shade, app-switcher peek, a
+      // permission dialog) and must NOT end it — otherwise the sessionQuality
+      // retention signal + offline-catch-up greeting churn on every blip.
+      case AppLifecycleState.paused:
+      case AppLifecycleState.detached:
+        widget.controller.onAppBackgrounded();
       case AppLifecycleState.resumed:
         widget.controller.onAppForegrounded();
       case AppLifecycleState.inactive:
-      case AppLifecycleState.paused:
       case AppLifecycleState.hidden:
-      case AppLifecycleState.detached:
-        widget.controller.onAppBackgrounded();
+        break; // transient — neither ends nor starts a session
     }
   }
 

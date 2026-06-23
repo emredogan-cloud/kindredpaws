@@ -96,6 +96,25 @@ void main() {
         expect(v.validate(ok).isValid, isTrue, reason: ok);
       }
     });
+
+    test('whitespace does not manufacture cross-word roots (P3-8 fix)', () {
+      // Per-token normalization: adjacent innocent words must not fuse into a
+      // root ("Bass Hitter"→"basshitter" used to trip "shit").
+      for (final ok in ['Bass Hitter', 'Cass Hitch', 'Miss Lutt']) {
+        expect(v.validate(ok).isValid, isTrue, reason: ok);
+      }
+      // ...but a genuinely letter-spaced evasion is still caught.
+      expect(v.validate('s h i t').rejection, NameRejection.containsProfanity);
+    });
+
+    test('short playful names with ambiguous TLDs pass (P3-8 fix)', () {
+      for (final ok in ['Mochi.co', 'Jojo.gg', 'Bo.io', 'Mr.Me']) {
+        expect(v.validate(ok).isValid, isTrue, reason: ok);
+      }
+      // Clear web addresses are still rejected.
+      expect(v.validate('cat.com').rejection, NameRejection.containsPii);
+      expect(v.validate('www.x.io').rejection, NameRejection.containsPii);
+    });
   });
 
   group('control characters are rejected', () {
