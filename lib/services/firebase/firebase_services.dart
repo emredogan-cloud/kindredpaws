@@ -51,9 +51,7 @@ void registerFirebaseServices(ServiceLocator sl) {
   sl.registerSingleton<PerformanceMonitor>(FirebasePerformanceAdapter());
   sl.registerSingleton<RemoteConfigService>(FirebaseRemoteConfigAdapter());
   // Fire-and-forget; enabling collection must never block or throw into boot.
-  unawaited(
-    FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(true),
-  );
+  unawaited(FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(true));
   unawaited(FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(true));
   unawaited(FirebasePerformance.instance.setPerformanceCollectionEnabled(true));
 }
