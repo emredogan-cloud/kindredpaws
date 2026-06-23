@@ -185,8 +185,12 @@ abstract final class Telemetry {
   static EventSpec specOf(AnalyticsEvent e) => specs[e]!;
 
   /// The set of params actually safe to ship for [e]: PII keys are always
-  /// dropped, and — when [e] declares a schema — any key outside its allowed
-  /// set is dropped too. Events with an empty schema accept any non-PII key.
+  /// dropped, and — when [e] declares a schema — any key outside its allowed set
+  /// is dropped too. An empty-schema event (the open-ended leading-churn flags)
+  /// accepts any non-PII key but only **coarse** (non-String) values: a free-text
+  /// String value is the one way PII could ride an un-declared key, so it is
+  /// dropped (P3-8 audit). Declared-schema events keep their String values (the
+  /// keys are explicitly contracted as coarse).
   static Map<String, Object?> sanitize(
     AnalyticsEvent e,
     Map<String, Object?> params,
@@ -196,7 +200,7 @@ abstract final class Telemetry {
     return {
       for (final entry in params.entries)
         if (!LogRecord.blockedKeys.contains(entry.key) &&
-            (!strict || allowed.contains(entry.key)))
+            (strict ? allowed.contains(entry.key) : entry.value is! String))
           entry.key: entry.value,
     };
   }

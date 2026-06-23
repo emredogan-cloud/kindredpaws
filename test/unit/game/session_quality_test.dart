@@ -107,5 +107,24 @@ void main() {
         c.dispose();
       },
     );
+
+    test(
+      'a foreground while a session is still active is a no-op (P3-8 fix)',
+      () async {
+        final c = makeController(clock: () => kDay0);
+        await c.load();
+        await c.adopt(species: Species.puppy, name: 'Biscuit'); // session armed
+        final analytics = c.observability.analytics as InMemoryAnalyticsService;
+        final startsBefore = analytics.countOf(AnalyticsEvent.sessionStart);
+
+        // A transient resumed (after `inactive`, no real background) must NOT
+        // re-resolve catch-up or emit a fresh sessionStart — the session is live.
+        c.onAppForegrounded();
+
+        expect(analytics.countOf(AnalyticsEvent.sessionStart), startsBefore);
+        expect(analytics.countOf(AnalyticsEvent.sessionQuality), 0);
+        c.dispose();
+      },
+    );
   });
 }

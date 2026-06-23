@@ -18,16 +18,15 @@ class BetaFeedback {
   /// note rather than a data sink.
   factory BetaFeedback({required int rating, String? comment}) {
     final trimmed = comment?.trim() ?? '';
+    // Cap on runes (not code units) so a multi-code-unit grapheme at the
+    // boundary — e.g. an emoji — is never split into a lone surrogate (P3-8
+    // audit).
+    final capped = trimmed.runes.length > maxCommentLength
+        ? String.fromCharCodes(trimmed.runes.take(maxCommentLength))
+        : trimmed;
     return BetaFeedback._(
       rating: rating.clamp(1, 5),
-      comment: trimmed.isEmpty
-          ? null
-          : trimmed.substring(
-              0,
-              trimmed.length > maxCommentLength
-                  ? maxCommentLength
-                  : trimmed.length,
-            ),
+      comment: capped.isEmpty ? null : capped,
     );
   }
 
