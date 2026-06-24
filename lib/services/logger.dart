@@ -33,6 +33,8 @@ class LogRecord {
     'dialogue',
     'fact',
     'factText',
+    'comment', // beta feedback note — only its sentiment LABEL may ship (P5-5)
+    'note',
   };
 
   /// [fields] with PII-bearing keys removed. Used by every sink before emit.

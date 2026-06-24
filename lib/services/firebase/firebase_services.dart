@@ -16,19 +16,13 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_performance/firebase_performance.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 
+import '../../core/bootstrap.dart' show rewireDerivedServices;
 import '../../core/service_locator.dart';
-import '../../monetization/monetization_controller.dart';
-import '../../monetization/paywall_controller.dart';
 import '../analytics_service.dart';
-import '../auth_service.dart';
 import '../backend_service.dart';
-import '../beta_diagnostics.dart';
-import '../beta_feedback_pipeline.dart';
 import '../crash_reporter.dart';
 import '../feedback_service.dart';
-import '../experiments.dart';
 import '../live_ops.dart';
-import '../observability.dart';
 import '../logger.dart' show LogRecord;
 import '../performance_monitor.dart';
 import '../remote_config_service.dart';
@@ -55,43 +49,26 @@ Future<bool> initFirebase() async {
 /// SDKs stay fully dormant until we're provisioned (otherwise they'd start at
 /// process launch, before this gate). Now that we are, re-enable collection.
 void registerFirebaseServices(ServiceLocator sl) {
+  // Swap the LEAF sinks to the Firebase adapters...
   sl.registerSingleton<BackendService>(FirestoreBackendService());
   // Closed-beta feedback now writes to the authoritative backend (P3-7).
   sl.registerSingleton<FeedbackService>(
     BackendFeedbackService(sl.get<BackendService>()),
   );
-  // Re-bind the beta feedback loop (P5-5) over the now-authoritative feedback
-  // stream so production tester feedback persists + still gets triaged telemetry.
-  sl.registerSingleton<BetaFeedbackPipeline>(
-    BetaFeedbackPipeline(
-      feedback: sl.get<FeedbackService>(),
-      diagnostics: sl.get<BetaDiagnostics>(),
-      observability: sl.get<ObservabilityFacade>(),
-    ),
-  );
   sl.registerSingleton<AnalyticsService>(FirebaseAnalyticsAdapter());
   sl.registerSingleton<CrashReporter>(FirebaseCrashReporterAdapter());
   sl.registerSingleton<PerformanceMonitor>(FirebasePerformanceAdapter());
   sl.registerSingleton<RemoteConfigService>(FirebaseRemoteConfigAdapter());
-  // Re-bind LiveOps over the now-authoritative Firebase Remote Config (P4-3).
+  // ...re-bind LiveOps over the now-authoritative Firebase Remote Config (P4-3)...
   sl.registerSingleton<LiveOps>(LiveOps(sl.get<RemoteConfigService>()));
-  // Re-bind the experiments coordinator over the authoritative Remote Config.
-  sl.registerSingleton<Experiments>(
-    Experiments(
-      liveOps: sl.get<LiveOps>(),
-      observability: sl.get<ObservabilityFacade>(),
-    ),
-  );
-  // Re-bind the paywall coordinator over the now-authoritative experiments
-  // (so the pricing-framing experiment uses Firebase Remote Config assignment).
-  sl.registerSingleton<PaywallController>(
-    PaywallController(
-      monetization: sl.get<MonetizationController>(),
-      experiments: sl.get<Experiments>(),
-      observability: sl.get<ObservabilityFacade>(),
-      auth: sl.get<AuthService>(),
-    ),
-  );
+  // ...then re-wire the ENTIRE derived layer (the ObservabilityFacade + every
+  // service that reads it) over those swapped leaves, using the same function
+  // bootstrap() used. This is what makes production telemetry/crash/perf, the
+  // impact ledger, the diagnostics snapshot, and the live kill-switches actually
+  // use the Firebase backends instead of the dead in-memory sinks captured at
+  // boot — the P5 audit fix. (A facade/controller can't be left on a stale sink
+  // because it's impossible to swap a leaf without re-running this.)
+  rewireDerivedServices(sl);
   // Fire-and-forget; enabling collection must never block or throw into boot.
   unawaited(FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(true));
   unawaited(FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(true));

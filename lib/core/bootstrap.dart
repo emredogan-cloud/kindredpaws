@@ -86,95 +86,26 @@ AppConfig bootstrap({ServiceLocator? locator}) {
         : NoopBillingService(),
   );
 
-  // Observability (P1-2). In-memory/console impls are fully functional for
-  // dev/CI; the Firebase-backed bodies drop in once provisioned (see
-  // firebase_provisioning.dart). Analytics is shared with the facade.
-  final analytics = InMemoryAnalyticsService();
+  // Observability sinks (P1-2 leaves). In-memory/console impls are fully
+  // functional for dev/CI; the Firebase-backed bodies drop in once provisioned
+  // (see firebase_provisioning.dart). The ObservabilityFacade + every service
+  // that reads it are built in [rewireDerivedServices] below, so the SAME wiring
+  // re-runs after the Firebase swap (no derived service left on a dead sink).
   final logger = InMemoryLogger();
   final crash = InMemoryCrashReporter();
-  final performance = InMemoryPerformanceMonitor();
-  sl.registerSingleton<AnalyticsService>(analytics);
+  sl.registerSingleton<AnalyticsService>(InMemoryAnalyticsService());
   sl.registerSingleton<Logger>(logger);
   sl.registerSingleton<CrashReporter>(crash);
-  sl.registerSingleton<PerformanceMonitor>(performance);
-  final observability = ObservabilityFacade(
-    logger: logger,
-    crash: crash,
-    performance: performance,
-    analytics: analytics,
-  );
-  sl.registerSingleton<ObservabilityFacade>(observability);
-
-  // Performance budgets (P5-6): the runtime gate over the canonical ceilings
-  // (cold start < 2.5s, 60fps, reaction beat ≤150ms). A breach warns + drops a
-  // crash breadcrumb; it never throws into play.
-  sl.registerSingleton<PerformanceBudgetMonitor>(
-    PerformanceBudgetMonitor(observability: observability),
-  );
-
-  // Monetization (P4-5): orchestrates the billing seam + the impact ledger, owns
-  // the current Entitlements (premium gating), and is the single PII-free emit
-  // point for monetizationEvent / compassionCoinMint. The UI listens to it.
-  sl.registerSingleton<MonetizationController>(
-    MonetizationController(
-      billing: sl.get<BillingService>(),
-      observability: observability,
-      backend: sl.get<BackendService>(),
-    ),
-  );
-
-  // Ads (P4-6): the child-safe ad seam + the ethical coordinator (rewarded-first,
-  // capped, never mid-emotion, kid-flags from AdConfig, killable via LiveOps).
+  sl.registerSingleton<PerformanceMonitor>(InMemoryPerformanceMonitor());
+  // Ad seam leaf (P4-6); the ethical AdsController is built in the derived layer.
   sl.registerSingleton<AdService>(const NoopAdService());
-  sl.registerSingleton<AdsController>(
-    AdsController(
-      ads: sl.get<AdService>(),
-      adConfig: sl.get<AdConfig>(),
-      liveOps: sl.get<LiveOps>(),
-      remoteConfig: sl.get<RemoteConfigService>(),
-      observability: observability,
-    ),
-  );
 
-  // Closed-beta diagnostics (P4-7): a PII-free support-export snapshot for
-  // incident triage (config + compliance + flags + versions; no player data).
-  sl.registerSingleton<BetaDiagnostics>(
-    BetaDiagnostics(
-      appConfig: config,
-      compliance: compliance,
-      monetization: sl.get<MonetizationController>(),
-      liveOps: sl.get<LiveOps>(),
-    ),
-  );
-
-  // Beta feedback loop (P5-5): the complete closed-beta ops pass — ingest →
-  // sentiment → crash/diagnostic correlation → triage → PII-free telemetry. The
-  // Noop feedback seam keeps dev/CI offline; firebase_services re-binds it over
-  // the backend stream once provisioned.
-  sl.registerSingleton<BetaFeedbackPipeline>(
-    BetaFeedbackPipeline(
-      feedback: sl.get<FeedbackService>(),
-      diagnostics: sl.get<BetaDiagnostics>(),
-      observability: observability,
-    ),
-  );
-
-  // A/B experiments coordinator (P5-3): variant assignment + exposure telemetry.
-  sl.registerSingleton<Experiments>(
-    Experiments(liveOps: sl.get<LiveOps>(), observability: observability),
-  );
-
-  // Paywall coordinator (P5-4): the purchase-funnel diagnostics + the pricing-
-  // *framing* experiment over the (cosmetic/QoL-only) catalogue. The UX sheet
-  // reads this; the ethical wall + telemetry live here, not in the widget.
-  sl.registerSingleton<PaywallController>(
-    PaywallController(
-      monetization: sl.get<MonetizationController>(),
-      experiments: sl.get<Experiments>(),
-      observability: observability,
-      auth: sl.get<AuthService>(),
-    ),
-  );
+  // Build the derived layer (the ObservabilityFacade + everything reading it)
+  // from the leaves just registered. registerFirebaseServices() calls this exact
+  // function again after swapping the leaves to Firebase adapters, so telemetry,
+  // the impact ledger, diagnostics, and the live kill-switches can never be left
+  // pointing at the boot-time in-memory sinks (P5 audit fix).
+  rewireDerivedServices(sl);
 
   // Pet renderer (P3-2). Registered after observability so the Rive seam's
   // load-timing + failure diagnostics route to the structured log + a crash
@@ -189,6 +120,98 @@ AppConfig bootstrap({ServiceLocator? locator}) {
   );
 
   return config;
+}
+
+/// (Re)builds the **derived service layer** — the [ObservabilityFacade] and
+/// everything that depends on it — from the leaf singletons currently registered
+/// in [sl]. Called once by [bootstrap] over the in-memory leaves, and again by
+/// `registerFirebaseServices` after the leaves are swapped to the Firebase
+/// adapters. Routing all of this through one function is the fix for the
+/// stale-dependency bug class (P5 audit): because these services capture their
+/// dependencies at construction, anything that reads a leaf MUST be rebuilt when
+/// the leaf is swapped — otherwise it keeps writing to the dead in-memory sink.
+/// The [SessionHealthMonitor] is preserved across a re-wire so a boot-time crash
+/// signal isn't lost.
+void rewireDerivedServices(ServiceLocator sl) {
+  final sessionHealth = sl.isRegistered<ObservabilityFacade>()
+      ? sl.get<ObservabilityFacade>().sessionHealth
+      : null;
+
+  // The single fan-out point for all telemetry/crash/perf. Rebuilt over the
+  // currently-registered sinks (in-memory at boot, Firebase after the swap).
+  final observability = ObservabilityFacade(
+    logger: sl.get<Logger>(),
+    crash: sl.get<CrashReporter>(),
+    performance: sl.get<PerformanceMonitor>(),
+    analytics: sl.get<AnalyticsService>(),
+    sessionHealth: sessionHealth,
+  );
+  sl.registerSingleton<ObservabilityFacade>(observability);
+
+  // Performance budgets (P5-6): the runtime gate over the canonical ceilings.
+  sl.registerSingleton<PerformanceBudgetMonitor>(
+    PerformanceBudgetMonitor(observability: observability),
+  );
+
+  // Monetization (P4-5): owns Entitlements + the impact ledger; the single
+  // PII-free emit point for monetizationEvent / compassionCoinMint. Reads the
+  // (now-authoritative) BackendService so the ledger persists in production.
+  sl.registerSingleton<MonetizationController>(
+    MonetizationController(
+      billing: sl.get<BillingService>(),
+      observability: observability,
+      backend: sl.get<BackendService>(),
+    ),
+  );
+
+  // Ads (P4-6): the ethical coordinator. Reads the live LiveOps/RemoteConfig so
+  // the founder's ad kill-switch + caps take effect after provisioning.
+  sl.registerSingleton<AdsController>(
+    AdsController(
+      ads: sl.get<AdService>(),
+      adConfig: sl.get<AdConfig>(),
+      liveOps: sl.get<LiveOps>(),
+      remoteConfig: sl.get<RemoteConfigService>(),
+      observability: observability,
+    ),
+  );
+
+  // Closed-beta diagnostics (P4-7): reads the live LiveOps so the support/
+  // incident snapshot reflects the real kill-switch state, not the offline one.
+  sl.registerSingleton<BetaDiagnostics>(
+    BetaDiagnostics(
+      appConfig: sl.get<AppConfig>(),
+      compliance: sl.get<ComplianceConfig>(),
+      monetization: sl.get<MonetizationController>(),
+      liveOps: sl.get<LiveOps>(),
+    ),
+  );
+
+  // Beta feedback loop (P5-5): ingest → sentiment → crash/diagnostic correlation
+  // → triage → PII-free telemetry, over the authoritative feedback stream.
+  sl.registerSingleton<BetaFeedbackPipeline>(
+    BetaFeedbackPipeline(
+      feedback: sl.get<FeedbackService>(),
+      diagnostics: sl.get<BetaDiagnostics>(),
+      observability: observability,
+    ),
+  );
+
+  // A/B experiments (P5-3): variant assignment + exposure telemetry.
+  sl.registerSingleton<Experiments>(
+    Experiments(liveOps: sl.get<LiveOps>(), observability: observability),
+  );
+
+  // Paywall coordinator (P5-4): the purchase-funnel diagnostics + the pricing-
+  // framing experiment over the (cosmetic/QoL-only) catalogue.
+  sl.registerSingleton<PaywallController>(
+    PaywallController(
+      monetization: sl.get<MonetizationController>(),
+      experiments: sl.get<Experiments>(),
+      observability: observability,
+      auth: sl.get<AuthService>(),
+    ),
+  );
 }
 
 /// Routes [RivePetRenderer] rig diagnostics to the observability stack: every

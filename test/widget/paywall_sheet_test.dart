@@ -86,7 +86,15 @@ void main() {
     await tester.tap(find.byKey(const Key('paywall-restore')));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('Nothing to restore'), findsOneWidget);
+    // The outcome is surfaced in the in-sheet live region (not just a SnackBar,
+    // which the modal sheet occludes) — the a11y fix.
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('paywall-status')),
+        matching: find.textContaining('Nothing to restore'),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('showPaywall logs the shown→dismissed funnel bookends', (

@@ -50,6 +50,11 @@ class _PaywallSheetState extends State<PaywallSheet> {
   late final PaywallCopy _copy = widget.controller.resolveCopy();
   bool _busy = false;
 
+  /// The latest purchase/restore outcome, shown as an in-sheet live region (a
+  /// SnackBar alone is occluded by the modal sheet, so a11y users + everyone get
+  /// no feedback on failure/restore — P5 audit fix).
+  String? _status;
+
   PaywallController get _c => widget.controller;
   MonetizationController get _monetization => _c.monetization;
 
@@ -84,6 +89,9 @@ class _PaywallSheetState extends State<PaywallSheet> {
   }
 
   void _toast(String message) {
+    // Show it BOTH inline (always visible above the sheet content, announced as
+    // a live region) and as a SnackBar (visible once the sheet is dismissed).
+    setState(() => _status = message);
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(message)));
@@ -109,6 +117,26 @@ class _PaywallSheetState extends State<PaywallSheet> {
                   Text(_copy.headline, style: theme.textTheme.headlineSmall),
                   const SizedBox(height: 4),
                   Text(_copy.subline, style: theme.textTheme.bodyMedium),
+                  if (_status != null) ...[
+                    const SizedBox(height: 12),
+                    Semantics(
+                      liveRegion: true,
+                      container: true,
+                      child: Container(
+                        key: const Key('paywall-status'),
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.secondaryContainer,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          _status!,
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 16),
                   if (entitled)
                     _EntitledCard(entitlements: _c.entitlements)
@@ -259,7 +287,13 @@ class _PlanCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: ListTile(
         title: Text(product.displayName),
-        subtitle: Text('\$${product.priceUsd.toStringAsFixed(2)}$period'),
+        // Fold the savings into the subtitle so it's part of the plan's spoken
+        // label, not only a trailing color chip (a11y — P5 audit fix).
+        subtitle: Text(
+          badge == null
+              ? '\$${product.priceUsd.toStringAsFixed(2)}$period'
+              : '\$${product.priceUsd.toStringAsFixed(2)}$period · $badge',
+        ),
         trailing: badge == null
             ? null
             : Chip(
