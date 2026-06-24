@@ -21,7 +21,9 @@ import '../analytics_service.dart';
 import '../backend_service.dart';
 import '../crash_reporter.dart';
 import '../feedback_service.dart';
+import '../experiments.dart';
 import '../live_ops.dart';
+import '../observability.dart';
 import '../logger.dart' show LogRecord;
 import '../performance_monitor.dart';
 import '../remote_config_service.dart';
@@ -59,6 +61,13 @@ void registerFirebaseServices(ServiceLocator sl) {
   sl.registerSingleton<RemoteConfigService>(FirebaseRemoteConfigAdapter());
   // Re-bind LiveOps over the now-authoritative Firebase Remote Config (P4-3).
   sl.registerSingleton<LiveOps>(LiveOps(sl.get<RemoteConfigService>()));
+  // Re-bind the experiments coordinator over the authoritative Remote Config.
+  sl.registerSingleton<Experiments>(
+    Experiments(
+      liveOps: sl.get<LiveOps>(),
+      observability: sl.get<ObservabilityFacade>(),
+    ),
+  );
   // Fire-and-forget; enabling collection must never block or throw into boot.
   unawaited(FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(true));
   unawaited(FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(true));

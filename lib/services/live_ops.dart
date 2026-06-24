@@ -60,7 +60,43 @@ class LiveOps {
   /// The dialogue-bank content version the live config expects (a Remote Config
   /// top-up bumps this so the client + content stay coordinated).
   int get contentVersion => _rc.getInt('liveops.content_version');
+
+  /// Assigns a **sticky** A/B variant for [exp] to [unitId] (P5-3). An experiment
+  /// is **OFF by default** — everyone is `control` (the safe baseline *and* the
+  /// emergency-rollback state); the founder enables it via
+  /// `experiment.<key>.enabled`. When on, users split deterministically + evenly
+  /// across `control` + [treatments] treatment arms (1 ⇒ control/A, 2 ⇒
+  /// control/A/B) by a per-experiment salted bucket — no flip-flop, no app update.
+  ExperimentVariant assignVariant(
+    Experiment exp, {
+    required String unitId,
+    int treatments = 1,
+  }) {
+    if (!_rc.getBool('experiment.${exp.key}.enabled')) {
+      return ExperimentVariant.control;
+    }
+    final arms = (treatments + 1).clamp(2, 3); // control + 1..2 treatments
+    final arm = (rolloutBucket(unitId, 'exp:${exp.key}') * arms) ~/ 100;
+    return ExperimentVariant.values[arm];
+  }
 }
+
+/// A soft-launch A/B experiment (LiveOps cohort). OFF by default; the founder
+/// flips `experiment.<key>.enabled` in Remote Config to start it. Add a key here
+/// + its default to run a new experiment.
+enum Experiment {
+  paywallCopy('paywall_copy'),
+  onboardingPace('onboarding_pace'),
+  notificationCadence('notification_cadence');
+
+  const Experiment(this.key);
+
+  final String key;
+}
+
+/// The arm a user is assigned to. `control` is the safe baseline (and the state
+/// when the experiment is off / rolled back). Order matters — indexed by bucket.
+enum ExperimentVariant { control, treatment, treatmentB }
 
 /// A stable `0..99` bucket from FNV-1a over `"salt:unitId"`. Pure + deterministic
 /// (no RNG) so a user's rollout assignment never changes between sessions.

@@ -19,6 +19,7 @@ import '../services/analytics_service.dart';
 import '../services/auth_service.dart';
 import '../services/backend_service.dart';
 import '../services/beta_diagnostics.dart';
+import '../services/experiments.dart';
 import '../services/crash_reporter.dart';
 import '../services/feedback_service.dart';
 import '../services/firebase_backend.dart';
@@ -134,6 +135,11 @@ AppConfig bootstrap({ServiceLocator? locator}) {
       monetization: sl.get<MonetizationController>(),
       liveOps: sl.get<LiveOps>(),
     ),
+  );
+
+  // A/B experiments coordinator (P5-3): variant assignment + exposure telemetry.
+  sl.registerSingleton<Experiments>(
+    Experiments(liveOps: sl.get<LiveOps>(), observability: observability),
   );
 
   // Pet renderer (P3-2). Registered after observability so the Rive seam's

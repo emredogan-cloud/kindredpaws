@@ -67,6 +67,11 @@ class DefaultRemoteConfig implements RemoteConfigService {
     // Content-hotfix coordination: the dialogue-bank version the live config
     // expects (bumped when a Remote Config top-up ships; see Content OS).
     'liveops.content_version': 1,
+    // A/B experiments (P5-3) — OFF by default (everyone gets the safe `control`
+    // baseline); the founder flips one on to start the experiment, no app update.
+    'experiment.paywall_copy.enabled': false,
+    'experiment.onboarding_pace.enabled': false,
+    'experiment.notification_cadence.enabled': false,
   };
 
   @override
