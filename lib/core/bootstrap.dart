@@ -18,6 +18,7 @@ import '../render/rive_pet_renderer.dart' show RiveDiagnostic;
 import '../services/analytics_service.dart';
 import '../services/auth_service.dart';
 import '../services/backend_service.dart';
+import '../services/beta_diagnostics.dart';
 import '../services/crash_reporter.dart';
 import '../services/feedback_service.dart';
 import '../services/firebase_backend.dart';
@@ -121,6 +122,17 @@ AppConfig bootstrap({ServiceLocator? locator}) {
       liveOps: sl.get<LiveOps>(),
       remoteConfig: sl.get<RemoteConfigService>(),
       observability: observability,
+    ),
+  );
+
+  // Closed-beta diagnostics (P4-7): a PII-free support-export snapshot for
+  // incident triage (config + compliance + flags + versions; no player data).
+  sl.registerSingleton<BetaDiagnostics>(
+    BetaDiagnostics(
+      appConfig: config,
+      compliance: compliance,
+      monetization: sl.get<MonetizationController>(),
+      liveOps: sl.get<LiveOps>(),
     ),
   );
 
