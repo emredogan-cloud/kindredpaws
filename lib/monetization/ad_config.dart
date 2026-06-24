@@ -4,7 +4,7 @@
 /// one place ([ComplianceConfig]) and the ad SDK just reads the result.
 ///
 /// No AdMob/mediation dependency lives here — the real SDK wiring (a
-/// post-provisioning step, REQUIRED_ENVIRONMENTS.md §5) reads these fields when
+/// post-provisioning step, REQUIRED_ENVIRONMENTS.md §6) reads these fields when
 /// it builds its request configuration. That keeps CI/dev free of an ad SDK and
 /// makes the child-safe mapping unit-testable in isolation.
 ///

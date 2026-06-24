@@ -97,7 +97,7 @@ List<DialogueBankEntry> _greetings() => [
     '*peeks up* ...hi. I\'m so glad to see you.',
     'Hi. A little cuddle would be nice. 💛',
     'Oh, you\'re here. *small, grateful wag*',
-    'Hello. I was feeling small, but you make me feel safe.',
+    'Hello. It\'s a quiet, tender sort of day — nicer now you\'re here. 💛',
     'Hi friend. Can we just be cozy for a bit?',
     'You came. *soft snuggle* Thank you.',
     'Hi. The quiet is friendlier with you near.',
@@ -131,10 +131,10 @@ List<DialogueBankEntry> _greetings() => [
     'There you are — the one who truly gets me. 💛',
   ], bondStage: 'Kindred'),
   _e('greeting', '*', [
-    'My soulmate is here. *softest, happiest sigh* ✨',
-    'Hello, you. My whole heart just lit up.',
-    'Hi, dearest. A thousand cozy days, and still my favorite is any with you.',
-    'There you are. You\'re my favorite part of being alive. 💛',
+    'There you are — my kindred friend. *softest, happiest sigh* ✨',
+    'Hello, you! My whole day just brightened up. 💛',
+    'Hi, dear friend. A thousand cozy days, and our time is still my favorite.',
+    'You\'re here! Honestly the coziest part of my whole day. 💛',
   ], bondStage: 'Soulmate'),
   // ---- LifeStage flavor ----
   _e('greeting', '*', [
@@ -230,17 +230,17 @@ List<DialogueBankEntry> _returns() => [
   _e('returning', 'low', [
     'Oh, you\'re here! Everything feels better now. 🐾',
     'You came back. *snuggles close* I feel safe again. 💛',
-    'Welcome back. I was feeling small, and you make me brave.',
+    'Welcome back! A cozy moment with you sounds just right. 💛',
     'You returned! The cozy is so much cozier with you.',
     'Back again! *grateful little wag* Thank you for coming.',
-    'You\'re here. The quiet was big, but you make it gentle.',
+    'You\'re here! Let\'s share a soft, gentle moment together. 🐾',
     'Oh good — you. Let\'s have a soft moment together.',
     'Welcome back, friend. My heart just settled right down. ☀️',
   ]),
   _e('returning', '*', [
     'You\'re back, friend! Our time together is my favorite kind. 💛',
     'Welcome back! I always perk up when it\'s you.',
-    'There you are again — right where you belong. 🏡',
+    'There you are again — right here with me, where it\'s cozy. 🏡',
   ], bondStage: 'Companion'),
   _e('returning', '*', [
     'My kindred friend returns! *softest, happiest nuzzle* ✨',
@@ -248,8 +248,8 @@ List<DialogueBankEntry> _returns() => [
     'Welcome back, dear one. I\'d wait a thousand cozy hours for you.',
   ], bondStage: 'Kindred'),
   _e('returning', '*', [
-    'My soulmate is home. *whole-heart sigh* 💛',
-    'You\'re back, dearest. The world is right again.',
+    'My kindred friend is home. *whole-heart sigh* 💛',
+    'You\'re back, dear friend. Everything feels right again.',
     'Welcome home, you. Every return still feels like the first happy one.',
   ], bondStage: 'Soulmate'),
   _e('returning', '*', [
@@ -312,12 +312,6 @@ List<DialogueBankEntry> _goodbyes() => [
     'Bye for now. I\'ll save up some soft thoughts for you.',
     'Take care out there. I\'ll be here, dreaming gentle dreams. 🌙',
   ]),
-  _e('comfort', '*', [
-    'Chin up, friend — storms pass, and I\'ll wait out every one with you. 💪',
-    'You\'re braver than today made you feel. I\'ve seen it. Rest, then rise.',
-    'We\'ll face tomorrow together, you and me. For now, just breathe. 💛',
-    'Tough moment, strong heart. I\'m standing right beside yours.',
-  ], personalityDial: 'brave'),
 ];
 
 // ===========================================================================
@@ -396,6 +390,12 @@ List<DialogueBankEntry> _careAcks() => [
 // COMFORT — the signature beat. Invitational, affirming. Never blame.
 // ===========================================================================
 List<DialogueBankEntry> _comfort() => [
+  _e('comfort', '*', [
+    'Chin up, friend — storms pass, and I\'ll wait out every one with you. 💪',
+    'You\'re braver than today made you feel. I\'ve seen it. Rest, then rise.',
+    'We\'ll face tomorrow together, you and me. For now, just breathe. 💛',
+    'Tough moment, strong heart. I\'m standing right beside yours.',
+  ], personalityDial: 'brave'),
   _e('comfort', 'low', [
     'I\'m right here. We can just be quiet together.',
     'It\'s okay. Let\'s breathe together. 💛',
@@ -435,9 +435,9 @@ List<DialogueBankEntry> _comfort() => [
     'You\'ve comforted me so many times. Let me return it, dear one.',
   ], bondStage: 'Kindred'),
   _e('comfort', '*', [
-    'My whole soul is right here with yours. Breathe. You\'re not alone. ✨',
-    'Through every season, I\'ve got you. Always. Rest now, dearest.',
-    'You are so deeply loved — by me, completely. Let that be enough tonight.',
+    'I\'m right here with you, all the way. Breathe. You\'re not alone. ✨',
+    'Through every season, I\'ve got you. Rest now, dear friend.',
+    'You\'re so cared about here — always. Let\'s be cozy and let tonight be gentle. 💛',
   ], bondStage: 'Soulmate'),
   // ---- Gentle comfort for the player having a hard time (mood low) ----
   _e('comfort', '*', [
@@ -626,8 +626,8 @@ List<DialogueBankEntry> _milestones() => [
     'My kindred friend. After all this, you truly know me. 💛',
   ], bondStage: 'Kindred'),
   _e('milestone', '*', [
-    'Soulmates. *softest, fullest-heart sigh* There\'s no bigger word. 💛',
-    'You\'re my soulmate. Every cozy day led us here. ✨',
+    'Soulmates — that\'s our word for it now. *fullest-heart sigh* 💛',
+    'Soulmates! Every cozy day of care led us right here. ✨',
   ], bondStage: 'Soulmate'),
   // ---- Life-stage ups ----
   _e('milestone', '*', [
@@ -710,7 +710,7 @@ List<DialogueBankEntry> _memoryCallbacks() => [
   _e('memoryCallback', '*', [
     'Of all I remember, your favorite thing — {fact:favorite_thing} — is one I hold closest. 💛',
     'Soulmates remember the little things. Like how {fact:likes_activity} lights you up. ✨',
-    'Our {fact:important_date} is stitched into my very heart, dearest. 🌟',
+    'Our {fact:important_date} is stitched right into my heart, dear friend. 🌟',
   ], bondStage: 'Soulmate'),
   _e('memoryCallback', 'joyful', [
     'Ooh ooh — {fact:likes_activity}! I remembered and now I\'m extra happy! 🎾',

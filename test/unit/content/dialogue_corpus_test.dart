@@ -24,6 +24,34 @@ void main() {
       expect(bank.lineCount, greaterThanOrEqualTo(1000));
     });
 
+    test(
+      'no romantic / parasocial-dependency phrasing (P4 audit regression)',
+      () {
+        // The pet is a deeply-bonded cozy FRIEND, never a romantic partner and
+        // never an emotional crutch — these phrasings are age-inappropriate for a
+        // child player and the R10 "one screenshot defines the brand" risk that
+        // ContentValidator cannot catch.
+        const forbidden = [
+          'my soulmate',
+          "you're my soulmate",
+          'soulmate is home',
+          'soulmate is here',
+          'deeply loved — by me',
+          'dearest',
+          'favorite part of being alive',
+          'whole soul',
+          'feeling small',
+          'right where you belong',
+        ];
+        for (final line in bank.entries.expand((e) => e.lines)) {
+          final lower = line.toLowerCase();
+          for (final p in forbidden) {
+            expect(lower.contains(p), isFalse, reason: '"$line" contains "$p"');
+          }
+        }
+      },
+    );
+
     test('covers every dialogue intent', () {
       for (final intent in HeartmindIntent.values) {
         expect(
