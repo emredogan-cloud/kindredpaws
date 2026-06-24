@@ -9,6 +9,7 @@ import 'app_config.dart';
 import 'compliance_config.dart';
 import 'service_locator.dart';
 import '../monetization/ad_config.dart';
+import '../monetization/monetization_controller.dart';
 import '../render/pet_renderer.dart';
 import '../render/pet_renderer_factory.dart';
 import '../render/rive_pet_renderer.dart' show RiveDiagnostic;
@@ -70,7 +71,13 @@ AppConfig bootstrap({ServiceLocator? locator}) {
   sl.registerSingleton<FeedbackService>(const NoopFeedbackService());
   // Billing seam (P3-5). Noop default = offline/deterministic; the real
   // RevenueCat impl is a post-provisioning swap (no SDK dependency yet).
-  sl.registerSingleton<BillingService>(NoopBillingService());
+  // Billing seam (P3-5 / P4-5): RevenueCat when KP_BILLING=revenuecat (a gated
+  // seam until the SDK + store products are provisioned), else the offline Noop.
+  sl.registerSingleton<BillingService>(
+    config.billingMode == BillingMode.revenuecat
+        ? const RevenueCatBillingService()
+        : NoopBillingService(),
+  );
 
   // Observability (P1-2). In-memory/console impls are fully functional for
   // dev/CI; the Firebase-backed bodies drop in once provisioned (see
@@ -83,12 +90,22 @@ AppConfig bootstrap({ServiceLocator? locator}) {
   sl.registerSingleton<Logger>(logger);
   sl.registerSingleton<CrashReporter>(crash);
   sl.registerSingleton<PerformanceMonitor>(performance);
-  sl.registerSingleton<ObservabilityFacade>(
-    ObservabilityFacade(
-      logger: logger,
-      crash: crash,
-      performance: performance,
-      analytics: analytics,
+  final observability = ObservabilityFacade(
+    logger: logger,
+    crash: crash,
+    performance: performance,
+    analytics: analytics,
+  );
+  sl.registerSingleton<ObservabilityFacade>(observability);
+
+  // Monetization (P4-5): orchestrates the billing seam + the impact ledger, owns
+  // the current Entitlements (premium gating), and is the single PII-free emit
+  // point for monetizationEvent / compassionCoinMint. The UI listens to it.
+  sl.registerSingleton<MonetizationController>(
+    MonetizationController(
+      billing: sl.get<BillingService>(),
+      observability: observability,
+      backend: sl.get<BackendService>(),
     ),
   );
 

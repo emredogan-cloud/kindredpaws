@@ -242,4 +242,57 @@ void main() {
       );
     });
   });
+
+  group('RevenueCat activation + premium gating (P4-5)', () {
+    MonetizationController controller(BillingService billing) =>
+        MonetizationController(
+          billing: billing,
+          observability: _obs(),
+          backend: InMemoryBackendService(),
+        );
+
+    test('RevenueCatBillingService is inert until provisioned', () async {
+      const b = RevenueCatBillingService();
+      expect(b.isProvisioned, isFalse);
+      expect(await b.entitlements(), Entitlements.none);
+      final r = await b.purchase(kForeverFriendsMonthly);
+      expect(r.success, isFalse);
+      expect(r.cancelled, isTrue);
+      expect(await b.restore(), Entitlements.none);
+    });
+
+    test(
+      'subscribing unlocks the premium entitlements (gating flows)',
+      () async {
+        final c = controller(NoopBillingService());
+        await c.load();
+        expect(c.entitlements.foreverFriends, isFalse);
+        expect(c.entitlements.removesInterstitials, isFalse);
+
+        final r = await c.purchase(kForeverFriendsMonthly);
+        expect(r.success, isTrue);
+        expect(c.entitlements.foreverFriends, isTrue);
+        expect(c.entitlements.removesInterstitials, isTrue); // premium gating
+        expect(c.entitlements.dailyKibbleBonus, isTrue);
+      },
+    );
+
+    test('restore re-resolves the active subscription', () async {
+      final billing = NoopBillingService();
+      final c = controller(billing);
+      await c.purchase(kForeverFriendsMonthly);
+      // A fresh controller over the same billing restores the entitlement.
+      final c2 = controller(billing);
+      await c2.restore();
+      expect(c2.entitlements.foreverFriends, isTrue);
+    });
+
+    test('the unprovisioned RevenueCat seam grants nothing', () async {
+      final c = controller(const RevenueCatBillingService());
+      await c.load();
+      final r = await c.purchase(kForeverFriendsMonthly);
+      expect(r.success, isFalse);
+      expect(c.entitlements.foreverFriends, isFalse);
+    });
+  });
 }

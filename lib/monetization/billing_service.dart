@@ -66,3 +66,40 @@ class NoopBillingService implements BillingService {
   @override
   Future<Entitlements> restore() async => _entitlements;
 }
+
+/// RevenueCat billing seam (P4-5), selected by `KP_BILLING=revenuecat`. It is
+/// **inert until provisioned**: `purchases_flutter` is not a dependency yet and
+/// no store products / SDK keys exist in this environment, so it degrades
+/// gracefully (no entitlements, every purchase reports unavailable) rather than
+/// throwing into the game. The contract is "never throw into the caller."
+///
+/// To activate (founder/credentialed step, REQUIRED_ENVIRONMENTS.md §5):
+///   1. `flutter pub add purchases_flutter`.
+///   2. Create the "Forever Friends" subscription + Heartstone/Rescue Bundle
+///      products in App Store Connect + Play Console; map them in RevenueCat.
+///   3. Set `REVENUECAT_PUBLIC_SDK_KEY_IOS` / `_ANDROID`; call
+///      `Purchases.configure(...)` at startup.
+///   4. Replace the three method bodies below with the SDK calls:
+///        entitlements → `Purchases.getCustomerInfo()` → map the active
+///        "forever_friends" entitlement;
+///        purchase     → `Purchases.purchaseStoreProduct(...)` → map result;
+///        restore      → `Purchases.restorePurchases()` → map entitlements.
+///      Receipt validation is the SDK's job (server-side); the client only
+///      reads the resolved entitlement. Then this seam becomes authoritative.
+class RevenueCatBillingService implements BillingService {
+  const RevenueCatBillingService();
+
+  /// True once the real SDK bodies replace the inert ones below. Lets callers /
+  /// a provisioning screen tell a configured billing stack from this stub.
+  bool get isProvisioned => false;
+
+  @override
+  Future<Entitlements> entitlements() async => Entitlements.none;
+
+  @override
+  Future<PurchaseResult> purchase(Product product) async =>
+      PurchaseResult.cancelledResult; // unavailable until provisioned
+
+  @override
+  Future<Entitlements> restore() async => Entitlements.none;
+}

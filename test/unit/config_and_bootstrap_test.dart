@@ -4,6 +4,9 @@ import 'package:kindredpaws/core/compliance_config.dart';
 import 'package:kindredpaws/core/kindred_terms.dart';
 import 'package:kindredpaws/core/service_locator.dart';
 import 'package:kindredpaws/monetization/ad_config.dart';
+import 'package:kindredpaws/monetization/billing_service.dart';
+import 'package:kindredpaws/monetization/entitlements.dart';
+import 'package:kindredpaws/monetization/monetization_controller.dart';
 import 'package:kindredpaws/render/pet_renderer.dart';
 import 'package:kindredpaws/services/analytics_service.dart';
 import 'package:kindredpaws/services/auth_service.dart';
@@ -62,6 +65,21 @@ void main() {
       // contextual-only.
       expect(sl.get<AdConfig>().isFullyChildSafe, isTrue);
     });
+
+    test(
+      'registers the monetization stack with the offline billing default (P4-5)',
+      () {
+        bootstrap();
+        final sl = ServiceLocator.instance;
+        expect(sl.get<BillingService>(), isA<NoopBillingService>());
+        // The controller is wired (premium gating + impact ledger emit point).
+        expect(sl.get<MonetizationController>(), isA<MonetizationController>());
+        expect(
+          sl.get<MonetizationController>().entitlements,
+          Entitlements.none,
+        );
+      },
+    );
 
     test('service locator throws for unregistered types', () {
       expect(
