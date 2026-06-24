@@ -42,6 +42,29 @@ void main() {
       );
     });
 
+    test('the P5 soft-launch events map to their funnel gates', () {
+      expect(
+        Telemetry.specOf(AnalyticsEvent.onboardingStep).gate,
+        TelemetryGate.onboarding,
+      );
+      expect(
+        Telemetry.specOf(AnalyticsEvent.retentionMilestone).gate,
+        TelemetryGate.retention,
+      );
+      expect(
+        Telemetry.specOf(AnalyticsEvent.notificationOpened).gate,
+        TelemetryGate.retention,
+      );
+      expect(
+        Telemetry.specOf(AnalyticsEvent.paywallStep).gate,
+        TelemetryGate.monetization,
+      );
+      expect(
+        Telemetry.specOf(AnalyticsEvent.experimentExposure).gate,
+        TelemetryGate.experiment,
+      );
+    });
+
     test('every spec has a description and required keys ⊆ allowed keys', () {
       for (final spec in Telemetry.specs.values) {
         expect(spec.description.trim(), isNotEmpty);

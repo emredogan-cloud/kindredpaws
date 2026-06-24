@@ -57,6 +57,11 @@ ready; emission lands with that system, by design / scope discipline).
 | `compassionCoinMint` | impact | Compassion Coins minted | **source, amount, validated** | ⏳ impact ledger |
 | `keepsakeShare` | virality | Keepsake card shared | **moment_type, platform** | ⏳ P3-3 (share flow) |
 | `llmCostEvent` | cost | Metered LLM turn | **tokens, cost, model** | ⏳ P4 live-chat (pre-gen reads are $0) |
+| `onboardingStep` | onboarding | Rescue Day funnel step | **step**, _ms_since_start_ | ⏳ P5-1 |
+| `retentionMilestone` | retention | Returned on a D1/D3/D7/D14/D30 boundary | **day** | ⏳ P5-2 |
+| `notificationOpened` | retention | App opened from a notification | **kind** | ⏳ P5-2 |
+| `paywallStep` | monetization | Paywall funnel step | **step**, _surface_ | ⏳ P5-4 |
+| `experimentExposure` | experiment | A/B variant assigned | **experiment, variant** | ⏳ P5-3 |
 
 > **No silent gaps:** the 5 ⏳ events are intentionally not emitted yet — their
 > source systems are later P3/P4 subsystems. Their schemas exist now so those

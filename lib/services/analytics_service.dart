@@ -26,6 +26,12 @@ enum AnalyticsEvent {
   compassionCoinMint,
   keepsakeShare,
   llmCostEvent, // R2 / G4: LLM cost/DAU < 35% ARPDAU
+  // ---- Phase 5 (soft-launch readiness) ----
+  onboardingStep, // Rescue Day funnel step (beat/species/name)
+  retentionMilestone, // returned on a D1/D3/D7/D14/D30 boundary since adopt
+  notificationOpened, // re-engagement effectiveness (app opened from a notification)
+  paywallStep, // monetization funnel step (shown/dismissed/start)
+  experimentExposure, // A/B experiment assignment (LiveOps cohorts)
 }
 
 abstract interface class AnalyticsService {
