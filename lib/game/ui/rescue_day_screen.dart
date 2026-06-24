@@ -48,6 +48,13 @@ class _RescueDayScreenState extends State<RescueDayScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    // Onboarding funnel start (P5-1): the cold-open's first beat.
+    widget.controller.recordOnboardingStep('reach_out');
+  }
+
+  @override
   void dispose() {
     _name.dispose();
     super.dispose();
@@ -99,7 +106,12 @@ class _RescueDayScreenState extends State<RescueDayScreen> {
           const SizedBox(height: 32),
           FilledButton(
             key: const Key('rescue-next'),
-            onPressed: () => setState(() => _beat++),
+            onPressed: () {
+              setState(() => _beat++);
+              if (_beat >= _beats.length) {
+                widget.controller.recordOnboardingStep('choose_species');
+              }
+            },
             child: Text(
               _beat == _beats.length - 1 ? 'Will you help?' : 'Reach out',
             ),
@@ -137,10 +149,15 @@ class _RescueDayScreenState extends State<RescueDayScreen> {
     return Card(
       child: InkWell(
         key: Key(key),
-        onTap: () => setState(() {
-          _species = species;
-          _name.text = species.defaultName;
-        }),
+        onTap: () {
+          // Pre-fill the name with the species default → one-tap adopt is a
+          // valid, friction-free path (recovery + progressive disclosure, P5-1).
+          setState(() {
+            _species = species;
+            _name.text = species.defaultName;
+          });
+          widget.controller.recordOnboardingStep('species_selected');
+        },
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(

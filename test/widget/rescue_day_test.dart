@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kindredpaws/game/ui/game_root.dart';
+import 'package:kindredpaws/services/analytics_service.dart';
 
 import '../support/harness.dart';
 
@@ -35,6 +36,42 @@ void main() {
     // The app routes to the Companion home with the adopted pet.
     expect(find.byKey(const Key('companion-home')), findsOneWidget);
     expect(find.text('Biscuit'), findsWidgets);
+    expect(controller.hasPet, isTrue);
+  });
+
+  testWidgets('the onboarding funnel is instrumented step by step (P5-1)', (
+    tester,
+  ) async {
+    final controller = makeController();
+    final analytics =
+        controller.observability.analytics as InMemoryAnalyticsService;
+    await tester.pumpWidget(
+      MaterialApp(home: GameRoot(controller: controller)),
+    );
+    await tester
+        .pumpAndSettle(); // load → no save → Rescue Day (initState fires)
+
+    Iterable<String> steps() => analytics.recorded
+        .where((e) => e.$1 == AnalyticsEvent.onboardingStep)
+        .map((e) => '${e.$2['step']}');
+
+    // The first beat fires `reach_out` on mount.
+    expect(steps(), contains('reach_out'));
+
+    for (var i = 0; i < 3; i++) {
+      await tester.tap(find.byKey(const Key('rescue-next')));
+      await tester.pumpAndSettle();
+    }
+    expect(steps(), contains('choose_species'));
+
+    await tester.tap(find.byKey(const Key('choose-puppy')));
+    await tester.pumpAndSettle();
+    expect(steps(), contains('species_selected'));
+
+    // The default name is pre-filled → one-tap adopt is friction-free.
+    await tester.tap(find.byKey(const Key('confirm-adopt')));
+    await tester.pumpAndSettle();
+    expect(analytics.countOf(AnalyticsEvent.rescueDayComplete), 1);
     expect(controller.hasPet, isTrue);
   });
 

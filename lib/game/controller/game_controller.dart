@@ -107,6 +107,22 @@ class GameController extends ChangeNotifier {
   /// [_endSession] after the `sessionQuality` beat is emitted.
   int? _sessionStartMs;
 
+  /// Wall-clock (ms) the Rescue Day onboarding began (first beat), for the
+  /// activation-funnel timing. Null before onboarding starts.
+  int? _onboardingStartMs;
+
+  /// Records a Rescue Day onboarding funnel step (P5-1) — `reach_out` (start) →
+  /// `choose_species` → `species_selected`; `adopt` is `rescueDayComplete`. Lets
+  /// the activation funnel + per-step drop-off be measured (§13.4 ≥80% complete).
+  /// The single emit point keeps the taxonomy enforced + PII-free.
+  void recordOnboardingStep(String step) {
+    _onboardingStartMs ??= _now();
+    observability.event(AnalyticsEvent.onboardingStep, {
+      'step': step,
+      'ms_since_start': _now() - _onboardingStartMs!,
+    });
+  }
+
   /// Transient warm line for the UI to surface (never guilt). Null after read.
   String? lastMessage;
 
