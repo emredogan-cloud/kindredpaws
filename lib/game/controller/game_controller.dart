@@ -21,6 +21,7 @@ import '../../render/pet_renderer.dart';
 import '../../services/analytics_service.dart';
 import '../../services/feedback_service.dart';
 import '../../services/home_widget_service.dart';
+import '../../services/live_ops.dart';
 import '../../services/notification_scheduler.dart';
 import '../../services/observability.dart';
 import '../../services/share_service.dart';
@@ -47,9 +48,11 @@ class GameController extends ChangeNotifier {
     required this.heartmind,
     required this.share,
     FeedbackService? feedback,
+    LiveOps? liveOps,
     int Function()? clock,
     String Function()? idGenerator,
   }) : _feedback = feedback ?? const NoopFeedbackService(),
+       _liveOps = liveOps,
        _now = clock ?? (() => DateTime.now().millisecondsSinceEpoch),
        _idGenerator =
            idGenerator ??
@@ -65,6 +68,15 @@ class GameController extends ChangeNotifier {
   final Heartmind heartmind;
   final ShareService share;
   final FeedbackService _feedback;
+
+  /// LiveOps control plane (P4-3), or null in tests. Notifications respect its
+  /// kill-switch so the founder can silence them live (incident mitigation).
+  final LiveOps? _liveOps;
+
+  /// Notifications are live unless a LiveOps kill-switch has disabled them.
+  bool get _notificationsLive =>
+      _liveOps?.isKilled(LiveFeature.notifications) != true;
+
   final int Function() _now;
   final String Function() _idGenerator;
 
@@ -161,7 +173,9 @@ class GameController extends ChangeNotifier {
     observability.event(AnalyticsEvent.rescueDayComplete, {
       'species': species.id,
     });
-    await notifications.scheduleDailyPresence(petName: pet.name, fromMs: now);
+    if (_notificationsLive) {
+      await notifications.scheduleDailyPresence(petName: pet.name, fromMs: now);
+    }
     await _persist();
     lastMessage = 'Welcome home, ${pet.name}! 💛';
     _say(HeartmindIntent.greeting); // the pet's first words
@@ -226,12 +240,15 @@ class GameController extends ChangeNotifier {
         'stage': outcome.state.bond.stage.name,
       });
       // A warm "come celebrate" nudge for later (never guilt; capped) — P4-4.
-      await notifications.scheduleEvent(
-        kind: NotificationKind.celebration,
-        petName: outcome.state.name,
-        atMs: _now() + 4 * Duration.millisecondsPerHour,
-        detail: 'becoming ${outcome.state.bond.stage.name}s',
-      );
+      // Respects the LiveOps notifications kill-switch (P4-3 / audit).
+      if (_notificationsLive) {
+        await notifications.scheduleEvent(
+          kind: NotificationKind.celebration,
+          petName: outcome.state.name,
+          atMs: _now() + 4 * Duration.millisecondsPerHour,
+          detail: 'becoming ${outcome.state.bond.stage.name}s',
+        );
+      }
     }
     await _persist();
     notifyListeners();

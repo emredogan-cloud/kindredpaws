@@ -32,9 +32,10 @@ Warm, **local-scheduled** (no push cost), pet-voiced re-engagement — capped at
   (`scheduleDailyPresence`).
 - A **bond-stage-up** schedules a `celebration` event (a warm "come celebrate"
   nudge for later, capped).
-- `scheduleEvent` is the seam the rest (memory nudges, streak warmth) call;
-  gate it on `LiveOps.isLive(LiveFeature.notifications, …)` so the founder can
-  kill all notifications live (P4-3).
+- The controller's scheduling is **gated on the LiveOps notifications
+  kill-switch** (`!liveOps.isKilled(LiveFeature.notifications)`, P4-3): the
+  founder can silence all notifications live, no app update. `scheduleEvent` is
+  the seam memory nudges / streak warmth call.
 - The native delivery binding (`flutter_local_notifications`) is a thin platform
   step (REQUIRED_ENVIRONMENTS.md); the in-memory scheduler computes exactly what
   would be delivered, fully testable with zero native dependency.

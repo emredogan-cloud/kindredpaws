@@ -8,6 +8,7 @@ import '../data/save_repository.dart';
 import '../services/analytics_service.dart';
 import '../services/backend_service.dart';
 import '../services/feedback_service.dart';
+import '../services/live_ops.dart';
 import '../services/home_widget_service.dart';
 import '../services/notification_scheduler.dart';
 import '../services/observability.dart';
@@ -43,6 +44,7 @@ GameController createGameController({
     heartmind: sl.get<Heartmind>(),
     share: sl.get<ShareService>(),
     feedback: sl.get<FeedbackService>(),
+    liveOps: sl.get<LiveOps>(),
     clock: clock,
   );
 }
