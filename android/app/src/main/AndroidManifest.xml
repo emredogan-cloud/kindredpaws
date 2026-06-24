@@ -1,5 +1,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Production notifications (Task 1, flutter_local_notifications). POST_
+         NOTIFICATIONS is the Android 13+ runtime permission (requested in-app);
+         RECEIVE_BOOT_COMPLETED lets the plugin re-register scheduled, warm
+         notifications after a reboot. Scheduling is INEXACT (battery-friendly,
+         never intrusive) so no SCHEDULE_EXACT_ALARM permission is needed. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+
     <application
         android:label="kindredpaws"
         android:name="${applicationName}"
@@ -63,6 +72,23 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/pet_widget_info" />
+        </receiver>
+
+        <!-- flutter_local_notifications (Task 1): the scheduled-notification
+             receiver + the boot receiver that restores warm, scheduled
+             notifications after a device reboot / app update. -->
+        <receiver
+            android:exported="false"
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
+        <receiver
+            android:exported="false"
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+                <action android:name="android.intent.action.QUICKBOOT_POWERON"/>
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
+            </intent-filter>
         </receiver>
     </application>
     <!-- Required to query activities that can process text, see:

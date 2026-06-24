@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'core/app_config.dart';
@@ -10,10 +12,16 @@ import 'data/prefs_save_store.dart';
 import 'game/controller/game_controller.dart';
 import 'game/game_wiring.dart';
 import 'game/ui/game_root.dart';
+import 'services/analytics_service.dart';
 import 'services/crash_reporter.dart';
 import 'services/firebase_provisioning.dart';
 import 'services/firebase/firebase_services.dart';
 import 'services/home_widget_service.dart';
+import 'services/live_ops.dart';
+import 'services/local_notification_scheduler.dart';
+import 'services/notification_scheduler.dart';
+import 'services/notifications/flutter_local_notifications_sink.dart';
+import 'services/observability.dart';
 import 'services/performance_monitor.dart';
 import 'services/remote_config_service.dart';
 
@@ -41,6 +49,26 @@ Future<void> main() async {
   } else {
     await FirebaseProvisioning.initialize(); // records the unprovisioned status
   }
+
+  // Production OS notifications (Task 1): the warm, capped, never-guilt scheduler
+  // over flutter_local_notifications. bootstrap()'s in-memory scheduler stands in
+  // for dev/CI/tests; this is the real device binding (a production swap like the
+  // home-widget writer), wired after the Firebase swap so the tap handler emits
+  // through the authoritative observability facade. Never blocks the first frame.
+  final observability = sl.get<ObservabilityFacade>();
+  final notifications = LocalNotificationScheduler(
+    sink: FlutterLocalNotificationsSink(),
+    liveOps: sl.get<LiveOps>(),
+  );
+  await notifications.initialize(
+    onTap: (payload) => observability.event(AnalyticsEvent.notificationOpened, {
+      'kind': payload ?? NotificationKind.reEngagement.name,
+    }),
+  );
+  sl.registerSingleton<NotificationScheduler>(notifications);
+  // Ask for notification permission in-context, fire-and-forget (Android 13+/
+  // iOS) — never awaited, so a user-interactive dialog can't block boot.
+  unawaited(notifications.requestPermission());
 
   final controller = createGameController(sl: sl, store: PrefsSaveStore());
   // Cold-start metric (P3-7): boot duration → first runApp. Feeds the startup
