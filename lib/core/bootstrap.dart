@@ -20,6 +20,7 @@ import '../services/analytics_service.dart';
 import '../services/auth_service.dart';
 import '../services/backend_service.dart';
 import '../services/beta_diagnostics.dart';
+import '../services/beta_feedback_pipeline.dart';
 import '../services/experiments.dart';
 import '../services/crash_reporter.dart';
 import '../services/feedback_service.dart';
@@ -135,6 +136,18 @@ AppConfig bootstrap({ServiceLocator? locator}) {
       compliance: compliance,
       monetization: sl.get<MonetizationController>(),
       liveOps: sl.get<LiveOps>(),
+    ),
+  );
+
+  // Beta feedback loop (P5-5): the complete closed-beta ops pass — ingest →
+  // sentiment → crash/diagnostic correlation → triage → PII-free telemetry. The
+  // Noop feedback seam keeps dev/CI offline; firebase_services re-binds it over
+  // the backend stream once provisioned.
+  sl.registerSingleton<BetaFeedbackPipeline>(
+    BetaFeedbackPipeline(
+      feedback: sl.get<FeedbackService>(),
+      diagnostics: sl.get<BetaDiagnostics>(),
+      observability: observability,
     ),
   );
 

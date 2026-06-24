@@ -19,6 +19,7 @@ import '../../keepsake/keepsake.dart';
 import '../../keepsake/keepsake_factory.dart';
 import '../../render/pet_renderer.dart';
 import '../../services/analytics_service.dart';
+import '../../services/beta_feedback_pipeline.dart';
 import '../../services/feedback_service.dart';
 import '../../services/home_widget_service.dart';
 import '../../services/live_ops.dart';
@@ -48,10 +49,12 @@ class GameController extends ChangeNotifier {
     required this.heartmind,
     required this.share,
     FeedbackService? feedback,
+    BetaFeedbackPipeline? betaFeedback,
     LiveOps? liveOps,
     int Function()? clock,
     String Function()? idGenerator,
   }) : _feedback = feedback ?? const NoopFeedbackService(),
+       _betaFeedback = betaFeedback,
        _liveOps = liveOps,
        _now = clock ?? (() => DateTime.now().millisecondsSinceEpoch),
        _idGenerator =
@@ -68,6 +71,10 @@ class GameController extends ChangeNotifier {
   final Heartmind heartmind;
   final ShareService share;
   final FeedbackService _feedback;
+
+  /// The P5-5 beta-ops pipeline (ingest → sentiment → crash/diagnostic
+  /// correlation → triage → telemetry), or null in tests that don't wire it.
+  final BetaFeedbackPipeline? _betaFeedback;
 
   /// LiveOps control plane (P4-3), or null in tests. Notifications respect its
   /// kill-switch so the founder can silence them live (incident mitigation).
@@ -364,11 +371,21 @@ class GameController extends ChangeNotifier {
     _sessionStartMs = null;
   }
 
-  /// Submits closed-beta feedback (P3-7) via the [FeedbackService] seam.
-  /// Best-effort + PII-minimized (rating + capped note only); never throws into
-  /// the UI.
-  Future<void> submitBetaFeedback({required int rating, String? comment}) =>
-      _feedback.submit(BetaFeedback(rating: rating, comment: comment));
+  /// Submits closed-beta feedback. When the P5-5 [BetaFeedbackPipeline] is wired
+  /// it runs the full beta-ops pass (sentiment + crash/diagnostic correlation +
+  /// triage + telemetry); otherwise it falls back to the raw [FeedbackService]
+  /// seam. Best-effort + PII-minimized (rating + capped note only); never throws.
+  Future<void> submitBetaFeedback({
+    required int rating,
+    String? comment,
+  }) async {
+    final pipeline = _betaFeedback;
+    if (pipeline != null) {
+      await pipeline.ingest(rating: rating, comment: comment);
+      return;
+    }
+    await _feedback.submit(BetaFeedback(rating: rating, comment: comment));
+  }
 
   Future<void> _persist() async {
     final save = _save;

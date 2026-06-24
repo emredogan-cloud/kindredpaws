@@ -53,6 +53,10 @@ enum TelemetryGate {
   /// A/B experiment exposure — variant assignment for soft-launch experiments
   /// (P5; LiveOps cohorts). Pairs with the per-gate outcome events.
   experiment,
+
+  /// Closed-beta operations — triaged tester feedback (sentiment + crash
+  /// correlation) that feeds the founder's beta issue queue (P5-5).
+  betaOps,
 }
 
 /// The contract for one analytics event: which KPI gate it feeds plus the exact
@@ -221,6 +225,14 @@ abstract final class Telemetry {
           'An A/B experiment assigned a variant to this user (LiveOps cohort). '
           'Joins to the per-gate outcome events for lift analysis.',
       required: {'experiment', 'variant'},
+    ),
+    AnalyticsEvent.betaFeedback: EventSpec(
+      gate: TelemetryGate.betaOps,
+      description:
+          'A piece of closed-beta feedback after triage: the star rating, the '
+          'routed category + severity, the note sentiment, and whether the '
+          'session crashed (crash correlation). PII-free — no note text ships.',
+      required: {'rating', 'category', 'severity', 'sentiment', 'had_crash'},
     ),
   };
 
