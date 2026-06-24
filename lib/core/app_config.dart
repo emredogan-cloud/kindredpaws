@@ -30,6 +30,7 @@ class AppConfig {
     required this.anthropicProxyConfigured,
     required this.environmentLabel,
     this.billingMode = BillingMode.noop,
+    this.betaEnabled = false,
   });
 
   /// Default config used when nothing is overridden via `--dart-define`.
@@ -51,6 +52,7 @@ class AppConfig {
       billingMode: _billing == 'revenuecat'
           ? BillingMode.revenuecat
           : BillingMode.noop,
+      betaEnabled: _beta,
     );
   }
 
@@ -80,6 +82,10 @@ class AppConfig {
   /// Selected billing backend (RevenueCat is locked; noop until provisioned).
   final BillingMode billingMode;
 
+  /// Closed-beta build flag (P4-7) — surfaces the beta feedback + diagnostics
+  /// entry points. Off in normal/golden builds (no UI change).
+  final bool betaEnabled;
+
   bool get usingMockBackend => backendMode == BackendMode.mock;
 
   static const String _backend = String.fromEnvironment(
@@ -104,4 +110,5 @@ class AppConfig {
     'KP_BILLING',
     defaultValue: 'noop',
   );
+  static const bool _beta = bool.fromEnvironment('KP_BETA');
 }
