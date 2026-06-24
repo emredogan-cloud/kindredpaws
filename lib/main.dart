@@ -4,6 +4,7 @@ import 'core/app_config.dart';
 import 'core/app_instrumentation.dart';
 import 'core/bootstrap.dart';
 import 'core/kindred_terms.dart';
+import 'core/performance_budgets.dart';
 import 'core/service_locator.dart';
 import 'data/prefs_save_store.dart';
 import 'game/controller/game_controller.dart';
@@ -44,10 +45,11 @@ Future<void> main() async {
   final controller = createGameController(sl: sl, store: PrefsSaveStore());
   // Cold-start metric (P3-7): boot duration → first runApp. Feeds the startup
   // perf budget alongside the host-side performance tests.
-  recordColdStart(
-    sl.get<PerformanceMonitor>(),
-    elapsedMs: DateTime.now().millisecondsSinceEpoch - startMs,
-  );
+  final coldStartMs = DateTime.now().millisecondsSinceEpoch - startMs;
+  recordColdStart(sl.get<PerformanceMonitor>(), elapsedMs: coldStartMs);
+  // Gate it against the budget (P5-6): a > 2.5s boot warns + breadcrumbs so a
+  // soft-launch startup regression is visible in beta triage (never throws).
+  sl.get<PerformanceBudgetMonitor>().check(PerfBudget.coldStart, coldStartMs);
   runApp(KindredPawsApp(config: config, controller: controller));
 }
 

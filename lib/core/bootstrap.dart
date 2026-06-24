@@ -7,6 +7,7 @@ library;
 
 import 'app_config.dart';
 import 'compliance_config.dart';
+import 'performance_budgets.dart';
 import 'service_locator.dart';
 import '../monetization/ad_config.dart';
 import '../monetization/ad_service.dart';
@@ -103,6 +104,13 @@ AppConfig bootstrap({ServiceLocator? locator}) {
     analytics: analytics,
   );
   sl.registerSingleton<ObservabilityFacade>(observability);
+
+  // Performance budgets (P5-6): the runtime gate over the canonical ceilings
+  // (cold start < 2.5s, 60fps, reaction beat ≤150ms). A breach warns + drops a
+  // crash breadcrumb; it never throws into play.
+  sl.registerSingleton<PerformanceBudgetMonitor>(
+    PerformanceBudgetMonitor(observability: observability),
+  );
 
   // Monetization (P4-5): orchestrates the billing seam + the impact ledger, owns
   // the current Entitlements (premium gating), and is the single PII-free emit

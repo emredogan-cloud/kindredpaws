@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kindredpaws/core/performance_budgets.dart';
 import 'package:kindredpaws/game/ui/game_root.dart';
 
 import '../support/harness.dart';
@@ -22,10 +23,11 @@ void main() {
     sw.stop();
 
     expect(
-      sw.elapsedMilliseconds,
-      lessThan(2000),
+      PerfBudget.coldWidgetBuild.isWithin(sw.elapsedMilliseconds),
+      isTrue,
       reason:
-          'cold widget build exceeded the 2000ms CI budget '
+          'cold widget build exceeded the '
+          '${PerfBudget.coldWidgetBuild.ceilingMs}ms CI budget '
           '(${sw.elapsedMilliseconds}ms)',
     );
   });
