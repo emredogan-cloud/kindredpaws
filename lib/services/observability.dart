@@ -11,6 +11,7 @@ import 'analytics_service.dart';
 import 'crash_reporter.dart';
 import 'logger.dart';
 import 'performance_monitor.dart';
+import 'session_health.dart';
 import 'telemetry.dart';
 
 class ObservabilityFacade {
@@ -19,14 +20,20 @@ class ObservabilityFacade {
     required this.crash,
     required this.performance,
     required this.analytics,
-  });
+    SessionHealthMonitor? sessionHealth,
+  }) : sessionHealth = sessionHealth ?? SessionHealthMonitor();
 
   final Logger logger;
   final CrashReporter crash;
   final PerformanceMonitor performance;
   final AnalyticsService analytics;
 
-  /// Record a non-fatal error across all sinks (log + crash report).
+  /// Crash-correlation signal for the beta feedback loop (P5-5): bumped on every
+  /// [recordError] so feedback can be tagged with whether the session crashed.
+  final SessionHealthMonitor sessionHealth;
+
+  /// Record a non-fatal error across all sinks (log + crash report + the
+  /// session-health counter that feeds beta-feedback crash correlation).
   void recordError(
     Object error,
     StackTrace? stack, {
@@ -38,6 +45,7 @@ class ObservabilityFacade {
       fields: {'error': error.toString(), ...keys},
     );
     crash.recordError(error, stack, context: context, keys: keys);
+    sessionHealth.recordError(context: context);
   }
 
   /// Time a synchronous unit of work and record the trace + a perf log.

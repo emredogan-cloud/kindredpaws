@@ -32,6 +32,7 @@ enum AnalyticsEvent {
   notificationOpened, // re-engagement effectiveness (app opened from a notification)
   paywallStep, // monetization funnel step (shown/dismissed/start)
   experimentExposure, // A/B experiment assignment (LiveOps cohorts)
+  betaFeedback, // triaged closed-beta feedback (sentiment + crash correlation)
 }
 
 abstract interface class AnalyticsService {

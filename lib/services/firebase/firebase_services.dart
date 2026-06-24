@@ -22,6 +22,8 @@ import '../../monetization/paywall_controller.dart';
 import '../analytics_service.dart';
 import '../auth_service.dart';
 import '../backend_service.dart';
+import '../beta_diagnostics.dart';
+import '../beta_feedback_pipeline.dart';
 import '../crash_reporter.dart';
 import '../feedback_service.dart';
 import '../experiments.dart';
@@ -57,6 +59,15 @@ void registerFirebaseServices(ServiceLocator sl) {
   // Closed-beta feedback now writes to the authoritative backend (P3-7).
   sl.registerSingleton<FeedbackService>(
     BackendFeedbackService(sl.get<BackendService>()),
+  );
+  // Re-bind the beta feedback loop (P5-5) over the now-authoritative feedback
+  // stream so production tester feedback persists + still gets triaged telemetry.
+  sl.registerSingleton<BetaFeedbackPipeline>(
+    BetaFeedbackPipeline(
+      feedback: sl.get<FeedbackService>(),
+      diagnostics: sl.get<BetaDiagnostics>(),
+      observability: sl.get<ObservabilityFacade>(),
+    ),
   );
   sl.registerSingleton<AnalyticsService>(FirebaseAnalyticsAdapter());
   sl.registerSingleton<CrashReporter>(FirebaseCrashReporterAdapter());
