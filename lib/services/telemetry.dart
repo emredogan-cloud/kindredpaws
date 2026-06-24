@@ -49,6 +49,10 @@ enum TelemetryGate {
 
   /// LLM cost/DAU — hard gate <35% of ARPDAU (R2/G4).
   cost,
+
+  /// A/B experiment exposure — variant assignment for soft-launch experiments
+  /// (P5; LiveOps cohorts). Pairs with the per-gate outcome events.
+  experiment,
 }
 
 /// The contract for one analytics event: which KPI gate it feeds plus the exact
@@ -178,6 +182,45 @@ abstract final class Telemetry {
           'design; the live-chat path (P4, Deferred) meters this. Feeds the '
           'hard cost/DAU <35% ARPDAU gate (R2).',
       required: {'tokens', 'cost', 'model'},
+    ),
+    // ---- Phase 5 (soft-launch readiness) ----
+    AnalyticsEvent.onboardingStep: EventSpec(
+      gate: TelemetryGate.onboarding,
+      description:
+          'A Rescue Day onboarding funnel step was reached (the cold-open beats, '
+          'species choice, name field). Feeds the activation funnel + drop-off '
+          'analysis (≥80% complete Rescue Day, §13.4).',
+      required: {'step'},
+      optional: {'ms_since_start'},
+    ),
+    AnalyticsEvent.retentionMilestone: EventSpec(
+      gate: TelemetryGate.retention,
+      description:
+          'The player returned on a D1/D3/D7/D14/D30 boundary since adopting. '
+          'Feeds the D1≥42% / D7≥20% / D30≥10% retention gates (G4).',
+      required: {'day'},
+    ),
+    AnalyticsEvent.notificationOpened: EventSpec(
+      gate: TelemetryGate.retention,
+      description:
+          'The app was opened from a notification — re-engagement effectiveness '
+          'per notification kind (G3/G4).',
+      required: {'kind'},
+    ),
+    AnalyticsEvent.paywallStep: EventSpec(
+      gate: TelemetryGate.monetization,
+      description:
+          'A monetization funnel step (paywall shown/dismissed, purchase/restore '
+          'started). Feeds ARPDAU + sub-conversion analysis (G4/G6).',
+      required: {'step'},
+      optional: {'surface'},
+    ),
+    AnalyticsEvent.experimentExposure: EventSpec(
+      gate: TelemetryGate.experiment,
+      description:
+          'An A/B experiment assigned a variant to this user (LiveOps cohort). '
+          'Joins to the per-gate outcome events for lift analysis.',
+      required: {'experiment', 'variant'},
     ),
   };
 
