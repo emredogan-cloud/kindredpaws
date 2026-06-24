@@ -35,6 +35,19 @@ top-up into the live bank — a safe, per-entry, fail-closed way to add/fix line
 without an app update. `liveops.content_version` coordinates the expected bank
 version. The bundled bank is always the safe floor.
 
+### 5. A/B experiments (`Experiments.expose`, P5-3)
+The safe way to run a soft-launch experiment. An `Experiment` (`paywall_copy`,
+`onboarding_pace`, `notification_cadence`, …) is **OFF by default** — everyone is
+`control` (the safe baseline *and* the emergency-rollback state). The founder
+flips `experiment.<key>.enabled` in Remote Config to start it; users then split
+**deterministically + evenly** across `control` + N treatment arms by a
+per-experiment salted bucket (sticky, no flip-flop). `Experiments.expose(exp,
+unitId:)` returns the variant **and** emits `experimentExposure {experiment,
+variant}` (once per user) — joined to any outcome event for lift analysis.
+**Emergency rollback** = set `enabled` back to false → everyone returns to
+control instantly, no app update. **Feature/content cohorts** are the existing
+`%-rollout` + `contentVersion` keyed by the same deterministic bucket.
+
 ## Wiring
 
 `LiveOps` is registered in `bootstrap()` over `DefaultRemoteConfig` and re-bound
