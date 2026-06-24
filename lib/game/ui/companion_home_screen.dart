@@ -7,6 +7,7 @@ library;
 import 'package:flutter/material.dart';
 
 import '../../core/service_locator.dart';
+import '../../monetization/paywall_controller.dart';
 import '../../render/pet_renderer.dart';
 import '../controller/game_controller.dart';
 import '../model/bond.dart';
@@ -15,6 +16,7 @@ import 'care_ring.dart';
 import 'keepsake_screen.dart';
 import 'memory_book_screen.dart';
 import 'mood_visuals.dart';
+import 'paywall_sheet.dart';
 
 class CompanionHomeScreen extends StatelessWidget {
   const CompanionHomeScreen({
@@ -80,6 +82,15 @@ class CompanionHomeScreen extends StatelessWidget {
                   MaterialPageRoute<void>(
                     builder: (_) => MemoryBookScreen(controller: controller),
                   ),
+                ),
+              ),
+              IconButton(
+                key: const Key('paywall-button'),
+                icon: const Icon(Icons.favorite_border),
+                tooltip: 'Forever Friends',
+                onPressed: () => showPaywall(
+                  context,
+                  ServiceLocator.instance.get<PaywallController>(),
                 ),
               ),
             ],

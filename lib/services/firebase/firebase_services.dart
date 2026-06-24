@@ -17,7 +17,10 @@ import 'package:firebase_performance/firebase_performance.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 
 import '../../core/service_locator.dart';
+import '../../monetization/monetization_controller.dart';
+import '../../monetization/paywall_controller.dart';
 import '../analytics_service.dart';
+import '../auth_service.dart';
 import '../backend_service.dart';
 import '../crash_reporter.dart';
 import '../feedback_service.dart';
@@ -66,6 +69,16 @@ void registerFirebaseServices(ServiceLocator sl) {
     Experiments(
       liveOps: sl.get<LiveOps>(),
       observability: sl.get<ObservabilityFacade>(),
+    ),
+  );
+  // Re-bind the paywall coordinator over the now-authoritative experiments
+  // (so the pricing-framing experiment uses Firebase Remote Config assignment).
+  sl.registerSingleton<PaywallController>(
+    PaywallController(
+      monetization: sl.get<MonetizationController>(),
+      experiments: sl.get<Experiments>(),
+      observability: sl.get<ObservabilityFacade>(),
+      auth: sl.get<AuthService>(),
     ),
   );
   // Fire-and-forget; enabling collection must never block or throw into boot.
