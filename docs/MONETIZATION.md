@@ -101,3 +101,41 @@ Connect + Play Console + map them in RevenueCat · set
 `REVENUECAT_PUBLIC_SDK_KEY_IOS`/`_ANDROID` · `Purchases.configure(...)` at startup
 · replace the three `RevenueCatBillingService` bodies with the SDK calls · build
 with `--dart-define=KP_BILLING=revenuecat`.
+
+## Validation (P5-4) — the paywall UX, funnel diagnostics + pricing experiment
+
+The monetization **UX layer** over the seam — the thing a soft-launch player
+actually sees and the analytics that prove it converts ethically.
+
+- **`PaywallController`** (`paywall_controller.dart`) is the brain; the widget is
+  dumb. It owns:
+  - **Purchase diagnostics — the funnel.** Every step emits `paywallStep {step,
+    surface}`: `shown` / `dismissed` bookend the view, and purchase + restore run
+    `*_start` → exactly one outcome (`purchase_success|cancelled|failed`,
+    `restore_success|empty`). Joined to `experimentExposure`, this is the
+    sub-conversion + drop-off view (G4/G6) **and** the support trail for "my
+    purchase didn't work." `monetizationEvent` (revenue) still fires once, on
+    success, from `MonetizationController` — the funnel never double-counts it.
+  - **Pricing experiment — framing only.** `resolveCopy()` exposes the
+    `paywall_copy` A/B (P5-3) and returns a `PaywallCopy` (headline + whether the
+    annual best-value plan leads). The **price is LOCKED** by the catalogue — we
+    A/B *how value is framed*, never the amount charged. A cohort-varied real
+    price would be predatory + child-unsafe, so it is deliberately unexpressible
+    here (the variant only picks copy + order). Off-by-default ⇒ everyone sees
+    control; emergency-rollback = disable the experiment.
+- **`PaywallSheet`** (`game/ui/paywall_sheet.dart`) — the warm sheet: the two
+  LOCKED plans (annual shows its honest savings vs 12× monthly), the cosmetic
+  Heartstone bundles, the Rescue Bundles with their **disclosed** giving split
+  ("$3.49 of $4.99 → real rescues"), and a persistent **ethical-wall note**
+  ("cosmetic & cozy perks only — never an advantage; cancelling never affects
+  your pet"). Opened from the Companion home (the `favorite_border` action).
+  - **Entitlement UX:** once `foreverFriends` is active the upsell is replaced by
+    a thank-you state (no nagging), and the sheet rebuilds live off the
+    `MonetizationController` notifier.
+  - **Restoration UX:** a "Restore purchases" action → `restore_success` /
+    `restore_empty` with a gentle message either way.
+- **Ethical wall, continuously validated:** the type-enforced `Grant` wall
+  (`monetization_test.dart`) is unchanged; P5-4 adds funnel + UX tests
+  (`paywall_controller_test.dart`, `paywall_sheet_test.dart`) pinning that the
+  price never varies by cohort, the ethical note always renders, and the funnel
+  emits the right step for each outcome.

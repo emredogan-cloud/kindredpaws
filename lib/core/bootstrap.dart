@@ -12,6 +12,7 @@ import '../monetization/ad_config.dart';
 import '../monetization/ad_service.dart';
 import '../monetization/ads_controller.dart';
 import '../monetization/monetization_controller.dart';
+import '../monetization/paywall_controller.dart';
 import '../render/pet_renderer.dart';
 import '../render/pet_renderer_factory.dart';
 import '../render/rive_pet_renderer.dart' show RiveDiagnostic;
@@ -140,6 +141,18 @@ AppConfig bootstrap({ServiceLocator? locator}) {
   // A/B experiments coordinator (P5-3): variant assignment + exposure telemetry.
   sl.registerSingleton<Experiments>(
     Experiments(liveOps: sl.get<LiveOps>(), observability: observability),
+  );
+
+  // Paywall coordinator (P5-4): the purchase-funnel diagnostics + the pricing-
+  // *framing* experiment over the (cosmetic/QoL-only) catalogue. The UX sheet
+  // reads this; the ethical wall + telemetry live here, not in the widget.
+  sl.registerSingleton<PaywallController>(
+    PaywallController(
+      monetization: sl.get<MonetizationController>(),
+      experiments: sl.get<Experiments>(),
+      observability: observability,
+      auth: sl.get<AuthService>(),
+    ),
   );
 
   // Pet renderer (P3-2). Registered after observability so the Rive seam's
