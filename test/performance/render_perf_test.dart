@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kindredpaws/core/performance_budgets.dart';
 import 'package:kindredpaws/render/pet_renderer.dart';
 import 'package:kindredpaws/render/rive_pet_renderer.dart';
 
@@ -35,8 +36,8 @@ void main() {
     // 48 rebuilds (4 moods × 12 emotions). Generous CI budget; on-device the
     // real rig self-advances and only the 3 inputs are pushed per change.
     expect(
-      sw.elapsedMilliseconds,
-      lessThan(4000),
+      PerfBudget.renderSweep.isWithin(sw.elapsedMilliseconds),
+      isTrue,
       reason: 'render sweep exceeded budget (${sw.elapsedMilliseconds}ms)',
     );
     expect(tester.takeException(), isNull);
@@ -50,6 +51,6 @@ void main() {
       riveLifeStageValue('grown');
     }
     sw.stop();
-    expect(sw.elapsedMilliseconds, lessThan(500));
+    expect(PerfBudget.inputMapping.isWithin(sw.elapsedMilliseconds), isTrue);
   });
 }
