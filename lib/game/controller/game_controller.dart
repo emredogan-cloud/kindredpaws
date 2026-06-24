@@ -294,10 +294,42 @@ class GameController extends ChangeNotifier {
     });
     // The pet greets you back — a "returning" beat after a real absence,
     // otherwise a normal greeting; a memory callback when one is available.
+    // The returning line is warm + longing, NEVER guilt (the comeback model).
     final intent = resume.offlineHours >= config.graceHours
         ? HeartmindIntent.returning
         : HeartmindIntent.greeting;
     _say(intent, tryCallback: true);
+    _recordRetentionBeats();
+  }
+
+  /// Standard retention-milestone days since adoption (D1/D3/D7/D14/D30) — feeds
+  /// the G4 D1≥42% / D7≥20% / D30≥10% gates.
+  static const Set<int> _retentionDays = {1, 3, 7, 14, 30};
+
+  /// Soft-launch retention beats (P5-2), on a real session start. NEVER guilt:
+  /// the retention-milestone signal, plus the **Gotcha Day** adoption-anniversary
+  /// celebration (a milestone beat — pride + joy, never obligation). Seasonal
+  /// moments arrive via Remote Config content top-ups (Content OS), not a
+  /// hardcoded calendar.
+  void _recordRetentionBeats() {
+    final pet = _save?.pet;
+    if (pet == null) return;
+    final daysSinceAdopt =
+        (_now() ~/ Duration.millisecondsPerDay) -
+        (pet.createdAtMs ~/ Duration.millisecondsPerDay);
+    final isAnniversary = daysSinceAdopt > 0 && daysSinceAdopt % 365 == 0;
+
+    // Retention-milestone return (per session on the day; the dashboard counts
+    // distinct returning users — see AnalyticsMetrics.retentionMilestonesByDay).
+    if (_retentionDays.contains(daysSinceAdopt) || isAnniversary) {
+      observability.event(AnalyticsEvent.retentionMilestone, {
+        'day': daysSinceAdopt,
+      });
+    }
+    // Gotcha Day — the pet celebrates how far you've come together.
+    if (isAnniversary) {
+      _say(HeartmindIntent.milestone);
+    }
   }
 
   /// App returned to the foreground (P3-7). Starts a fresh session: re-resolves
