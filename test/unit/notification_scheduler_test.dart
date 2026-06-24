@@ -1,8 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kindredpaws/content/content_validator.dart';
 import 'package:kindredpaws/services/notification_scheduler.dart';
 
 const _day = Duration.millisecondsPerDay;
 const _day0 = 20000 * _day;
+const _hour = Duration.millisecondsPerHour;
 
 void main() {
   group('InMemoryNotificationScheduler (warm, capped, never guilt)', () {
@@ -65,6 +67,86 @@ void main() {
       await s.scheduleDailyPresence(petName: 'A', fromMs: _day0);
       await s.cancelAll();
       expect(s.scheduled, isEmpty);
+    });
+  });
+
+  group('NotificationScheduler — the 5 kinds + caps (P4-4)', () {
+    test('every template across every kind passes the never-guilt SSOT', () {
+      final banks = [
+        InMemoryNotificationScheduler.warmTemplates,
+        InMemoryNotificationScheduler.memoryTemplates,
+        InMemoryNotificationScheduler.celebrationTemplates,
+        InMemoryNotificationScheduler.streakWarmthTemplates,
+      ];
+      for (final bank in banks) {
+        for (final t in bank) {
+          final lower = t.toLowerCase();
+          for (final w in ContentValidator.forbiddenGuiltLanguage) {
+            expect(lower.contains(w), isFalse, reason: '"$t" contains "$w"');
+          }
+        }
+      }
+    });
+
+    test('scheduleEvent adds a notification of the requested kind', () async {
+      final s = InMemoryNotificationScheduler();
+      await s.scheduleEvent(
+        kind: NotificationKind.celebration,
+        petName: 'Biscuit',
+        atMs: _day0 + 4 * _hour,
+        detail: 'becoming Friends',
+      );
+      expect(s.scheduled.single.kind, NotificationKind.celebration);
+      expect(s.scheduled.single.body, contains('Biscuit'));
+    });
+
+    test('streak-warmth copy is reassuring, never loss-framed', () async {
+      final s = InMemoryNotificationScheduler();
+      await s.scheduleEvent(
+        kind: NotificationKind.streakWarmth,
+        petName: 'Mochi',
+        atMs: _day0 + 4 * _hour,
+      );
+      final body = s.scheduled.single.body.toLowerCase();
+      expect(body, contains('warm'));
+      expect(body, isNot(contains('lost')));
+      expect(body, isNot(contains("don't")));
+    });
+
+    test(
+      'the hard daily cap (2) drops a third event on the same day',
+      () async {
+        final s = InMemoryNotificationScheduler();
+        for (var i = 0; i < 3; i++) {
+          await s.scheduleEvent(
+            kind: NotificationKind.memory,
+            petName: 'Biscuit',
+            atMs: _day0 + (5 + i) * _hour, // all same calendar day
+          );
+        }
+        expect(s.scheduled.length, 2); // 3rd dropped
+        expect(s.countOnDay(_day0 + 6 * _hour), 2);
+      },
+    );
+
+    test('an event on a different day is not blocked by a full day', () async {
+      final s = InMemoryNotificationScheduler();
+      await s.scheduleEvent(
+        kind: NotificationKind.memory,
+        petName: 'A',
+        atMs: _day0 + 5 * _hour,
+      );
+      await s.scheduleEvent(
+        kind: NotificationKind.memory,
+        petName: 'A',
+        atMs: _day0 + 5 * _hour,
+      ); // day full (2)
+      await s.scheduleEvent(
+        kind: NotificationKind.celebration,
+        petName: 'A',
+        atMs: _day0 + _day + 5 * _hour,
+      ); // next day
+      expect(s.scheduled.length, 3);
     });
   });
 }
