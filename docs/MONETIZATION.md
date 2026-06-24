@@ -74,3 +74,30 @@ seam keeps the app fully functional offline.
 - The exact USD→Coin rate and the net-revenue % split are illustrative and **to
   finalize before G4** (brief §9); the ledger is the source of truth for real
   giving, and the player's wallet `compassionCoins` is a display credited from it.
+
+## Activation (P4-5) — RevenueCat + premium gating
+
+The billing **seam** + the orchestration are fully wired offline; activation is a
+founder/credentialed step (REQUIRED_ENVIRONMENTS.md §5).
+
+- **`BillingService` seam** — `NoopBillingService` (offline, simulates purchases)
+  is the default; `RevenueCatBillingService` is selected by
+  `--dart-define=KP_BILLING=revenuecat`. The RevenueCat impl is an **inert gated
+  seam** (no `purchases_flutter` dependency yet) that degrades gracefully —
+  `isProvisioned=false`, no entitlements, every purchase reports unavailable — so
+  selecting it without the SDK never breaks the game. Its docstring lists the
+  exact `Purchases.*` calls that replace each body once provisioned.
+- **`MonetizationController`** is registered in `bootstrap()` (P4-5): it owns the
+  current `Entitlements`, drives **premium gating**, and is the single PII-free
+  emit point for `monetizationEvent` / `compassionCoinMint`.
+- **Premium gating, proven by tests:** purchasing Forever Friends flips
+  `entitlements.foreverFriends` → `removesInterstitials` + `dailyKibbleBonus`
+  (cosmetic/QoL only — never the Bond/pet, §18). `restore()` re-resolves the
+  active subscription. The unprovisioned RevenueCat seam grants nothing.
+
+**Founder activation checklist:** `flutter pub add purchases_flutter` · create the
+Forever Friends subscription + Heartstone/Rescue-Bundle products in App Store
+Connect + Play Console + map them in RevenueCat · set
+`REVENUECAT_PUBLIC_SDK_KEY_IOS`/`_ANDROID` · `Purchases.configure(...)` at startup
+· replace the three `RevenueCatBillingService` bodies with the SDK calls · build
+with `--dart-define=KP_BILLING=revenuecat`.

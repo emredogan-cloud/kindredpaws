@@ -15,6 +15,11 @@ enum BackendMode { mock, firebase }
 /// commissioned `.riv` rig asset arrives (P2); `rive` activates the real seam.
 enum PetRendererBackend { placeholder, rive }
 
+/// Which billing implementation is wired (RevenueCat is the locked choice,
+/// ADR-007; `noop` simulates purchases offline until the SDK + store products
+/// are provisioned — REQUIRED_ENVIRONMENTS.md §5).
+enum BillingMode { noop, revenuecat }
+
 /// Immutable, build-time application configuration.
 class AppConfig {
   const AppConfig({
@@ -24,6 +29,7 @@ class AppConfig {
     required this.heartmindLiveChatEnabled,
     required this.anthropicProxyConfigured,
     required this.environmentLabel,
+    this.billingMode = BillingMode.noop,
   });
 
   /// Default config used when nothing is overridden via `--dart-define`.
@@ -42,6 +48,9 @@ class AppConfig {
       heartmindLiveChatEnabled: _liveChat,
       anthropicProxyConfigured: _proxy,
       environmentLabel: _env,
+      billingMode: _billing == 'revenuecat'
+          ? BillingMode.revenuecat
+          : BillingMode.noop,
     );
   }
 
@@ -68,6 +77,9 @@ class AppConfig {
   /// Free-form environment label (dev / staging / soft-launch / prod).
   final String environmentLabel;
 
+  /// Selected billing backend (RevenueCat is locked; noop until provisioned).
+  final BillingMode billingMode;
+
   bool get usingMockBackend => backendMode == BackendMode.mock;
 
   static const String _backend = String.fromEnvironment(
@@ -87,5 +99,9 @@ class AppConfig {
   static const String _env = String.fromEnvironment(
     'KP_ENV',
     defaultValue: 'dev',
+  );
+  static const String _billing = String.fromEnvironment(
+    'KP_BILLING',
+    defaultValue: 'noop',
   );
 }
