@@ -8,6 +8,7 @@ import 'package:kindredpaws/game/sim/bond_engine.dart';
 import 'package:kindredpaws/game/sim/interaction.dart';
 import 'package:kindredpaws/heartmind/personality.dart';
 import 'package:kindredpaws/services/analytics_service.dart';
+import 'package:kindredpaws/services/notification_scheduler.dart';
 import 'package:kindredpaws/services/share_service.dart';
 
 import '../../support/harness.dart';
@@ -128,6 +129,14 @@ void main() {
       await c.interact(CareInteraction.feed); // pushes Bond over 250
       expect(c.pet!.bond.stage, BondStage.friend);
       expect(analytics.countOf(AnalyticsEvent.bondStageUp), 1);
+
+      // P4-4: the milestone schedules a warm celebration notification.
+      final notes = c.notifications as InMemoryNotificationScheduler;
+      final celebrations = notes.scheduled.where(
+        (n) => n.kind == NotificationKind.celebration,
+      );
+      expect(celebrations, hasLength(1));
+      expect(celebrations.single.body, contains('Biscuit'));
 
       // Staying within the same stage does not re-emit the milestone.
       await c.interact(CareInteraction.play);

@@ -225,6 +225,13 @@ class GameController extends ChangeNotifier {
       observability.event(AnalyticsEvent.bondStageUp, {
         'stage': outcome.state.bond.stage.name,
       });
+      // A warm "come celebrate" nudge for later (never guilt; capped) — P4-4.
+      await notifications.scheduleEvent(
+        kind: NotificationKind.celebration,
+        petName: outcome.state.name,
+        atMs: _now() + 4 * Duration.millisecondsPerHour,
+        detail: 'becoming ${outcome.state.bond.stage.name}s',
+      );
     }
     await _persist();
     notifyListeners();
