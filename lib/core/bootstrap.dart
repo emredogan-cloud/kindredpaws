@@ -9,6 +9,8 @@ import 'app_config.dart';
 import 'compliance_config.dart';
 import 'service_locator.dart';
 import '../monetization/ad_config.dart';
+import '../monetization/ad_service.dart';
+import '../monetization/ads_controller.dart';
 import '../monetization/monetization_controller.dart';
 import '../render/pet_renderer.dart';
 import '../render/pet_renderer_factory.dart';
@@ -106,6 +108,19 @@ AppConfig bootstrap({ServiceLocator? locator}) {
       billing: sl.get<BillingService>(),
       observability: observability,
       backend: sl.get<BackendService>(),
+    ),
+  );
+
+  // Ads (P4-6): the child-safe ad seam + the ethical coordinator (rewarded-first,
+  // capped, never mid-emotion, kid-flags from AdConfig, killable via LiveOps).
+  sl.registerSingleton<AdService>(const NoopAdService());
+  sl.registerSingleton<AdsController>(
+    AdsController(
+      ads: sl.get<AdService>(),
+      adConfig: sl.get<AdConfig>(),
+      liveOps: sl.get<LiveOps>(),
+      remoteConfig: sl.get<RemoteConfigService>(),
+      observability: observability,
     ),
   );
 
