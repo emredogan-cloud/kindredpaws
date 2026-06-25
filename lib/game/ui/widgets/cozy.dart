@@ -105,6 +105,10 @@ class CozyImage extends StatelessWidget {
       cacheWidth: cw,
       filterQuality: FilterQuality.medium,
       semanticLabel: semanticLabel,
+      // Decorative by default: a label-less image is kept out of the a11y tree
+      // (adjacent text carries the meaning), so screen readers don't announce
+      // an unnamed image for every icon/illustration.
+      excludeFromSemantics: semanticLabel == null,
       errorBuilder: (_, _, _) => SizedBox(width: width, height: height),
     );
   }
@@ -183,11 +187,17 @@ class CozyImageButton extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 2),
+        // A soft white halo keeps the label legible over the busy cozy scene
+        // (esp. the dark night room) without a heavy backing.
         Text(
           label,
           style: Theme.of(context).textTheme.labelMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-            color: Theme.of(context).colorScheme.onSurface,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF4A3F38),
+            shadows: const [
+              Shadow(color: Color(0xE6FFF6EC), blurRadius: 6),
+              Shadow(color: Color(0xE6FFF6EC), blurRadius: 3),
+            ],
           ),
         ),
       ],

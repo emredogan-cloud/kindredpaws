@@ -70,4 +70,28 @@ void main() {
     expect(find.byKey(const Key('memory-book')), findsOneWidget);
     expect(find.textContaining('Rescue Day'), findsWidgets);
   });
+
+  testWidgets('home does not overflow on a short screen (cozy ring clamps)', (
+    tester,
+  ) async {
+    // A realistic small phone (360×740 logical — smaller than most real devices).
+    tester.view.physicalSize = const Size(360, 740);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final c = makeController();
+    await c.load();
+    await c.adopt(species: Species.puppy, name: 'Biscuit');
+
+    await tester.pumpWidget(
+      MaterialApp(home: CompanionHomeScreen(controller: c)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('companion-home')), findsOneWidget);
+    expect(find.byKey(const Key('feed-button')), findsOneWidget);
+    // No RenderFlex overflow / layout exception on the small surface.
+    expect(tester.takeException(), isNull);
+  });
 }

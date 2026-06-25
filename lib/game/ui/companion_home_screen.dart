@@ -133,22 +133,33 @@ class CompanionHomeScreen extends StatelessWidget {
                       if (controller.petLine != null)
                         _SpeechBubble(text: controller.petLine!),
                       Expanded(
-                        child: Align(
-                          alignment: const Alignment(0, 0.35),
-                          child: GestureDetector(
-                            key: const Key('pet-tap'),
-                            onTap: controller.nudgeAmbient,
-                            child: CareRing(
-                              meters: pet.meters,
-                              size: 232,
-                              child: rig.build(
-                                context,
-                                mood: petMoodFor(controller.mood),
-                                lifeStage: pet.lifeStage.id,
-                                emotion: currentPetEmotion(controller),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            // Clamp the ring so it can never overflow a squeezed
+                            // Expanded on short screens (responsive fix).
+                            // Never exceed the room the Expanded actually got
+                            // (so the ring can't overflow a short screen).
+                            final ringSize = constraints.maxHeight.isFinite
+                                ? constraints.maxHeight.clamp(0.0, 232.0)
+                                : 232.0;
+                            return Align(
+                              alignment: const Alignment(0, 0.35),
+                              child: GestureDetector(
+                                key: const Key('pet-tap'),
+                                onTap: controller.nudgeAmbient,
+                                child: CareRing(
+                                  meters: pet.meters,
+                                  size: ringSize,
+                                  child: rig.build(
+                                    context,
+                                    mood: petMoodFor(controller.mood),
+                                    lifeStage: pet.lifeStage.id,
+                                    emotion: currentPetEmotion(controller),
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
+                            );
+                          },
                         ),
                       ),
                       _CozyChip(
@@ -162,9 +173,9 @@ class CompanionHomeScreen extends StatelessWidget {
                               ?.copyWith(fontWeight: FontWeight.w600),
                         ),
                       ),
-                      if (controller.lastMessage != null)
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(24, 6, 24, 0),
+                      if (controller.lastMessage != null) ...[
+                        const SizedBox(height: 6),
+                        _CozyChip(
                           child: Text(
                             controller.lastMessage!,
                             key: const Key('feedback-message'),
@@ -173,10 +184,11 @@ class CompanionHomeScreen extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               color: scheme.primary,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ),
+                      ],
                       const SizedBox(height: 14),
                       _verbBar(context),
                       const SizedBox(height: 18),
@@ -215,20 +227,26 @@ class CompanionHomeScreen extends StatelessWidget {
             Row(
               children: [
                 const ExcludeSemantics(child: Text('💖 ')),
-                Semantics(
-                  label: 'Bond level: ${bond.stage.displayName}',
-                  child: Text(
-                    bond.stage.displayName,
-                    key: const Key('bond-stage'),
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
+                Flexible(
+                  child: Semantics(
+                    label: 'Bond level: ${bond.stage.displayName}',
+                    child: Text(
+                      bond.stage.displayName,
+                      key: const Key('bond-stage'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ),
-                const Spacer(),
+                const SizedBox(width: 8),
                 if (next != null)
                   Text(
                     'next: ${next.displayName}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
               ],

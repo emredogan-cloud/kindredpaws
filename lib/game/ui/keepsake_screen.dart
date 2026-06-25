@@ -76,7 +76,6 @@ class _KeepsakeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
     return Card(
       key: Key('keepsake-${keepsake.id}'),
       clipBehavior: Clip.antiAlias,
@@ -85,7 +84,7 @@ class _KeepsakeCard extends StatelessWidget {
         children: [
           Expanded(
             child: Container(
-              color: scheme.secondaryContainer,
+              color: const Color(0xFFFBE3D2), // warm peach (cozy, not Material)
               alignment: Alignment.center,
               child: ExcludeSemantics(
                 child: Text(

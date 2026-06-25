@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import '../controller/game_controller.dart';
 import 'companion_home_screen.dart';
 import 'rescue_day_screen.dart';
+import 'widgets/cozy.dart';
 
 class GameRoot extends StatefulWidget {
   const GameRoot({required this.controller, this.autoLoad = true, super.key});
@@ -32,6 +33,20 @@ class _GameRootState extends State<GameRoot> with WidgetsBindingObserver {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         widget.controller.load();
       });
+    }
+  }
+
+  bool _precached = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Warm the first-seen cozy scenes so the home/onboarding paints without a
+    // cream flash (perf polish; decoded once, cached). Best-effort + guarded.
+    if (_precached) return;
+    _precached = true;
+    for (final bg in KpAssets.backgrounds) {
+      precacheImage(AssetImage(bg), context, onError: (_, _) {});
     }
   }
 
