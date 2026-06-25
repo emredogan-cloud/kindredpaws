@@ -15,6 +15,7 @@ import '../../monetization/entitlements.dart';
 import '../../monetization/monetization_controller.dart';
 import '../../monetization/paywall_controller.dart';
 import '../../monetization/product_catalog.dart';
+import 'widgets/cozy.dart';
 
 /// Opens the paywall as a modal sheet, logging `shown` on open + `dismissed` on
 /// close (the funnel bookends). [surface] tags where it was opened from.
@@ -114,6 +115,18 @@ class _PaywallSheetState extends State<PaywallSheet> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: CozyImage(
+                      entitled
+                          ? KpAssets.entitledGlow
+                          : KpAssets.foreverFriendsHeader,
+                      width: double.infinity,
+                      height: 150,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   Text(_copy.headline, style: theme.textTheme.headlineSmall),
                   const SizedBox(height: 4),
                   Text(_copy.subline, style: theme.textTheme.bodyMedium),

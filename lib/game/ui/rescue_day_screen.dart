@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import '../../core/name_input_validator.dart';
 import '../controller/game_controller.dart';
 import '../model/species.dart';
+import 'widgets/cozy.dart';
 
 class RescueDayScreen extends StatefulWidget {
   const RescueDayScreen({required this.controller, super.key});
@@ -62,26 +63,43 @@ class _RescueDayScreenState extends State<RescueDayScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return Scaffold(
       key: const Key('rescue-day'),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [scheme.surfaceContainerHighest, scheme.surface],
-          ),
-        ),
+      body: CozyBackground(
+        asset: KpAssets.onboardingDark,
+        // A soft scrim lifts the cream panel + text off the dim rainy scene.
+        scrim: Colors.black.withValues(alpha: 0.26),
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Center(child: _body(context)),
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(22, 26, 22, 22),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFFBF5).withValues(alpha: 0.93),
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.18),
+                      blurRadius: 24,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: _body(context),
+              ),
+            ),
           ),
         ),
       ),
     );
   }
+
+  static const _beatIllos = [
+    KpAssets.onboardingBeat1,
+    KpAssets.onboardingBeat2,
+    KpAssets.onboardingBeat3,
+  ];
 
   Widget _body(BuildContext context) {
     final theme = Theme.of(context);
@@ -90,8 +108,16 @@ class _RescueDayScreenState extends State<RescueDayScreen> {
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(b.emoji, style: const TextStyle(fontSize: 72)),
-          const SizedBox(height: 24),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: CozyImage(
+              _beatIllos[_beat],
+              width: 280,
+              height: 188,
+              fit: BoxFit.cover,
+            ),
+          ),
+          const SizedBox(height: 20),
           Text(
             b.title,
             style: theme.textTheme.headlineSmall,
@@ -128,12 +154,22 @@ class _RescueDayScreenState extends State<RescueDayScreen> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: const CozyImage(
+            KpAssets.adoptionChoice,
+            width: 280,
+            height: 176,
+            fit: BoxFit.cover,
+          ),
+        ),
+        const SizedBox(height: 18),
         Text(
           'Will you give it a forever home?',
           style: theme.textTheme.headlineSmall,
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 20),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [

@@ -11,6 +11,7 @@ import 'core/service_locator.dart';
 import 'data/prefs_save_store.dart';
 import 'game/controller/game_controller.dart';
 import 'game/game_wiring.dart';
+import 'game/ui/cozy_theme.dart';
 import 'game/ui/game_root.dart';
 import 'services/analytics_service.dart';
 import 'services/crash_reporter.dart';
@@ -98,10 +99,7 @@ class KindredPawsApp extends StatelessWidget {
     return MaterialApp(
       title: KindredTerms.gameTitle,
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF6C8EAD)),
-      ),
+      theme: cozyTheme(),
       // Key by controller identity so a controller swap (e.g. sign-in / restore)
       // gets a fresh GameRoot State that re-runs load(), instead of Flutter
       // silently reusing the old State and never loading the new save.
