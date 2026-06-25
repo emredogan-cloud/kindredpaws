@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import '../../keepsake/keepsake.dart';
 import '../../services/share_service.dart';
 import '../controller/game_controller.dart';
+import 'widgets/cozy.dart';
 
 class KeepsakeScreen extends StatelessWidget {
   const KeepsakeScreen({required this.controller, super.key});
@@ -23,13 +24,25 @@ class KeepsakeScreen extends StatelessWidget {
       key: const Key('keepsakes'),
       appBar: AppBar(title: const Text('Keepsakes')),
       body: cards.isEmpty
-          ? const Padding(
-              padding: EdgeInsets.all(24),
+          ? Padding(
+              padding: const EdgeInsets.all(24),
               child: Center(
-                child: Text(
-                  'Special moments with your pet will be saved here as '
-                  'beautiful cards to keep and share. 💛',
-                  textAlign: TextAlign.center,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const CozyImage(
+                      KpAssets.emptyKeepsakes,
+                      width: 240,
+                      height: 200,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Special moments with your pet will be saved here as '
+                      'beautiful cards to keep and share. 💛',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                  ],
                 ),
               ),
             )
@@ -63,7 +76,6 @@ class _KeepsakeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
     return Card(
       key: Key('keepsake-${keepsake.id}'),
       clipBehavior: Clip.antiAlias,
@@ -72,7 +84,7 @@ class _KeepsakeCard extends StatelessWidget {
         children: [
           Expanded(
             child: Container(
-              color: scheme.secondaryContainer,
+              color: const Color(0xFFFBE3D2), // warm peach (cozy, not Material)
               alignment: Alignment.center,
               child: ExcludeSemantics(
                 child: Text(

@@ -94,3 +94,4 @@ videos/
 !test/golden/goldens/
 !test/golden/goldens/*.png
 prompt.txt
+test/golden/failures/
