@@ -39,9 +39,12 @@ import '../services/status_snapshot_service.dart';
 import '../heartmind/heartmind_service.dart';
 import '../heartmind/local_heartmind.dart';
 
-AppConfig bootstrap({ServiceLocator? locator}) {
+AppConfig bootstrap({
+  ServiceLocator? locator,
+  PetRendererBackend fallbackRenderer = PetRendererBackend.placeholder,
+}) {
   final sl = locator ?? ServiceLocator.instance;
-  final config = AppConfig.fromEnvironment();
+  final config = AppConfig.fromEnvironment(fallbackRenderer: fallbackRenderer);
 
   sl.registerSingleton<AppConfig>(config);
 
