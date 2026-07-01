@@ -8,6 +8,7 @@
 library;
 
 import '../model/care_meters.dart';
+import '../model/care_streak.dart';
 import '../model/items.dart';
 import '../model/mood.dart';
 import '../model/pet_state.dart';
@@ -29,6 +30,7 @@ class ResumeOutcome {
     required this.offlineHours,
     required this.isNewDay,
     required this.greetingBond,
+    required this.dailyKibble,
     required this.grewWhileAway,
   });
 
@@ -38,6 +40,9 @@ class ResumeOutcome {
   final double offlineHours;
   final bool isNewDay;
   final int greetingBond;
+
+  /// Kibble granted for the first open of the day (§8.1), 0 otherwise.
+  final int dailyKibble;
   final bool grewWhileAway;
 }
 
@@ -52,6 +57,7 @@ class InteractionOutcome {
     required this.wasNeeded,
     required this.streakIncremented,
     required this.freezeUsed,
+    required this.streakBrokeFromCount,
     required this.comfortBeat,
     required this.grew,
   });
@@ -65,6 +71,10 @@ class InteractionOutcome {
   final bool wasNeeded;
   final bool streakIncremented;
   final bool freezeUsed;
+
+  /// If > 0, the streak reset with this count before the break — the UI may
+  /// offer the one-time Streak Repair (welcome-back framing, never penalty).
+  final int streakBrokeFromCount;
   final bool comfortBeat;
   final bool grew;
 }
@@ -92,6 +102,11 @@ class GameSimulation {
   final LifeStageEngine _life;
 
   MoodResolver get mood => _mood;
+
+  /// One-time Streak Repair (§11.2): restores a just-broken streak to
+  /// [toCount]. The caller charges the Kibble (config.streakRepairKibbleCost).
+  CareStreak repairStreak(CareStreak streak, int toCount) =>
+      _streak.repair(streak, toCount);
 
   /// Resolve elapsed time on foreground: decay (never below floor, longing not
   /// guilt), count the active day, award the first-daily greeting, and check
@@ -144,10 +159,12 @@ class GameSimulation {
       workingLedger = award.ledger;
     }
 
+    final dailyKibble = isNewDay ? config.dailyKibbleBonus : 0;
     final next = state.copyWith(
       meters: decayed,
       bond: bond,
       lifeStage: life.stage,
+      wallet: state.wallet.addKibble(dailyKibble),
       activeDays: activeDays,
       lastActiveDayEpoch: today,
       lastSimTimestampMs: nowMs,
@@ -160,6 +177,7 @@ class GameSimulation {
       offlineHours: offlineHours,
       isNewDay: isNewDay,
       greetingBond: greetingBond,
+      dailyKibble: dailyKibble,
       grewWhileAway: life.advanced,
     );
   }
@@ -251,6 +269,7 @@ class GameSimulation {
       wasNeeded: effect.wasNeeded,
       streakIncremented: streakUpdate.isNewCareDay,
       freezeUsed: streakUpdate.freezeUsed,
+      streakBrokeFromCount: streakUpdate.brokeFromCount,
       comfortBeat: comfortBeat,
       grew: life.advanced,
     );

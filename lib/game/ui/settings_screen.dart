@@ -12,6 +12,9 @@ import '../../core/service_locator.dart';
 import '../../services/feel_service.dart';
 import '../../services/prefs_service.dart';
 import '../controller/game_controller.dart';
+import '../model/bond.dart';
+import '../model/items.dart';
+import '../model/life_stage.dart';
 import '../model/species.dart';
 import 'widgets/cozy.dart';
 
@@ -280,11 +283,84 @@ class ProfileScreen extends StatelessWidget {
                 title: 'Days together',
                 value: '${pet.activeDays}',
               ),
+              const Padding(
+                padding: EdgeInsets.fromLTRB(4, 18, 4, 6),
+                child: Text(
+                  'Milestones we\'ve reached',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
+                    color: Color(0xFF7A6A58),
+                  ),
+                ),
+              ),
+              ..._milestones(),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 10),
+                child: Text(
+                  'more chapters to come 💛',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontStyle: FontStyle.italic,
+                    color: Color(0xFF7A6A58),
+                  ),
+                ),
+              ),
             ],
           );
         },
       ),
     );
+  }
+
+  /// The Milestone Book — only chapters already lived (derived from the save;
+  /// never a checklist, never pressure). Each is a warm celebration line.
+  List<Widget> _milestones() {
+    final pet = controller.pet!;
+    final streakTier = pet.careStreak.count >= 30
+        ? 30
+        : pet.careStreak.count >= 7
+        ? 7
+        : 3;
+    final reached = <(String, String)>[
+      ('🏡', 'Rescue Day — the day we met'),
+      for (final stage in BondStage.values)
+        if (stage.rank > 0 && pet.bond.stage.rank >= stage.rank)
+          ('💖', 'Reached ${stage.displayName} together'),
+      if (pet.lifeStage != LifeStage.pupKit)
+        ('🌱', 'Grew into a ${pet.lifeStage.displayName}'),
+      if (pet.careStreak.count >= 3)
+        ('🔥', '$streakTier days of care in a row'),
+      for (final toy in ItemCatalog.ofKind(ItemKind.toy))
+        if (controller.inventory.affinity(toy.id) >= 15)
+          ('🧸', '${toy.displayName} became a favourite'),
+      if (controller.keepsakes.length >= 5)
+        ('📸', '${controller.keepsakes.length} keepsakes collected'),
+      if (pet.activeDays >= 7) ('🌞', 'A whole week together'),
+      if (pet.activeDays >= 30) ('🌈', 'A whole month together'),
+    ];
+    return [
+      for (final (emoji, line) in reached)
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 3),
+          child: CozyChip(
+            child: Row(
+              children: [
+                ExcludeSemantics(
+                  child: Text(emoji, style: const TextStyle(fontSize: 20)),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    line,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+    ];
   }
 
   Widget _fact(

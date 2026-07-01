@@ -68,6 +68,7 @@ class SimConfig {
     },
     this.recentAttentionWeight = 0.10,
     this.sleepRegenPerHour = 20.0,
+    this.dailyKibbleBonus = 50,
     this.streakWarmthCap = 2,
     this.streakRepairKibbleCost = 100,
     this.youngOneMinBondStage = 1, // Friend
@@ -109,6 +110,10 @@ class SimConfig {
   /// Energy restored per real hour asleep (§5.1: rest +20/h). Applied as a
   /// wake-time credit for the whole nap, on top of normal offline decay.
   final double sleepRegenPerHour;
+
+  /// Kibble granted on the first open of a new day (§8.1: daily first-open
+  /// +50) — a welcome, never a hook; missing days costs nothing.
+  final int dailyKibbleBonus;
 
   final int streakWarmthCap;
   final int streakRepairKibbleCost;

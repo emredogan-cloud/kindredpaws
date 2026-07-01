@@ -165,6 +165,10 @@ class GameController extends ChangeNotifier {
   /// after adopt/resume (the pet shows its resting expression for the mood).
   CareInteraction? lastInteraction;
 
+  /// A pending one-time Streak Repair offer (the count that just broke), or
+  /// null. Welcome-back framing only — ignoring it costs nothing (§11.2).
+  int? streakRepairOffer;
+
   bool get loading => _loading;
   bool get hasPet => _save != null;
   PetState? get pet => _save?.pet;
@@ -310,6 +314,11 @@ class GameController extends ChangeNotifier {
           : save.facts,
     );
     _captureKeepsakes(outcome, preStage);
+    if (outcome.streakBrokeFromCount > 0) {
+      streakRepairOffer = outcome.streakBrokeFromCount;
+    } else if (outcome.streakIncremented) {
+      streakRepairOffer = null; // a fresh day of care moves us forward
+    }
     if (outcome.grew || outcome.state.bond.stage != preStage) {
       _cue(SfxCue.tada, HapticKind.celebrate);
     } else if (outcome.comfortBeat) {
@@ -626,6 +635,33 @@ class GameController extends ChangeNotifier {
     return true;
   }
 
+  /// The one-time Streak Repair (§11.2): spends Kibble to rekindle the streak
+  /// that just broke. Only available while [streakRepairOffer] stands; always
+  /// optional, never nagged. Returns false when Kibble is short (warm copy).
+  Future<bool> repairStreak() async {
+    final save = _save;
+    final offer = streakRepairOffer;
+    if (save == null || offer == null) return false;
+    final debited = save.pet.wallet.spendKibble(config.streakRepairKibbleCost);
+    if (debited == null) {
+      lastMessage =
+          'A few more care moments and the streak can be rekindled 💛';
+      notifyListeners();
+      return false;
+    }
+    final rekindled = sim.repairStreak(save.pet.careStreak, offer + 1);
+    _save = save.copyWith(
+      pet: save.pet.copyWith(wallet: debited, careStreak: rekindled),
+    );
+    streakRepairOffer = null;
+    _cue(SfxCue.tada, HapticKind.success);
+    lastMessage = 'Your streak is glowing again — day ${offer + 1} 🔥';
+    observability.event(AnalyticsEvent.streakEvent, {'count': rekindled.count});
+    await _persist();
+    notifyListeners();
+    return true;
+  }
+
   void _resumeSession() {
     final save = _save!;
     final resume = sim.resolveOnResume(
@@ -648,6 +684,11 @@ class GameController extends ChangeNotifier {
     observability.event(AnalyticsEvent.sessionStart, {
       'offline_hours': resume.offlineHours.round(),
     });
+    if (resume.dailyKibble > 0) {
+      lastMessage =
+          '+${resume.dailyKibble} Kibble — happy new day together! 🦴';
+      _cue(SfxCue.sparkle);
+    }
     // The pet greets you back — a "returning" beat after a real absence,
     // otherwise a normal greeting; a memory callback when one is available.
     // The returning line is warm + longing, NEVER guilt (the comeback model).

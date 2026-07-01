@@ -42,6 +42,8 @@ class HomeRoom extends StatelessWidget {
         child: Column(
           children: [
             _bondBar(context, pet.bond),
+            if (controller.streakRepairOffer != null)
+              _RepairOfferChip(controller: controller),
             if (controller.petLine != null)
               CozySpeechBubble(text: controller.petLine!),
             Expanded(
@@ -114,6 +116,7 @@ class HomeRoom extends StatelessWidget {
     final progress = next == null
         ? 1.0
         : ((bond.value - from) / (to - from)).clamp(0.0, 1.0);
+    final streak = controller.pet!.careStreak;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 8, 14, 0),
@@ -140,11 +143,28 @@ class HomeRoom extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 if (next != null)
-                  Text(
-                    'next: ${next.displayName}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall,
+                  Flexible(
+                    child: Text(
+                      'next: ${next.displayName}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                const Spacer(),
+                if (streak.count > 0)
+                  Semantics(
+                    label:
+                        'Care streak: ${streak.count} days'
+                        '${streak.warmthBanked > 0 ? ', ${streak.warmthBanked} warmth saved' : ''}',
+                    child: Text(
+                      '🔥${streak.count}'
+                      '${streak.warmthBanked > 0 ? ' ❄️${streak.warmthBanked}' : ''}',
+                      key: const Key('streak-chip'),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                   ),
               ],
             ),
@@ -189,6 +209,55 @@ class HomeRoom extends StatelessWidget {
           onTap: () => controller.interact(CareInteraction.play),
         ),
       ],
+    );
+  }
+}
+
+/// The one-time Streak Repair invitation (§11.2): appears only right after a
+/// streak breaks, reads as a welcome-back, and can be dismissed for free —
+/// ignoring it never costs anything and the pet never minds.
+class _RepairOfferChip extends StatelessWidget {
+  const _RepairOfferChip({required this.controller});
+  final GameController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final offer = controller.streakRepairOffer;
+    if (offer == null) return const SizedBox.shrink();
+    final cost = controller.config.streakRepairKibbleCost;
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: CozyChip(
+        child: Row(
+          children: [
+            Flexible(
+              child: Text(
+                'Your $offer-day streak can be rekindled 🔥',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+            TextButton(
+              key: const Key('streak-repair'),
+              onPressed: controller.repairStreak,
+              child: Text(
+                '$cost 🦴',
+                style: const TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ),
+            IconButton(
+              key: const Key('streak-repair-dismiss'),
+              tooltip: 'No thanks',
+              icon: const Icon(Icons.close_rounded, size: 18),
+              onPressed: () {
+                controller.streakRepairOffer = null;
+                controller.nudgeAmbient(); // a warm shrug — nothing lost
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

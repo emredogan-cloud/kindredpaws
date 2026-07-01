@@ -133,9 +133,9 @@ Sequencing: feel-foundation first (E1 raises the ceiling for everything), then s
 | Phase | Status | Evidence |
 |---|---|---|
 | Baseline (rooms program) | ✅ Complete | PR #63 CI 9/9 green; IMMERSIVE_PET_EXPERIENCE_REPORT.md |
-| E1 Feel & Feedback | ⏳ In progress | — |
-| E2 Settings/Profile/Compliance | ▢ Pending | — |
-| E3 Retention surfaces | ▢ Pending | — |
+| E1 Feel & Feedback | ✅ Complete | a594c3b (+review fixes in E3 commit); adversarial review: 1 High (stale-burst replay) found & fixed, copy + same-tick-bond fixes applied |
+| E2 Settings/Profile/Compliance | ✅ Complete | 8df8f39 — Settings (toggles, right-to-be-forgotten), Our story profile, drawer complete |
+| E3 Retention surfaces | ✅ Complete | daily +50 Kibble (§8.1), streak chip + Warmth, one-time Streak Repair (§11.2), Milestone Book |
 | E4 Mini games | ▢ Pending | — |
 | E5 Living-pet polish | ▢ Pending | — |
 | E6 Hardening | ▢ Pending | — |

@@ -168,13 +168,17 @@ class PetFx extends StatefulWidget {
 }
 
 class _PetFxState extends State<PetFx> {
-  int _lastOutcomeId = 0;
+  /// The outcome already burst for (by reference). Seeded from the controller
+  /// at mount so a remount (rooms live in a PageView — every swipe disposes/
+  /// recreates this state) never replays a stale action's burst.
+  Object? _seenOutcome;
   int _burstSeq = 0;
   BurstKind? _kind;
 
   @override
   void initState() {
     super.initState();
+    _seenOutcome = widget.controller.lastOutcome;
     widget.controller.addListener(_onChange);
   }
 
@@ -186,10 +190,8 @@ class _PetFxState extends State<PetFx> {
 
   void _onChange() {
     final outcome = widget.controller.lastOutcome;
-    if (outcome == null) return;
-    final id = identityHashCode(outcome);
-    if (id == _lastOutcomeId) return;
-    _lastOutcomeId = id;
+    if (outcome == null || identical(outcome, _seenOutcome)) return;
+    _seenOutcome = outcome;
     final kind = outcome.grew
         ? BurstKind.confetti
         : outcome.comfortBeat
@@ -264,14 +266,19 @@ class _CelebrationOverlayState extends State<CelebrationOverlay> {
     if (pet == null) return;
     String? banner;
     if (_seenLifeStage != null && pet.lifeStage.id != _seenLifeStage) {
-      banner = '${pet.name} grew into a ${pet.lifeStage.displayName}! 🎉';
+      // Growth wins this tick; a bond stage crossed by the SAME interact
+      // stays un-seen so its own celebration follows on the next beat.
+      banner = pet.lifeStage.id == 'grown'
+          ? '${pet.name} is all grown up! 🎉'
+          : '${pet.name} grew into a ${pet.lifeStage.displayName}! 🎉';
+      _seenLifeStage = pet.lifeStage.id;
     } else if (_seenBondStage != null && pet.bond.stage != _seenBondStage) {
-      banner =
-          'You and ${pet.name} are ${pet.bond.stage.displayName}s '
-          'now 💛';
+      banner = 'You and ${pet.name} reached ${pet.bond.stage.displayName} 💛';
+      _seenBondStage = pet.bond.stage;
+    } else {
+      _seenLifeStage = pet.lifeStage.id;
+      _seenBondStage = pet.bond.stage;
     }
-    _seenLifeStage = pet.lifeStage.id;
-    _seenBondStage = pet.bond.stage;
     if (banner == null || !mounted) return;
     setState(() {
       _banner = banner;
