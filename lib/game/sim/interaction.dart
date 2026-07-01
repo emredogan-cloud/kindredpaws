@@ -8,6 +8,7 @@ library;
 import 'dart:math' as math;
 
 import '../model/care_meters.dart';
+import '../model/items.dart';
 import 'sim_config.dart';
 
 enum CareInteraction {
@@ -51,6 +52,15 @@ class SessionInteractions {
     petting: petting,
   );
 
+  /// One more petting/comfort touch this session (its own diminishing track —
+  /// §5.4: petting bond is tiny and capped, so cuddles stay warm, not farmable).
+  SessionInteractions incrementPetting() => SessionInteractions(
+    feed: feed,
+    clean: clean,
+    play: play,
+    petting: petting + 1,
+  );
+
   static const SessionInteractions empty = SessionInteractions();
 }
 
@@ -86,22 +96,30 @@ class InteractionEngine {
 
   double _clamp(double v) => v.clamp(config.floor, 100);
 
+  /// Applies one care verb. With [item] (a pantry food on feed, an owned toy
+  /// on play) the item's profile replaces the generic restore values, so the
+  /// Kitchen and Play Garden enrich the SAME three canonical verbs — bond,
+  /// streak, and diminishing-returns semantics stay identical. [toyAffinity]
+  /// adds a small joy warmth for a well-loved toy (a meter, never Bond — no
+  /// pay-to-win).
   InteractionEffect apply(
     CareMeters meters,
     CareInteraction interaction,
-    SessionInteractions session,
-  ) {
+    SessionInteractions session, {
+    ItemDef? item,
+    int toyAffinity = 0,
+  }) {
     final n = session.countOf(interaction);
     final bp = config.bondPoints;
 
     switch (interaction) {
       case CareInteraction.feed:
         final needed = meters.hunger < 100;
+        final restore = item?.satiety ?? config.feedRestore;
+        final joy = item == null ? config.feedHappiness : item.joy;
         final next = meters.copyWith(
-          hunger: _clamp(meters.hunger + _diminish(config.feedRestore, n)),
-          happiness: _clamp(
-            meters.happiness + _diminish(config.feedHappiness, n),
-          ),
+          hunger: _clamp(meters.hunger + _diminish(restore, n)),
+          happiness: _clamp(meters.happiness + _diminish(joy, n)),
         );
         return InteractionEffect(
           meters: next,
@@ -130,14 +148,17 @@ class InteractionEngine {
         );
       case CareInteraction.play:
         // Play costs energy (not diminished — it always tires the pet) and
-        // boosts happiness (diminished).
+        // boosts happiness (diminished). A well-loved toy plays a little
+        // sweeter: +0.6 joy per shared play, capped at +6.
+        final joy =
+            (item?.joy ?? config.playHappiness) +
+            (toyAffinity * 0.6).clamp(0.0, 6.0);
+        final energyCost = item == null ? config.playEnergyCost : -item.energy;
         final next = meters.copyWith(
-          happiness: _clamp(
-            meters.happiness + _diminish(config.playHappiness, n),
-          ),
-          energy: _clamp(meters.energy - config.playEnergyCost),
+          happiness: _clamp(meters.happiness + _diminish(joy, n)),
+          energy: _clamp(meters.energy - energyCost),
         );
-        final willing = meters.energy > config.playEnergyCost;
+        final willing = meters.energy > energyCost;
         return InteractionEffect(
           meters: next,
           rawBondPoints: _diminish(

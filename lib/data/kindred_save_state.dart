@@ -1,6 +1,7 @@
-/// The persisted save (schema v6), mirroring GAME_TECHNICAL_SYSTEMS.md §3.4.
+/// The persisted save (schema v7), mirroring GAME_TECHNICAL_SYSTEMS.md §3.4.
 /// Holds the full runtime [PetState], the daily Bond [BondLedger], the Memory
-/// Book facts, Keepsakes, and the pet's evolving [PersonalityProfile].
+/// Book facts, Keepsakes, the pet's evolving [PersonalityProfile], and the
+/// household [Inventory] (the room-based home).
 /// Versioned + migrated forward (Risk R4: no update may orphan a pet).
 /// Serialization only — the simulation lives in `lib/game`.
 library;
@@ -8,6 +9,7 @@ library;
 import '../game/model/bond.dart';
 import '../game/model/care_meters.dart';
 import '../game/model/care_streak.dart';
+import '../game/model/inventory.dart';
 import '../game/model/life_stage.dart';
 import '../game/model/pet_state.dart';
 import '../game/model/species.dart';
@@ -22,6 +24,7 @@ import 'migrations/v2_to_v3.dart';
 import 'migrations/v3_to_v4.dart';
 import 'migrations/v4_to_v5.dart';
 import 'migrations/v5_to_v6.dart';
+import 'migrations/v6_to_v7.dart';
 import 'save_envelope.dart';
 
 class KindredSaveState {
@@ -32,10 +35,11 @@ class KindredSaveState {
     this.keepsakes = const [],
     this.nestCosmeticIds = const [],
     this.personality = PersonalityProfile.neutral,
+    this.inventory = const Inventory(),
   });
 
   /// Schema version this app writes. Bump + add a migration on change.
-  static const int currentSchemaVersion = 6;
+  static const int currentSchemaVersion = 7;
 
   /// Ordered migration chain → [currentSchemaVersion].
   static const List<Migration> migrations = [
@@ -44,6 +48,7 @@ class KindredSaveState {
     V3ToV4(),
     V4ToV5(),
     V5ToV6(),
+    V6ToV7(),
   ];
 
   final PetState pet;
@@ -56,6 +61,10 @@ class KindredSaveState {
   /// survives app restarts — "Only MY pet" must be stable, not reset each open).
   final PersonalityProfile personality;
 
+  /// The household inventory — pantry, toys (+affection), care supplies, and
+  /// the wardrobe closet (persisted from v7, the room-based home).
+  final Inventory inventory;
+
   KindredSaveState copyWith({
     PetState? pet,
     BondLedger? ledger,
@@ -63,6 +72,7 @@ class KindredSaveState {
     List<Keepsake>? keepsakes,
     List<String>? nestCosmeticIds,
     PersonalityProfile? personality,
+    Inventory? inventory,
   }) => KindredSaveState(
     pet: pet ?? this.pet,
     ledger: ledger ?? this.ledger,
@@ -70,6 +80,7 @@ class KindredSaveState {
     keepsakes: keepsakes ?? this.keepsakes,
     nestCosmeticIds: nestCosmeticIds ?? this.nestCosmeticIds,
     personality: personality ?? this.personality,
+    inventory: inventory ?? this.inventory,
   );
 
   SaveEnvelope toEnvelope() => SaveEnvelope(
@@ -92,10 +103,12 @@ class KindredSaveState {
       'memoryFacts': facts.map((f) => f.toJson()).toList(),
       'keepsakes': keepsakes.map((k) => k.toJson()).toList(),
       'personality': personality.toMap(),
+      'inventory': inventory.toMap(),
+      'sleepingSinceMs': pet.sleepingSinceMs,
     },
   );
 
-  /// Reads a v6 envelope. Upgrade older envelopes with [MigrationRunner] first.
+  /// Reads a v7 envelope. Upgrade older envelopes with [MigrationRunner] first.
   factory KindredSaveState.fromEnvelope(SaveEnvelope env) {
     if (env.schemaVersion != currentSchemaVersion) {
       throw StateError(
@@ -129,6 +142,7 @@ class KindredSaveState {
       lastActiveDayEpoch: (d['lastActiveDayEpoch'] as num?)?.toInt(),
       createdAtMs: (d['createdAtMs'] as num?)?.toInt() ?? 0,
       lastSimTimestampMs: (d['lastSimTimestampMs'] as num).toInt(),
+      sleepingSinceMs: (d['sleepingSinceMs'] as num?)?.toInt(),
     );
 
     return KindredSaveState(
@@ -145,6 +159,9 @@ class KindredSaveState {
           .toList(),
       personality: PersonalityProfile.fromMap(
         (d['personality'] as Map?)?.cast<String, dynamic>() ?? const {},
+      ),
+      inventory: Inventory.fromMap(
+        (d['inventory'] as Map?)?.cast<String, dynamic>() ?? const {},
       ),
     );
   }

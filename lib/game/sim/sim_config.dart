@@ -67,6 +67,7 @@ class SimConfig {
       CareNeed.hygiene: 0.15,
     },
     this.recentAttentionWeight = 0.10,
+    this.sleepRegenPerHour = 20.0,
     this.streakWarmthCap = 2,
     this.streakRepairKibbleCost = 100,
     this.youngOneMinBondStage = 1, // Friend
@@ -104,6 +105,11 @@ class SimConfig {
 
   final Map<CareNeed, double> moodWeights;
   final double recentAttentionWeight;
+
+  /// Energy restored per real hour asleep (§5.1: rest +20/h). Applied as a
+  /// wake-time credit for the whole nap, on top of normal offline decay.
+  final double sleepRegenPerHour;
+
   final int streakWarmthCap;
   final int streakRepairKibbleCost;
   final int youngOneMinBondStage;

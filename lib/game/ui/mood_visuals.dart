@@ -25,9 +25,11 @@ PetEmotion petEmotionForReaction(
   CareInteraction.play => PetEmotion.playful,
 };
 
-/// The pet's current expression: a reaction to the last care verb, else an
-/// ambient idle expression, else the resting expression for the current mood.
+/// The pet's current expression: asleep wins (the pet dreams in every room),
+/// then a reaction to the last care verb, else an ambient idle expression,
+/// else the resting expression for the current mood.
 PetEmotion currentPetEmotion(GameController c) {
+  if (c.isSleeping) return PetEmotion.sleepy;
   final last = c.lastInteraction;
   if (last != null) {
     return petEmotionForReaction(
