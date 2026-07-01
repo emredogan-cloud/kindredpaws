@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import '../../../render/pet_renderer.dart';
 import '../../controller/game_controller.dart';
 import '../../rooms/room_id.dart';
+import 'bathroom_room.dart';
 import 'grocery_room.dart';
 import 'home_room.dart';
 import 'kitchen_room.dart';
@@ -46,6 +47,11 @@ List<RoomDefinition> enabledRooms() => const [
     icon: Icons.soup_kitchen_rounded,
     build: _kitchen,
   ),
+  RoomDefinition(
+    id: RoomId.bathroom,
+    icon: Icons.bathtub_rounded,
+    build: _bathroom,
+  ),
   RoomDefinition(id: RoomId.home, icon: Icons.cottage_rounded, build: _home),
 ];
 
@@ -57,3 +63,6 @@ Widget _kitchen(GameController c, PetRenderer rig, void Function(RoomId) go) =>
 
 Widget _grocery(GameController c, PetRenderer rig, void Function(RoomId) go) =>
     GroceryRoom(controller: c, rig: rig, goToRoom: go);
+
+Widget _bathroom(GameController c, PetRenderer rig, void Function(RoomId) go) =>
+    BathroomRoom(controller: c, rig: rig, goToRoom: go);
