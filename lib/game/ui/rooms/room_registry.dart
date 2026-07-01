@@ -12,6 +12,7 @@ import 'bathroom_room.dart';
 import 'grocery_room.dart';
 import 'home_room.dart';
 import 'kitchen_room.dart';
+import 'play_room.dart';
 
 /// One room's UI wiring: a friendly rounded dock icon + the room content.
 /// Content receives the shared [GameController], the shell-resolved rig, and
@@ -53,6 +54,7 @@ List<RoomDefinition> enabledRooms() => const [
     build: _bathroom,
   ),
   RoomDefinition(id: RoomId.home, icon: Icons.cottage_rounded, build: _home),
+  RoomDefinition(id: RoomId.playRoom, icon: Icons.toys_rounded, build: _play),
 ];
 
 Widget _home(GameController c, PetRenderer rig, void Function(RoomId) go) =>
@@ -66,3 +68,6 @@ Widget _grocery(GameController c, PetRenderer rig, void Function(RoomId) go) =>
 
 Widget _bathroom(GameController c, PetRenderer rig, void Function(RoomId) go) =>
     BathroomRoom(controller: c, rig: rig, goToRoom: go);
+
+Widget _play(GameController c, PetRenderer rig, void Function(RoomId) go) =>
+    PlayRoom(controller: c, rig: rig, goToRoom: go);
