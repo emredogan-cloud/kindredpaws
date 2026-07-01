@@ -30,6 +30,7 @@ import '../../services/notification_scheduler.dart';
 import '../../services/observability.dart';
 import '../../services/share_service.dart';
 import '../../services/status_snapshot_service.dart';
+import '../minigames/mini_games.dart' show miniGameKibble;
 import '../model/bond.dart';
 import '../model/inventory.dart';
 import '../model/items.dart';
@@ -633,6 +634,39 @@ class GameController extends ChangeNotifier {
     _onboardingStartMs = null;
     notifyListeners();
     return true;
+  }
+
+  /// Wraps up a Play Garden mini-game session: one canonical play verb (the
+  /// game IS play — bond/energy/happiness semantics identical) plus a small
+  /// capped Kibble thank-you for the joy scored. No-fail by design upstream;
+  /// a zero score still ends warmly (the verb alone).
+  Future<void> finishMiniGame({
+    required String gameId,
+    required int score,
+  }) async {
+    if (_save == null) return;
+    if (_guardSleeping()) return;
+    await _applyInteraction(
+      CareInteraction.play,
+      warmLine: (name) => '$name had the best time playing! \u{1F389}',
+    );
+    final bonus = miniGameKibble(score);
+    final save = _save;
+    if (save == null) return;
+    if (bonus > 0) {
+      _save = save.copyWith(
+        pet: save.pet.copyWith(wallet: save.pet.wallet.addKibble(bonus)),
+      );
+      lastMessage = '+$bonus Kibble \u2014 what a game! \u{1F9B4}';
+      _cue(SfxCue.tada, HapticKind.success);
+    }
+    observability.event(AnalyticsEvent.careAction, {
+      'verb': 'minigame_$gameId',
+      'bond_awarded': lastOutcome?.bondAwarded ?? 0,
+      'needed': false,
+    });
+    await _persist();
+    notifyListeners();
   }
 
   /// The one-time Streak Repair (§11.2): spends Kibble to rekindle the streak

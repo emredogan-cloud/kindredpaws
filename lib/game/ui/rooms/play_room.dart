@@ -12,6 +12,7 @@ import '../../controller/game_controller.dart';
 import '../../model/care_meters.dart';
 import '../../model/items.dart';
 import '../../rooms/room_id.dart';
+import '../minigames/mini_game_screen.dart';
 import '../widgets/cozy.dart';
 import 'room_scaffold.dart';
 import 'widgets/need_glow.dart';
@@ -90,6 +91,25 @@ class PlayRoom extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Garden games — tiny, warm, no-fail (E4).
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _GameCard(
+                  key: const Key('minigame-bounce'),
+                  emoji: '🎈',
+                  label: 'Bounce!',
+                  onTap: () => _openGame(context, MiniGameKind.bounce),
+                ),
+                _GameCard(
+                  key: const Key('minigame-catch'),
+                  emoji: '🧺',
+                  label: 'Snack Catch',
+                  onTap: () => _openGame(context, MiniGameKind.snackCatch),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
             Flexible(
               child: ShelfGrid(
                 children: [
@@ -119,6 +139,65 @@ class PlayRoom extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+extension on PlayRoom {
+  void _openGame(BuildContext context, MiniGameKind kind) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => MiniGameScreen(controller: controller, kind: kind),
+      ),
+    );
+  }
+}
+
+/// A little garden-game invitation card.
+class _GameCard extends StatelessWidget {
+  const _GameCard({
+    required this.emoji,
+    required this.label,
+    required this.onTap,
+    super.key,
+  });
+
+  final String emoji;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: label,
+      child: Material(
+        color: const Color(0xFFFFF6EC),
+        borderRadius: BorderRadius.circular(18),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ExcludeSemantics(
+                  child: Text(emoji, style: const TextStyle(fontSize: 26)),
+                ),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF4A3F38),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
