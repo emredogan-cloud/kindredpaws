@@ -136,9 +136,9 @@ Sequencing: feel-foundation first (E1 raises the ceiling for everything), then s
 | E1 Feel & Feedback | ✅ Complete | a594c3b (+review fixes in E3 commit); adversarial review: 1 High (stale-burst replay) found & fixed, copy + same-tick-bond fixes applied |
 | E2 Settings/Profile/Compliance | ✅ Complete | 8df8f39 — Settings (toggles, right-to-be-forgotten), Our story profile, drawer complete |
 | E3 Retention surfaces | ✅ Complete | daily +50 Kibble (§8.1), streak chip + Warmth, one-time Streak Repair (§11.2), Milestone Book |
-| E4 Mini games | ▢ Pending | — |
-| E5 Living-pet polish | ▢ Pending | — |
-| E6 Hardening | ▢ Pending | — |
+| E4 Mini games | ✅ Complete | d37794f — Bounce! + Snack Catch (no-fail engines, capped treat rewards, sleeping-pet hush) |
+| E5 Living-pet polish | ✅ Complete | a0d795a/18e009b — stroke-to-pet cuddles, shelf-to-snoot meal flight, reduced-motion a11y |
+| E6 Hardening | ⏳ In progress | goldens for Settings/Profile added; release-build smoke + emulator E2E + walkthrough running |
 | E7 Master report | ▢ Pending | — |
 
 *Updated at every phase boundary. Never allowed to drift.*
