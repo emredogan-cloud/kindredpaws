@@ -9,6 +9,8 @@ import '../../../render/pet_renderer.dart';
 import '../../controller/game_controller.dart';
 import '../../rooms/room_id.dart';
 import 'bathroom_room.dart';
+import 'bedroom_room.dart';
+import 'care_corner_room.dart';
 import 'grocery_room.dart';
 import 'home_room.dart';
 import 'kitchen_room.dart';
@@ -55,6 +57,16 @@ List<RoomDefinition> enabledRooms() => const [
   ),
   RoomDefinition(id: RoomId.home, icon: Icons.cottage_rounded, build: _home),
   RoomDefinition(id: RoomId.playRoom, icon: Icons.toys_rounded, build: _play),
+  RoomDefinition(
+    id: RoomId.bedroom,
+    icon: Icons.bedtime_rounded,
+    build: _bedroom,
+  ),
+  RoomDefinition(
+    id: RoomId.medicalRoom,
+    icon: Icons.healing_rounded,
+    build: _careCorner,
+  ),
 ];
 
 Widget _home(GameController c, PetRenderer rig, void Function(RoomId) go) =>
@@ -71,3 +83,12 @@ Widget _bathroom(GameController c, PetRenderer rig, void Function(RoomId) go) =>
 
 Widget _play(GameController c, PetRenderer rig, void Function(RoomId) go) =>
     PlayRoom(controller: c, rig: rig, goToRoom: go);
+
+Widget _bedroom(GameController c, PetRenderer rig, void Function(RoomId) go) =>
+    BedroomRoom(controller: c, rig: rig, goToRoom: go);
+
+Widget _careCorner(
+  GameController c,
+  PetRenderer rig,
+  void Function(RoomId) go,
+) => CareCornerRoom(controller: c, rig: rig, goToRoom: go);
