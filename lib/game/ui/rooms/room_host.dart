@@ -76,6 +76,13 @@ class _RoomHostState extends State<RoomHost> {
     );
   }
 
+  /// In-room navigation (e.g. the Kitchen's Grocery shortcut). Unknown/not-
+  /// yet-open rooms are ignored (the UI never offers them).
+  void _goToRoom(RoomId id) {
+    final i = _rooms.indexWhere((r) => r.id == id);
+    if (i >= 0) _goTo(i);
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
@@ -157,7 +164,7 @@ class _RoomHostState extends State<RoomHost> {
                 itemCount: _rooms.length,
                 onPageChanged: (i) => setState(() => _current = i),
                 itemBuilder: (context, i) =>
-                    _rooms[i].build(widget.controller, rig),
+                    _rooms[i].build(widget.controller, rig, _goToRoom),
               ),
               // Soft top scrim so the app-bar title + icons stay legible over
               // any scene (esp. the dark night room).
