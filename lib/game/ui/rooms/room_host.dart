@@ -17,6 +17,7 @@ import '../keepsake_screen.dart';
 import '../memory_book_screen.dart';
 import '../paywall_sheet.dart';
 import '../widgets/cozy.dart';
+import '../widgets/feel_fx.dart';
 import 'room_registry.dart';
 
 /// Vertical space rooms must leave free at the bottom so content never sits
@@ -187,6 +188,11 @@ class _RoomHostState extends State<RoomHost> {
                     ),
                   ),
                 ),
+              ),
+              // Milestone celebrations (growth / bond stage) play over every
+              // room — the whole home shares the moment.
+              Positioned.fill(
+                child: CelebrationOverlay(controller: widget.controller),
               ),
               if (_rooms.length > 1)
                 Positioned(

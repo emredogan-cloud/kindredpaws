@@ -4,6 +4,8 @@
 /// rebuilds on change. The clock is injectable so tests stay deterministic.
 library;
 
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../../core/name_input_validator.dart';
@@ -21,6 +23,7 @@ import '../../render/pet_renderer.dart';
 import '../../services/analytics_service.dart';
 import '../../services/beta_feedback_pipeline.dart';
 import '../../services/feedback_service.dart';
+import '../../services/feel_service.dart';
 import '../../services/home_widget_service.dart';
 import '../../services/live_ops.dart';
 import '../../services/notification_scheduler.dart';
@@ -54,11 +57,13 @@ class GameController extends ChangeNotifier {
     FeedbackService? feedback,
     BetaFeedbackPipeline? betaFeedback,
     LiveOps? liveOps,
+    FeelService? feel,
     int Function()? clock,
     String Function()? idGenerator,
   }) : _feedback = feedback ?? const NoopFeedbackService(),
        _betaFeedback = betaFeedback,
        _liveOps = liveOps,
+       _feel = feel,
        _now = clock ?? (() => DateTime.now().millisecondsSinceEpoch),
        _idGenerator =
            idGenerator ??
@@ -82,6 +87,16 @@ class GameController extends ChangeNotifier {
   /// LiveOps control plane (P4-3), or null in tests. Notifications respect its
   /// kill-switch so the founder can silence them live (incident mitigation).
   final LiveOps? _liveOps;
+
+  /// The Feel layer (E1): one warm cue (sound + soft haptic, both gated by
+  /// player toggles) per meaningful moment. Null-safe — pure-logic tests that
+  /// construct the controller directly simply feel nothing.
+  final FeelService? _feel;
+
+  void _cue(SfxCue sfx, [HapticKind kind = HapticKind.tap]) {
+    final feel = _feel;
+    if (feel != null) unawaited(feel.cue(sfx, kind));
+  }
 
   /// Notifications are live unless a LiveOps kill-switch has disabled them.
   bool get _notificationsLive =>
@@ -288,6 +303,17 @@ class GameController extends ChangeNotifier {
           : save.facts,
     );
     _captureKeepsakes(outcome, preStage);
+    if (outcome.grew || outcome.state.bond.stage != preStage) {
+      _cue(SfxCue.tada, HapticKind.celebrate);
+    } else if (outcome.comfortBeat) {
+      _cue(SfxCue.heartGlow, HapticKind.success);
+    } else {
+      _cue(switch (interaction) {
+        CareInteraction.feed => SfxCue.feedChime,
+        CareInteraction.clean => SfxCue.splash,
+        CareInteraction.play => SfxCue.boing,
+      });
+    }
     _session = outcome.session;
     _mood = outcome.mood;
     lastOutcome = outcome;
@@ -378,6 +404,7 @@ class GameController extends ChangeNotifier {
       return false;
     }
     _save = save.copyWith(pet: outcome.state, inventory: outcome.inventory);
+    _cue(SfxCue.basket, HapticKind.success);
     lastMessage = '${item.emoji} ${item.displayName} — into the basket!';
     observability.event(AnalyticsEvent.careAction, {
       'verb': 'purchase',
@@ -419,6 +446,10 @@ class GameController extends ChangeNotifier {
     _mood = outcome.mood;
     lastInteraction = null;
     ambientEmotion = null;
+    _cue(
+      outcome.comfortBeat ? SfxCue.heartGlow : SfxCue.sparkle,
+      outcome.comfortBeat ? HapticKind.success : HapticKind.tap,
+    );
     lastMessage = outcome.comfortBeat
         ? '${outcome.state.name} feels so much better with you here 💛'
         : '${supply.emoji} ${outcome.state.name} feels cozier already';
@@ -454,6 +485,7 @@ class GameController extends ChangeNotifier {
     _mood = outcome.mood;
     lastInteraction = null;
     ambientEmotion = null;
+    _cue(SfxCue.heartGlow, HapticKind.success);
     lastMessage = outcome.comfortBeat
         ? '${outcome.state.name} feels so much better with you here 💛'
         : '${outcome.state.name} leans into your hand 💛';
@@ -478,6 +510,7 @@ class GameController extends ChangeNotifier {
     if (save == null) return;
     final name = save.pet.name;
     final lowest = save.pet.meters.lowest;
+    _cue(SfxCue.sparkle);
     lastMessage = lowest >= config.needsCareThreshold
         ? '🌡️ Snug as a sunbeam — $name is doing wonderfully!'
         : '🌡️ All safe and sound — a little extra love and '
@@ -501,6 +534,7 @@ class GameController extends ChangeNotifier {
       inv = inv.add(item); // the Forever Friends keepsake joins the closet
     }
     _save = save.copyWith(inventory: inv.equip(item));
+    _cue(SfxCue.softPop);
     lastMessage =
         '${item.emoji} ${save.pet.name} is wearing the '
         '${item.displayName}!';
@@ -527,6 +561,7 @@ class GameController extends ChangeNotifier {
     _save = save.copyWith(pet: save.pet.tuckedIn(_now()));
     lastInteraction = null;
     ambientEmotion = null;
+    _cue(SfxCue.lullabyDip);
     lastMessage = 'Sweet dreams, ${save.pet.name} 🌙';
     _say(HeartmindIntent.goodbye);
     await _persist();
@@ -542,6 +577,7 @@ class GameController extends ChangeNotifier {
     _mood = outcome.mood;
     lastInteraction = null;
     ambientEmotion = null;
+    _cue(SfxCue.morningChirp, HapticKind.success);
     lastMessage = outcome.sleptHours >= 1
         ? '☀️ ${outcome.state.name} stretches — what a lovely nap!'
         : '☀️ ${outcome.state.name} blinks awake, happy to see you';
@@ -807,6 +843,7 @@ class GameController extends ChangeNotifier {
       return;
     }
     _ambientTick++;
+    _cue(SfxCue.softPop);
     lastInteraction = null; // ambient idle takes over from a stale reaction
     ambientEmotion = _ambient.idleEmotion(
       mood: petMood,

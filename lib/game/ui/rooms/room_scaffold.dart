@@ -12,6 +12,7 @@ import '../../controller/game_controller.dart';
 import '../../model/items.dart';
 import '../mood_visuals.dart';
 import '../widgets/cozy.dart';
+import '../widgets/feel_fx.dart';
 import 'room_host.dart' show kRoomDockClearance;
 
 /// A room's canvas: full-bleed scene, an optional warm tint that gives the
@@ -91,35 +92,40 @@ class DressedPet extends StatelessWidget {
       lifeStage: pet.lifeStage.id,
       emotion: currentPetEmotion(controller),
     );
-    if (worn.isEmpty) return petVisual;
+    if (worn.isEmpty) {
+      return PetFx(controller: controller, child: petVisual);
+    }
 
     final box = 160 * pet.lifeStage.scale;
-    return Stack(
-      alignment: Alignment.center,
-      clipBehavior: Clip.none,
-      children: [
-        petVisual,
-        for (final item in worn)
-          Positioned.fill(
-            child: IgnorePointer(
-              child: Align(
-                alignment: _anchorFor(item.slot!).$1,
-                child: ExcludeSemantics(
-                  child: Text(
-                    item.emoji,
-                    key: Key('worn-${item.id}'),
-                    style: TextStyle(
-                      fontSize: box * _anchorFor(item.slot!).$2,
-                      shadows: const [
-                        Shadow(color: Color(0x33000000), blurRadius: 4),
-                      ],
+    return PetFx(
+      controller: controller,
+      child: Stack(
+        alignment: Alignment.center,
+        clipBehavior: Clip.none,
+        children: [
+          petVisual,
+          for (final item in worn)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: Align(
+                  alignment: _anchorFor(item.slot!).$1,
+                  child: ExcludeSemantics(
+                    child: Text(
+                      item.emoji,
+                      key: Key('worn-${item.id}'),
+                      style: TextStyle(
+                        fontSize: box * _anchorFor(item.slot!).$2,
+                        shadows: const [
+                          Shadow(color: Color(0x33000000), blurRadius: 4),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 }

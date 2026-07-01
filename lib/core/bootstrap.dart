@@ -25,11 +25,13 @@ import '../services/beta_feedback_pipeline.dart';
 import '../services/experiments.dart';
 import '../services/crash_reporter.dart';
 import '../services/feedback_service.dart';
+import '../services/feel_service.dart';
 import '../services/firebase_backend.dart';
 import '../services/logger.dart';
 import '../services/notification_scheduler.dart';
 import '../services/observability.dart';
 import '../services/performance_monitor.dart';
+import '../services/prefs_service.dart';
 import '../services/live_ops.dart';
 import '../services/remote_config_service.dart';
 import '../services/home_widget_service.dart';
@@ -75,6 +77,14 @@ AppConfig bootstrap({
   sl.registerSingleton<NotificationScheduler>(InMemoryNotificationScheduler());
   sl.registerSingleton<StatusSnapshotService>(InMemoryStatusSnapshotService());
   sl.registerSingleton<HomeWidgetService>(NoopHomeWidgetService());
+  // Feel layer (Product Evolution E1): player prefs + gated sound/haptics.
+  // In-memory prefs + a silent audio sink keep dev/CI deterministic; main()
+  // swaps the SharedPreferences + audioplayers implementations in production.
+  final prefsService = InMemoryPrefsService();
+  sl.registerSingleton<PrefsService>(prefsService);
+  sl.registerSingleton<FeelService>(
+    FeelService(prefs: prefsService, audio: NoopAudioSink()),
+  );
   sl.registerSingleton<ShareService>(const NoopShareService());
   // Closed-beta feedback hook (P3-7). Noop default keeps dev/CI offline; the
   // backend-backed impl is swapped in once a real backend is wired (below).

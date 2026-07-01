@@ -9,6 +9,7 @@ import '../services/analytics_service.dart';
 import '../services/backend_service.dart';
 import '../services/beta_feedback_pipeline.dart';
 import '../services/feedback_service.dart';
+import '../services/feel_service.dart';
 import '../services/live_ops.dart';
 import '../services/home_widget_service.dart';
 import '../services/notification_scheduler.dart';
@@ -47,6 +48,7 @@ GameController createGameController({
     feedback: sl.get<FeedbackService>(),
     betaFeedback: sl.get<BetaFeedbackPipeline>(),
     liveOps: sl.get<LiveOps>(),
+    feel: sl.get<FeelService>(),
     clock: clock,
   );
 }

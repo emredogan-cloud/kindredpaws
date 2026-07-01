@@ -17,7 +17,10 @@ import 'game/ui/game_root.dart';
 import 'render/pet_renderer.dart';
 import 'render/pet_renderer_factory.dart';
 import 'services/analytics_service.dart';
+import 'services/audioplayers_sink.dart';
 import 'services/crash_reporter.dart';
+import 'services/feel_service.dart';
+import 'services/prefs_service.dart';
 import 'services/firebase_provisioning.dart';
 import 'services/firebase/firebase_services.dart';
 import 'services/home_widget_service.dart';
@@ -46,6 +49,14 @@ Future<void> main() async {
   // Production native bridges (the prefs-backed home-widget writer feeds the
   // OS widget; bootstrap's defaults are the test-safe in-memory versions).
   sl.registerSingleton<HomeWidgetService>(PrefsHomeWidgetService());
+  // The Feel layer goes live (E1): persisted player prefs + the audioplayers
+  // sink over the original synthesized cue set. Same production-swap idiom.
+  final prefsService = SharedPrefsService();
+  await prefsService.initialize();
+  sl.registerSingleton<PrefsService>(prefsService);
+  sl.registerSingleton<FeelService>(
+    FeelService(prefs: prefsService, audio: AudioplayersSink()),
+  );
 
   // Real Firebase stack (P3-0): activates ONLY when provisioned
   // (KP_FIREBASE_PROVISIONED + flutterfire configure). Otherwise the mock/
