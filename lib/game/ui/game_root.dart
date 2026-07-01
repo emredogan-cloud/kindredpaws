@@ -6,8 +6,8 @@ library;
 import 'package:flutter/material.dart';
 
 import '../controller/game_controller.dart';
-import 'companion_home_screen.dart';
 import 'rescue_day_screen.dart';
+import 'rooms/room_host.dart';
 import 'widgets/cozy.dart';
 
 class GameRoot extends StatefulWidget {
@@ -86,7 +86,7 @@ class _GameRootState extends State<GameRoot> with WidgetsBindingObserver {
           );
         }
         return widget.controller.hasPet
-            ? CompanionHomeScreen(controller: widget.controller)
+            ? RoomHost(controller: widget.controller)
             : RescueDayScreen(controller: widget.controller);
       },
     );

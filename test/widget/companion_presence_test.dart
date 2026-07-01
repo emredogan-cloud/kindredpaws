@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kindredpaws/game/sim/interaction.dart';
 import 'package:kindredpaws/game/model/species.dart';
-import 'package:kindredpaws/game/ui/companion_home_screen.dart';
+import 'package:kindredpaws/game/ui/rooms/room_host.dart';
 import 'package:kindredpaws/heartmind/safety_filter.dart';
 
 import '../support/harness.dart';
@@ -76,9 +76,7 @@ void main() {
       await c.load();
       await c.adopt(species: Species.puppy, name: 'Biscuit');
 
-      await tester.pumpWidget(
-        MaterialApp(home: CompanionHomeScreen(controller: c)),
-      );
+      await tester.pumpWidget(MaterialApp(home: RoomHost(controller: c)));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('pet-speech')), findsOneWidget);
 
