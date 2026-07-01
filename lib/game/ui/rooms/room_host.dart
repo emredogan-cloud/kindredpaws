@@ -96,7 +96,10 @@ class _RoomHostState extends State<RoomHost> {
         return Scaffold(
           key: const Key('companion-home'),
           extendBodyBehindAppBar: true,
-          drawer: _CozyDrawer(controller: widget.controller),
+          drawer: _CozyDrawer(
+            controller: widget.controller,
+            onGoToRoom: _goToRoom,
+          ),
           appBar: AppBar(
             title: Text(pet.name, maxLines: 1, overflow: TextOverflow.ellipsis),
             actions: [
@@ -340,8 +343,9 @@ class _RoomDockState extends State<_RoomDock> {
 /// settings · profile. Existing screens route; not-yet-built screens give a
 /// warm "coming soon" (honest — those screens are a future deliverable).
 class _CozyDrawer extends StatelessWidget {
-  const _CozyDrawer({required this.controller});
+  const _CozyDrawer({required this.controller, required this.onGoToRoom});
   final GameController controller;
+  final void Function(RoomId) onGoToRoom;
 
   @override
   Widget build(BuildContext context) {
@@ -363,7 +367,10 @@ class _CozyDrawer extends StatelessWidget {
               KpAssets.iconWardrobe,
               'Wardrobe',
               'drawer-wardrobe',
-              () => _soon(context, 'Wardrobe'),
+              () {
+                Navigator.of(context).pop();
+                onGoToRoom(RoomId.wardrobe);
+              },
             ),
             _item(
               context,

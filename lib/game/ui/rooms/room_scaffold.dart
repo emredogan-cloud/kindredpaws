@@ -59,6 +59,71 @@ class RoomScaffold extends StatelessWidget {
   }
 }
 
+/// The pet wearing its equipped cosmetics — the same dressed friend in every
+/// room (wardrobe state is inventory state; nothing about the look is local
+/// to a screen). Cosmetics are overlay stickers anchored to the rig's box
+/// (canon: "cosmetics = overlay sprites", never new rig art), so the future
+/// Rive rig inherits the exact same dressing layer.
+class DressedPet extends StatelessWidget {
+  const DressedPet({required this.controller, required this.rig, super.key});
+
+  final GameController controller;
+  final PetRenderer rig;
+
+  /// Anchor + scale per slot within the rig's square box.
+  static (Alignment, double) _anchorFor(CosmeticSlot slot) => switch (slot) {
+    CosmeticSlot.hat => (const Alignment(0.06, -0.86), 0.26),
+    CosmeticSlot.neck => (const Alignment(0, 0.34), 0.20),
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final pet = controller.pet;
+    if (pet == null) return const SizedBox.shrink();
+    final worn = controller.inventory.equipped
+        .map(ItemCatalog.byId)
+        .whereType<ItemDef>()
+        .where((i) => i.slot != null)
+        .toList(growable: false);
+    final petVisual = rig.build(
+      context,
+      mood: petMoodFor(controller.mood),
+      lifeStage: pet.lifeStage.id,
+      emotion: currentPetEmotion(controller),
+    );
+    if (worn.isEmpty) return petVisual;
+
+    final box = 160 * pet.lifeStage.scale;
+    return Stack(
+      alignment: Alignment.center,
+      clipBehavior: Clip.none,
+      children: [
+        petVisual,
+        for (final item in worn)
+          Positioned.fill(
+            child: IgnorePointer(
+              child: Align(
+                alignment: _anchorFor(item.slot!).$1,
+                child: ExcludeSemantics(
+                  child: Text(
+                    item.emoji,
+                    key: Key('worn-${item.id}'),
+                    style: TextStyle(
+                      fontSize: box * _anchorFor(item.slot!).$2,
+                      shadows: const [
+                        Shadow(color: Color(0x33000000), blurRadius: 4),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
 /// The pet, alive on the room's scene: speech bubble, tap-to-ambient, the
 /// mood line, and the transient warm feedback chip. Reads the SAME controller
 /// as every other room — walking between rooms never resets a thing.
@@ -94,12 +159,7 @@ class PetStage extends StatelessWidget {
           onTap: controller.nudgeAmbient,
           child: Transform.scale(
             scale: petScale,
-            child: rig.build(
-              context,
-              mood: petMoodFor(controller.mood),
-              lifeStage: pet.lifeStage.id,
-              emotion: currentPetEmotion(controller),
-            ),
+            child: DressedPet(controller: controller, rig: rig),
           ),
         ),
         if (controller.lastMessage != null)

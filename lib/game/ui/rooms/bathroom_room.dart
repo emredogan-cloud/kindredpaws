@@ -15,9 +15,9 @@ import '../../controller/game_controller.dart';
 import '../../model/care_meters.dart';
 import '../../rooms/room_id.dart';
 import '../../sim/interaction.dart';
-import '../mood_visuals.dart';
 import '../widgets/cozy.dart';
 import 'room_host.dart' show kRoomDockClearance;
+import 'room_scaffold.dart' show DressedPet;
 import 'widgets/need_glow.dart';
 
 class BathroomRoom extends StatefulWidget {
@@ -89,12 +89,7 @@ class _BathroomRoomState extends State<BathroomRoom> {
                     alignment: Alignment.center,
                     clipBehavior: Clip.none,
                     children: [
-                      widget.rig.build(
-                        context,
-                        mood: petMoodFor(c.mood),
-                        lifeStage: pet.lifeStage.id,
-                        emotion: currentPetEmotion(c),
-                      ),
+                      DressedPet(controller: c, rig: widget.rig),
                       // Foam builds with the scrub (deterministic bubbles).
                       if (_scrub > 0.02)
                         Positioned.fill(

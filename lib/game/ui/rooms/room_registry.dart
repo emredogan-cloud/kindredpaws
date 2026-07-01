@@ -15,6 +15,7 @@ import 'grocery_room.dart';
 import 'home_room.dart';
 import 'kitchen_room.dart';
 import 'play_room.dart';
+import 'wardrobe_room.dart';
 
 /// One room's UI wiring: a friendly rounded dock icon + the room content.
 /// Content receives the shared [GameController], the shell-resolved rig, and
@@ -67,6 +68,11 @@ List<RoomDefinition> enabledRooms() => const [
     icon: Icons.healing_rounded,
     build: _careCorner,
   ),
+  RoomDefinition(
+    id: RoomId.wardrobe,
+    icon: Icons.checkroom_rounded,
+    build: _wardrobe,
+  ),
 ];
 
 Widget _home(GameController c, PetRenderer rig, void Function(RoomId) go) =>
@@ -92,3 +98,6 @@ Widget _careCorner(
   PetRenderer rig,
   void Function(RoomId) go,
 ) => CareCornerRoom(controller: c, rig: rig, goToRoom: go);
+
+Widget _wardrobe(GameController c, PetRenderer rig, void Function(RoomId) go) =>
+    WardrobeRoom(controller: c, rig: rig, goToRoom: go);

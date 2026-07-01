@@ -15,6 +15,7 @@ import '../care_ring.dart';
 import '../mood_visuals.dart';
 import '../widgets/cozy.dart';
 import 'room_host.dart' show kRoomDockClearance;
+import 'room_scaffold.dart' show DressedPet;
 
 class HomeRoom extends StatelessWidget {
   const HomeRoom({required this.controller, required this.rig, super.key});
@@ -59,12 +60,7 @@ class HomeRoom extends StatelessWidget {
                       child: CareRing(
                         meters: pet.meters,
                         size: ringSize,
-                        child: rig.build(
-                          context,
-                          mood: petMoodFor(controller.mood),
-                          lifeStage: pet.lifeStage.id,
-                          emotion: currentPetEmotion(controller),
-                        ),
+                        child: DressedPet(controller: controller, rig: rig),
                       ),
                     ),
                   );
