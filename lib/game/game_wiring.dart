@@ -10,6 +10,7 @@ import '../services/backend_service.dart';
 import '../services/beta_feedback_pipeline.dart';
 import '../services/feedback_service.dart';
 import '../services/feel_service.dart';
+import '../services/prefs_service.dart';
 import '../services/live_ops.dart';
 import '../services/home_widget_service.dart';
 import '../services/notification_scheduler.dart';
@@ -49,6 +50,7 @@ GameController createGameController({
     betaFeedback: sl.get<BetaFeedbackPipeline>(),
     liveOps: sl.get<LiveOps>(),
     feel: sl.get<FeelService>(),
+    notificationsAllowed: () => sl.get<PrefsService>().notificationsEnabled,
     clock: clock,
   );
 }

@@ -8,8 +8,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 abstract interface class PrefsService {
   bool get soundEnabled;
   bool get hapticsEnabled;
+  bool get notificationsEnabled;
   Future<void> setSoundEnabled(bool value);
   Future<void> setHapticsEnabled(bool value);
+  Future<void> setNotificationsEnabled(bool value);
 }
 
 /// Deterministic in-memory prefs (dev/CI/tests). Defaults: everything on.
@@ -18,11 +20,16 @@ class InMemoryPrefsService implements PrefsService {
   bool soundEnabled = true;
   @override
   bool hapticsEnabled = true;
+  @override
+  bool notificationsEnabled = true;
 
   @override
   Future<void> setSoundEnabled(bool value) async => soundEnabled = value;
   @override
   Future<void> setHapticsEnabled(bool value) async => hapticsEnabled = value;
+  @override
+  Future<void> setNotificationsEnabled(bool value) async =>
+      notificationsEnabled = value;
 }
 
 /// SharedPreferences-backed prefs (production). Reads are memoized so the UI
@@ -30,16 +37,19 @@ class InMemoryPrefsService implements PrefsService {
 class SharedPrefsService implements PrefsService {
   static const _kSound = 'prefs.sound_enabled';
   static const _kHaptics = 'prefs.haptics_enabled';
+  static const _kNotifications = 'prefs.notifications_enabled';
 
   SharedPreferences? _prefs;
   bool _sound = true;
   bool _haptics = true;
+  bool _notifications = true;
 
   Future<void> initialize() async {
     final p = await SharedPreferences.getInstance();
     _prefs = p;
     _sound = p.getBool(_kSound) ?? true;
     _haptics = p.getBool(_kHaptics) ?? true;
+    _notifications = p.getBool(_kNotifications) ?? true;
   }
 
   @override
@@ -57,5 +67,14 @@ class SharedPrefsService implements PrefsService {
   Future<void> setHapticsEnabled(bool value) async {
     _haptics = value;
     await _prefs?.setBool(_kHaptics, value);
+  }
+
+  @override
+  bool get notificationsEnabled => _notifications;
+
+  @override
+  Future<void> setNotificationsEnabled(bool value) async {
+    _notifications = value;
+    await _prefs?.setBool(_kNotifications, value);
   }
 }

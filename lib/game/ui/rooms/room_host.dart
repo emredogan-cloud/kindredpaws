@@ -16,6 +16,7 @@ import '../../rooms/room_id.dart';
 import '../keepsake_screen.dart';
 import '../memory_book_screen.dart';
 import '../paywall_sheet.dart';
+import '../settings_screen.dart';
 import '../widgets/cozy.dart';
 import '../widgets/feel_fx.dart';
 import 'room_registry.dart';
@@ -419,14 +420,28 @@ class _CozyDrawer extends StatelessWidget {
               KpAssets.iconSettings,
               'Settings',
               'drawer-settings',
-              () => _soon(context, 'Settings'),
+              () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => SettingsScreen(controller: controller),
+                  ),
+                );
+              },
             ),
             _item(
               context,
               KpAssets.iconBond,
-              'Profile',
+              'Our story',
               'drawer-profile',
-              () => _soon(context, 'Profile'),
+              () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => ProfileScreen(controller: controller),
+                  ),
+                );
+              },
             ),
           ],
         ),
@@ -447,14 +462,5 @@ class _CozyDrawer extends StatelessWidget {
       title: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
       onTap: onTap,
     );
-  }
-
-  void _soon(BuildContext context, String what) {
-    Navigator.of(context).pop();
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(content: Text('$what is on its way — coming soon 🐾')),
-      );
   }
 }

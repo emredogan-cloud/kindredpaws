@@ -58,12 +58,14 @@ class GameController extends ChangeNotifier {
     BetaFeedbackPipeline? betaFeedback,
     LiveOps? liveOps,
     FeelService? feel,
+    bool Function()? notificationsAllowed,
     int Function()? clock,
     String Function()? idGenerator,
   }) : _feedback = feedback ?? const NoopFeedbackService(),
        _betaFeedback = betaFeedback,
        _liveOps = liveOps,
        _feel = feel,
+       _notificationsAllowed = notificationsAllowed,
        _now = clock ?? (() => DateTime.now().millisecondsSinceEpoch),
        _idGenerator =
            idGenerator ??
@@ -98,9 +100,14 @@ class GameController extends ChangeNotifier {
     if (feel != null) unawaited(feel.cue(sfx, kind));
   }
 
-  /// Notifications are live unless a LiveOps kill-switch has disabled them.
+  /// Player-side notification preference (Settings toggle), or null in tests.
+  final bool Function()? _notificationsAllowed;
+
+  /// Notifications are live unless the founder's LiveOps kill-switch OR the
+  /// player's own Settings toggle has disabled them.
   bool get _notificationsLive =>
-      _liveOps?.isKilled(LiveFeature.notifications) != true;
+      _liveOps?.isKilled(LiveFeature.notifications) != true &&
+      (_notificationsAllowed?.call() ?? true);
 
   final int Function() _now;
   final String Function() _idGenerator;
@@ -589,6 +596,34 @@ class GameController extends ChangeNotifier {
     });
     await _persist();
     notifyListeners();
+  }
+
+  /// Right-to-be-forgotten (§8.3, Settings): erases the save everywhere
+  /// (local + backend + analytics identifiers via the repo), cancels every
+  /// pending notification, clears the runtime, and returns to Rescue Day.
+  /// Returns false (with a calm message) if the erase failed — never silent.
+  Future<bool> deleteAccountAndStartOver() async {
+    final result = await repo.deleteAccount(petId: _save?.pet.petId);
+    if (result.isErr) {
+      lastMessage =
+          'Something went wrong and nothing was deleted — please try again.';
+      notifyListeners();
+      return false;
+    }
+    await notifications.cancelAll();
+    _save = null;
+    _session = SessionInteractions.empty;
+    _mood = Mood.content;
+    _personality = PersonalityProfile.neutral;
+    petLine = null;
+    lastMessage = null;
+    lastOutcome = null;
+    lastInteraction = null;
+    ambientEmotion = null;
+    _sessionStartMs = null;
+    _onboardingStartMs = null;
+    notifyListeners();
+    return true;
   }
 
   void _resumeSession() {
