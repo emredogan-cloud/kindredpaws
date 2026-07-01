@@ -70,11 +70,8 @@ void main() {
         child: MaterialApp(
           home: Scaffold(
             body: Builder(
-              builder: (context) => rig.build(
-                context,
-                mood: PetMood.joyful,
-                lifeStage: 'pupKit',
-              ),
+              builder: (context) =>
+                  rig.build(context, mood: PetMood.joyful, lifeStage: 'pupKit'),
             ),
           ),
         ),
