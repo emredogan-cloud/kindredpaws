@@ -62,6 +62,10 @@ class VectorPetRenderer implements PetRenderer {
   }) {
     final expression = emotion ?? PetEmotion.restingFor(mood);
     final box = size * petLifeStageScale(lifeStage);
+    // Accessibility: the system reduced-motion setting stills the idle loop
+    // (the pet keeps its pose and one-shot expressions, nothing loops).
+    final reducedMotion =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     return Semantics(
       label: 'pet ($lifeStage, ${mood.name}, ${expression.displayName})',
       child: SizedBox(
@@ -73,7 +77,7 @@ class VectorPetRenderer implements PetRenderer {
           emotion: expression,
           lifeStage: lifeStage,
           species: speciesOf?.call() ?? Species.puppy,
-          continuousMotion: continuousMotion,
+          continuousMotion: continuousMotion && !reducedMotion,
         ),
       ),
     );

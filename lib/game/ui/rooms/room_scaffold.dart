@@ -130,10 +130,12 @@ class DressedPet extends StatelessWidget {
   }
 }
 
-/// The pet, alive on the room's scene: speech bubble, tap-to-ambient, the
-/// mood line, and the transient warm feedback chip. Reads the SAME controller
-/// as every other room — walking between rooms never resets a thing.
-class PetStage extends StatelessWidget {
+/// The pet, alive on the room's scene: speech bubble, tap-to-ambient,
+/// stroke-to-pet (a gentle pan is a cuddle — the §1.4 petting interaction),
+/// the mood line, and the transient warm feedback chip. Reads the SAME
+/// controller as every other room — walking between rooms never resets a
+/// thing.
+class PetStage extends StatefulWidget {
   const PetStage({
     required this.controller,
     required this.rig,
@@ -144,6 +146,26 @@ class PetStage extends StatelessWidget {
   final GameController controller;
   final PetRenderer rig;
   final double petScale;
+
+  @override
+  State<PetStage> createState() => _PetStageState();
+}
+
+class _PetStageState extends State<PetStage> {
+  GameController get controller => widget.controller;
+  PetRenderer get rig => widget.rig;
+
+  /// Stroke distance accumulated toward the next cuddle (a slow, deliberate
+  /// pet — roughly one warm cuddle per full stroke across the pet).
+  double _strokeDistance = 0;
+
+  void _onStroke(DragUpdateDetails d) {
+    _strokeDistance += d.delta.distance;
+    if (_strokeDistance >= 220) {
+      _strokeDistance = 0;
+      controller.comfortPet(); // canonical petting bond (§5.4, capped)
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -163,8 +185,9 @@ class PetStage extends StatelessWidget {
         GestureDetector(
           key: const Key('room-pet-tap'),
           onTap: controller.nudgeAmbient,
+          onPanUpdate: _onStroke,
           child: Transform.scale(
-            scale: petScale,
+            scale: widget.petScale,
             child: DressedPet(controller: controller, rig: rig),
           ),
         ),
