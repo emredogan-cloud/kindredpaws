@@ -59,12 +59,15 @@ abstract final class KpAssets {
   static const entitledGlow = 'assets/premium/entitled_glow.png';
   static const rescueBundleBadge = 'assets/shop/rescue_bundle_badge.png';
 
-  /// Every background, for precaching.
+  /// Every room scene + onboarding backdrop, for precaching — room hops must
+  /// paint instantly (no loading screens between rooms, no cream flash).
   static const backgrounds = [
-    cozyRoomDay,
-    cozyRoomNight,
-    rainyWindow,
-    onboardingDark,
+    cozyRoomDay, // Home (day) · Kitchen · Grocery · Wardrobe bases
+    cozyRoomNight, // Home (night) · Bedroom
+    bathroomScene, // Bathroom
+    gardenDay, // Play Garden
+    rainyWindow, // Care Corner
+    onboardingDark, // Rescue Day
   ];
 }
 
