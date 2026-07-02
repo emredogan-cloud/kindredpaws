@@ -45,6 +45,12 @@ flutter:
     # selected at build time via `--dart-define=KP_RIV_ASSET=assets/rigs/<f>.riv`
     # (see lib/render/rive_pet_renderer.dart, REQUIRED_ENVIRONMENTS.md §8).
     - assets/rigs/
+    # Canonical mascot drop-in location named by the founder brief + the design
+    # SSOT (KINDREDPAWS_RIVE_CHARACTER_MASTER_BIBLE_TR.md §5: `assets/rive/<name>.riv`,
+    # e.g. the interactive-dog mascot at `assets/rive/interactive_dog.riv`). Bundled
+    # so the documented drop-in path works with zero further pubspec/code change;
+    # the same `PetStateMachine` contract + KP_RIV_ASSET seam serve both dirs.
+    - assets/rive/
     # Premium UI assets (UI integration sprint) — GPT-generated backgrounds,
     # buttons, icons, cards, illustrations. Loaded with cacheWidth/Height since
     # the source PNGs are large (see lib/game/ui/widgets/cozy.dart).

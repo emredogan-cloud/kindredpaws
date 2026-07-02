@@ -139,6 +139,45 @@ void main() {
       expect(find.byKey(const Key('pet-renderer')), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets(
+      'the canonical founder mascot drop-in path (assets/rive/interactive_dog.riv) '
+      'is handled by the same path-agnostic seam — graceful fallback until the '
+      'real .riv is supplied',
+      (tester) async {
+        // Pins the founder-brief / design-bible drop-in location so the seam can
+        // never silently stop honoring it. The dir is bundled (pubspec) but the
+        // .riv is not yet delivered (paid Rive export — see the integration
+        // report), so the load fails and we degrade to the stand-in, never crash.
+        final codes = <String>[];
+        final renderer = RivePetRenderer(
+          assetPath: 'assets/rive/interactive_dog.riv',
+          onDiagnostic: (code, {Map<String, Object?> fields = const {}}) =>
+              codes.add(code),
+        );
+        await tester.runAsync(() async {
+          await tester.pumpWidget(
+            MaterialApp(
+              home: Builder(
+                builder: (context) => renderer.build(
+                  context,
+                  mood: PetMood.joyful,
+                  lifeStage: 'pupKit',
+                  emotion: PetEmotion.happy,
+                ),
+              ),
+            ),
+          );
+          await Future<void>.delayed(const Duration(milliseconds: 100));
+        });
+        await tester.pump();
+
+        expect(codes, contains('rive_load_failed'));
+        expect(find.byKey(const Key('pet-renderer')), findsOneWidget);
+        expect(find.text('rive'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
   });
 
   group('RivePetRenderer reactive binding (P4-2)', () {
