@@ -4,7 +4,7 @@ publish_to: "none"
 
 # Managed by release-please (see release-please-config.json). versionName/versionCode
 # for the apps derive from this value during release builds.
-version: 0.1.0+1
+version: 0.1.1+2
 
 environment:
   sdk: ^3.11.5
