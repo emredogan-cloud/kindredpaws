@@ -948,8 +948,10 @@ class GameController extends ChangeNotifier {
 
   void _resumeSession() {
     final save = _save!;
-    // Rhythm-aware notifications (GE-6): note the local hour this session
-    // opened, on-device only (privacy-first — never a pet-save field).
+    // Rhythm-aware notifications (GE-6): note the session-open hour, on-device
+    // only (privacy-first — never a pet-save field). It's the clock's hour,
+    // consistent with how the scheduler places its anchor hours, so the
+    // hellos land at the household's habitual time.
     final openHour = (_now() ~/ Duration.millisecondsPerHour) % 24;
     _recordOpenHour?.call(openHour);
     final resume = sim.resolveOnResume(

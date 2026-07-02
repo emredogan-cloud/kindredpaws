@@ -215,7 +215,7 @@ Program rules (apply to every phase):
 - **UX goals:** care feels intimate; rooms hum quietly; a first-time child always knows the one thing to try; notifications arrive when this household actually plays.
 - **Architecture:** camera push via `PetStage` transform (reduced-motion: cross-fade only); `AmbientAudioService` on the existing `AudioSink` seam (Noop in CI); hints as a tiny overlay in `room_scaffold.dart` driven by `PrefsService`; rhythm window in the notification scheduler (pure function over a stored open-hours histogram, fully unit-testable, privacy: never leaves device).
 - **Dependencies:** GE-2 (stage/ambient utilities); audio asset generation local-only.
-- **Acceptance criteria:** push-in never fights user scroll/drag; pads duck under SFX and stop when backgrounded; each hint shows exactly once per install; scheduler still guilt-scanned, capped, kill-switchable; all toggles persist.
+- **Acceptance criteria:** push-in never fights user scroll/drag and actually dwells (not a one-frame blink); each first-visit hint keeps pointing until acknowledged with a tap, then never returns (tap-dismiss is deliberate — a PageView-kept-alive neighbour room must not consume its hint before the child arrives); rhythm scheduler still guilt-scanned, capped, kill-switchable; all toggles persist. (Ambient pads deferred — see objectives.)
 - **Testing:** unit (rhythm histogram→window math, hint seen-set, audio service states), widget (hint overlay once-ness, settings toggles), integration touch on notification scheduling path.
 - **Performance:** pads decoded once, looped; no jank on push-in (transform-only).
 - **Accessibility:** hints have semantic labels and auto-dismiss; ambient audio always user-controllable, off when the sound toggle is off.

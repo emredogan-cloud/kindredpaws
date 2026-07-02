@@ -210,15 +210,16 @@ class _GameCanvas extends StatelessWidget {
             ),
             child: CustomPaint(size: size, painter: _BubblePainter(p)),
           ),
-          final StarlightTrailGame t => GestureDetector(
+          // Raw pointer events (not a GestureDetector) so a finger that
+          // drifts mid-hold — very common with kids — keeps the firefly
+          // rising: Listener bypasses the gesture arena, so no pan
+          // recognizer can steal the hold and drop it to "released".
+          final StarlightTrailGame t => Listener(
             key: const Key('trail-hold'),
             behavior: HitTestBehavior.opaque,
-            onTapDown: (_) => t.setHolding(true),
-            onTapUp: (_) => t.setHolding(false),
-            onTapCancel: () => t.setHolding(false),
-            onPanDown: (_) => t.setHolding(true),
-            onPanEnd: (_) => t.setHolding(false),
-            onPanCancel: () => t.setHolding(false),
+            onPointerDown: (_) => t.setHolding(true),
+            onPointerUp: (_) => t.setHolding(false),
+            onPointerCancel: (_) => t.setHolding(false),
             child: CustomPaint(size: size, painter: _TrailPainter(t)),
           ),
           _ => const SizedBox.shrink(),

@@ -57,21 +57,19 @@ void main() {
     // Feed from the pantry — a care beat.
     await tester.tap(find.byKey(const Key('pantry-food_kibble_bowl')));
     await tester.pump(); // beat detected → push-in this frame
-    final scaleWidget = tester.widget<AnimatedScale>(
+    AnimatedScale petScale() => tester.widget<AnimatedScale>(
       find.descendant(
         of: find.byType(PetStage),
         matching: find.byType(AnimatedScale),
       ),
     );
-    expect(scaleWidget.scale, greaterThan(1.0)); // pushed in
-    await tester.pumpAndSettle(); // settles back to rest
-    final settled = tester.widget<AnimatedScale>(
-      find.descendant(
-        of: find.byType(PetStage),
-        matching: find.byType(AnimatedScale),
-      ),
-    );
-    expect(settled.scale, 1.0);
+    expect(petScale().scale, greaterThan(1.0)); // pushed in
+    // The push-in must DWELL, not blink: still pushed in a couple of frames
+    // later (guards the reviewed no-op where a post-frame reset killed it).
+    await tester.pump(const Duration(milliseconds: 120));
+    expect(petScale().scale, greaterThan(1.0));
+    await tester.pumpAndSettle(); // then settles back to rest
+    expect(petScale().scale, 1.0);
   });
 
   testWidgets('reduced motion keeps the pet perfectly still on a care beat', (

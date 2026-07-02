@@ -1,4 +1,4 @@
-/// The persisted save (schema v9), mirroring GAME_TECHNICAL_SYSTEMS.md §3.4.
+/// The persisted save (schema v10), mirroring GAME_TECHNICAL_SYSTEMS.md §3.4.
 /// Holds the full runtime [PetState], the daily Bond [BondLedger], the Memory
 /// Book facts, Keepsakes, the pet's evolving [PersonalityProfile], the
 /// household [Inventory] (the room-based home), and the Daily Kindness slate

@@ -44,6 +44,10 @@ class KindnessEngine {
     final seed = _seed(dayEpoch, petId);
     final firstIdx = seed % defs.length;
     final first = defs[firstIdx];
+    // A pool of one can't yield a distinct pair (and the stride below divides
+    // by length-1). Not reachable today (12 evergreen defs are always in),
+    // but guard the invariant so a future catalog trim can't crash.
+    if (defs.length < 2) return [first.id];
     // Walk the whole catalog from a seed-varied offset (full coverage, so a
     // partner is always found; the offset keeps pairings fresh day to day).
     final start = 1 + ((seed >> 8) % (defs.length - 1));

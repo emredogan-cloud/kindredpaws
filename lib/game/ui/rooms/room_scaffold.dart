@@ -5,6 +5,8 @@
 /// place (§0.1: scene is everything; the pet is the subject; warmth first).
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../render/pet_renderer.dart';
@@ -105,10 +107,11 @@ class RoomScaffold extends StatelessWidget {
   }
 }
 
-/// A one-time, gentle first-visit hint (GE-6 onboarding): a soft pulsing chip
-/// that names the room's primary verb the first time it's seen, then marks
-/// itself seen and never returns. Reduced-motion shows a still chip. Warm and
-/// dismissible — a tap (or a few seconds) sends it on its way.
+/// A gentle first-visit hint (GE-6 onboarding): a soft pulsing chip naming
+/// the room's primary verb. It keeps pointing until the player acknowledges
+/// it with a tap, then marks itself seen and never returns (a tap-to-dismiss
+/// so an unvisited, PageView-kept-alive neighbour room never "uses up" its
+/// hint before the child gets there). Reduced-motion shows a still chip.
 class FirstVisitHint extends StatefulWidget {
   const FirstVisitHint({
     required this.controller,
@@ -183,14 +186,19 @@ class _PulseChipState extends State<_PulseChip>
     super.didChangeDependencies();
     final reduced = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     // The same master motion switch as ambient life: OFF in tests/CI (so
-    // pumpAndSettle settles) and under reduced-motion (a still chip).
-    if (AmbientScene.motionEnabled && !reduced && _pulse == null) {
+    // pumpAndSettle settles) and under reduced-motion (a still chip). Mirror
+    // AmbientScene: also STOP if reduced-motion flips on while the chip shows.
+    final shouldPulse = AmbientScene.motionEnabled && !reduced;
+    if (shouldPulse && _pulse == null) {
       _pulse = AnimationController(
         vsync: this,
         duration: const Duration(milliseconds: 1100),
         lowerBound: 0.97,
         upperBound: 1.03,
       )..repeat(reverse: true);
+    } else if (!shouldPulse && _pulse != null) {
+      _pulse!.dispose();
+      _pulse = null;
     }
   }
 
@@ -350,10 +358,17 @@ class _PetStageState extends State<PetStage> {
 
   /// Camera intimacy (GE-6): the last care-message we pushed in for. A fresh
   /// warm line means a care beat just happened → a gentle scale push-in that
-  /// settles back. Tracking the message (not a raw counter) ties the beat to
-  /// the moment the room actually surfaces feedback.
+  /// dwells briefly, then settles back. Tracking the message (not a raw
+  /// counter) ties the beat to the moment the room surfaces feedback.
   String? _lastBeatMessage;
   bool _pushedIn = false;
+  Timer? _pushTimer;
+
+  @override
+  void dispose() {
+    _pushTimer?.cancel();
+    super.dispose();
+  }
 
   void _onStroke(DragUpdateDetails d) {
     _strokeDistance += d.delta.distance;
@@ -376,8 +391,11 @@ class _PetStageState extends State<PetStage> {
     if (msg != null && msg != _lastBeatMessage) {
       _lastBeatMessage = msg;
       if (!reducedMotion && controller.lastInteraction != null) {
+        // Rise to the push-in, dwell for the animation, then settle back —
+        // a Timer (not a next-frame reset) so the scale actually travels.
         _pushedIn = true;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
+        _pushTimer?.cancel();
+        _pushTimer = Timer(const Duration(milliseconds: 460), () {
           if (mounted) setState(() => _pushedIn = false);
         });
       }
