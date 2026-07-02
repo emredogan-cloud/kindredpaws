@@ -138,7 +138,7 @@ Sequencing: feel-foundation first (E1 raises the ceiling for everything), then s
 | E3 Retention surfaces | ✅ Complete | daily +50 Kibble (§8.1), streak chip + Warmth, one-time Streak Repair (§11.2), Milestone Book |
 | E4 Mini games | ✅ Complete | d37794f — Bounce! + Snack Catch (no-fail engines, capped treat rewards, sleeping-pet hush) |
 | E5 Living-pet polish | ✅ Complete | a0d795a/18e009b — stroke-to-pet cuddles, shelf-to-snoot meal flight, reduced-motion a11y |
-| E6 Hardening | ⏳ In progress | goldens for Settings/Profile added; release-build smoke + emulator E2E + walkthrough running |
-| E7 Master report | ▢ Pending | — |
+| E6 Hardening | ✅ Complete | release APK builds (122.5MB; concurrent-Gradle race documented); Settings/Profile goldens; emulator E2E PASS on full evolution build; kitten-species walkthrough (Settings/Profile/games live); 0 crashes/ANRs; CI green |
+| E7 Master report | ✅ Complete | MASTER_PRODUCT_EXECUTION_REPORT.md |
 
 *Updated at every phase boundary. Never allowed to drift.*
