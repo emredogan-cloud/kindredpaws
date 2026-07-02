@@ -81,6 +81,10 @@ class ItemDef {
   final bool premium;
 
   bool get purchasable => kibblePrice > 0 && !premium;
+
+  /// Bundled sticker artwork (generated originals, `assets/items/*.png`).
+  /// UI renders this with the [emoji] as a graceful fallback.
+  String get artPath => 'assets/items/$id.png';
 }
 
 /// The static launch catalog. Kept const + code-defined (same pattern as the

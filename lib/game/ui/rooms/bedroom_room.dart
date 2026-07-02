@@ -52,7 +52,7 @@ class BedroomRoom extends StatelessWidget {
         RoomScaffold(
           controller: controller,
           rig: rig,
-          sceneAsset: KpAssets.cozyRoomNight,
+          sceneAsset: KpAssets.bedroomScene,
           // Deep starlit hush while sleeping; soft dusk otherwise.
           tint: sleeping ? const Color(0x59283B5C) : const Color(0x26283B5C),
           petFooter: sleeping

@@ -110,14 +110,22 @@ class DressedPet extends StatelessWidget {
                 child: Align(
                   alignment: _anchorFor(item.slot!).$1,
                   child: ExcludeSemantics(
-                    child: Text(
-                      item.emoji,
+                    // Generated sticker art; emoji stays as the fallback.
+                    child: Image.asset(
+                      item.artPath,
                       key: Key('worn-${item.id}'),
-                      style: TextStyle(
-                        fontSize: box * _anchorFor(item.slot!).$2,
-                        shadows: const [
-                          Shadow(color: Color(0x33000000), blurRadius: 4),
-                        ],
+                      width: box * _anchorFor(item.slot!).$2 * 1.4,
+                      height: box * _anchorFor(item.slot!).$2 * 1.4,
+                      fit: BoxFit.contain,
+                      cacheWidth: 160,
+                      errorBuilder: (_, _, _) => Text(
+                        item.emoji,
+                        style: TextStyle(
+                          fontSize: box * _anchorFor(item.slot!).$2,
+                          shadows: const [
+                            Shadow(color: Color(0x33000000), blurRadius: 4),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -314,10 +322,18 @@ class ItemCard extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // Generated sticker art; emoji stays as the fallback.
                   ExcludeSemantics(
-                    child: Text(
-                      item.emoji,
-                      style: const TextStyle(fontSize: 30),
+                    child: Image.asset(
+                      item.artPath,
+                      width: 40,
+                      height: 40,
+                      fit: BoxFit.contain,
+                      cacheWidth: 120,
+                      errorBuilder: (_, _, _) => Text(
+                        item.emoji,
+                        style: const TextStyle(fontSize: 30),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 2),

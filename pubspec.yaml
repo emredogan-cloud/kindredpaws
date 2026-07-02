@@ -59,3 +59,5 @@ flutter:
     - assets/wardrobe/
     # Original synthesized SFX (tool/generate_sfx.dart — license-clean).
     - assets/audio/
+    # Generated item sticker art (tool/generate_gpt_assets.py).
+    - assets/items/

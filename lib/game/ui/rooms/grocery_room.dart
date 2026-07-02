@@ -40,9 +40,7 @@ class GroceryRoom extends StatelessWidget {
     return RoomScaffold(
       controller: controller,
       rig: rig,
-      sceneAsset: KpAssets.cozyRoomDay,
-      // A fresh, leafy morning-market light.
-      tint: const Color(0x24A8C686),
+      sceneAsset: KpAssets.groceryScene,
       content: ShelfPanel(
         title: 'Grocery Store',
         trailing: Row(

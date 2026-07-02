@@ -19,6 +19,11 @@ abstract final class KpAssets {
   static const campsiteEvening = 'assets/backgrounds/campsite_evening.png';
   static const onboardingDark = 'assets/backgrounds/onboarding_rainy_dark.png';
   static const bathroomScene = 'assets/backgrounds/bathroom_clean_scene.png';
+  // Dedicated room interiors (generated 2026-07-02 via tool/generate_gpt_assets.py).
+  static const kitchenScene = 'assets/backgrounds/kitchen_scene.png';
+  static const bedroomScene = 'assets/backgrounds/bedroom_scene.png';
+  static const wardrobeScene = 'assets/backgrounds/wardrobe_scene.png';
+  static const groceryScene = 'assets/backgrounds/grocery_scene.png';
 
   // UI frames (transparent).
   static const speechBubble = 'assets/ui/speech_bubble.png';
@@ -62,11 +67,15 @@ abstract final class KpAssets {
   /// Every room scene + onboarding backdrop, for precaching — room hops must
   /// paint instantly (no loading screens between rooms, no cream flash).
   static const backgrounds = [
-    cozyRoomDay, // Home (day) · Kitchen · Grocery · Wardrobe bases
-    cozyRoomNight, // Home (night) · Bedroom
+    cozyRoomDay, // Home (day)
+    cozyRoomNight, // Home (night)
+    kitchenScene, // Kitchen
     bathroomScene, // Bathroom
     gardenDay, // Play Garden
+    bedroomScene, // Bedroom
     rainyWindow, // Care Corner
+    wardrobeScene, // Wardrobe
+    groceryScene, // Grocery Store
     onboardingDark, // Rescue Day
   ];
 }
