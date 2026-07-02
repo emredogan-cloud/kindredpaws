@@ -5,31 +5,41 @@
 library;
 
 import '../model/kindness.dart';
+import 'season_engine.dart';
 
 class KindnessEngine {
   const KindnessEngine();
 
   /// Returns the state for the day containing [nowMs]: [prior] unchanged if it
   /// is already today's, else a fresh offer (yesterday's slate simply fades —
-  /// nothing is "lost", per the Charter).
+  /// nothing is "lost", per the Charter). [season] admits that season's
+  /// kindnesses into the pool (GE-5); null offers the evergreen dozen only
+  /// (also the kill-switch neutral state).
   KindnessState today({
     required int nowMs,
     required String petId,
     KindnessState? prior,
+    NatureSeason? season,
   }) {
     final day = nowMs ~/ Duration.millisecondsPerDay;
     if (prior != null && prior.dayEpoch == day && prior.offered.isNotEmpty) {
       return prior;
     }
-    return KindnessState(dayEpoch: day, offered: offersFor(day, petId));
+    return KindnessState(
+      dayEpoch: day,
+      offered: offersFor(day, petId, season: season),
+    );
   }
 
   /// The deterministic daily pair: seed = FNV-1a(petId) mixed with the epoch
   /// day (stable across runs/platforms — never `String.hashCode`). The second
   /// pick is the first catalog walk hit with a different trigger AND room, so
   /// the pair always reads as two distinct little adventures.
-  List<String> offersFor(int dayEpoch, String petId) {
-    const defs = KindnessCatalog.all;
+  List<String> offersFor(int dayEpoch, String petId, {NatureSeason? season}) {
+    final defs = [
+      for (final d in KindnessCatalog.all)
+        if (d.season == null || d.season == season) d,
+    ];
     if (defs.isEmpty) return const [];
     final seed = _seed(dayEpoch, petId);
     final firstIdx = seed % defs.length;

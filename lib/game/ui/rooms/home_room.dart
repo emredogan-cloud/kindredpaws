@@ -47,6 +47,9 @@ class HomeRoom extends StatelessWidget {
         children: [
           // Warm dust motes drifting through the hearth light (GE-2).
           const AmbientScene(variant: AmbientVariant.homeMotes),
+          // The hearth turns with the year (GE-5 Seasons of Us).
+          if (controller.seasonAccent case final season?)
+            SeasonAccentScene(season: season),
           // Placed décor lives in the scene (GE-3 Cozy Corners).
           DecorLayer(controller: controller, room: RoomId.home),
           SafeArea(

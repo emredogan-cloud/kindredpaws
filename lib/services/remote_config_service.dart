@@ -57,6 +57,7 @@ class DefaultRemoteConfig implements RemoteConfigService {
     'killswitch.notifications': false,
     'killswitch.beta_feedback': false,
     'killswitch.rescue_bundles': false,
+    'killswitch.seasons': false, // GE-5: neutral world on demand
     // LiveOps rollout percentages (0..100; 100 = fully rolled out).
     'rollout.live_chat.pct': 100,
     'rollout.rewarded_ads.pct': 100,
@@ -64,6 +65,7 @@ class DefaultRemoteConfig implements RemoteConfigService {
     'rollout.notifications.pct': 100,
     'rollout.beta_feedback.pct': 100,
     'rollout.rescue_bundles.pct': 100,
+    'rollout.seasons.pct': 100,
     // Content-hotfix coordination: the dialogue-bank version the live config
     // expects (bumped when a Remote Config top-up ships; see Content OS).
     'liveops.content_version': 1,

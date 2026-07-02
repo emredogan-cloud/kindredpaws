@@ -64,6 +64,7 @@ class PlayRoom extends StatelessWidget {
         ),
       ),
       decorRoom: RoomId.playRoom,
+      seasonAccent: controller.seasonAccent,
       petFooter: tired
           ? Padding(
               padding: const EdgeInsets.only(top: 4),

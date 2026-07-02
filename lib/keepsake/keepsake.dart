@@ -15,7 +15,8 @@ enum KeepsakeKind {
   bondMilestone('A New Bond', '💛'),
   streakMilestone('Days Together', '🔥'),
   personalityReveal('Only My Pet', '✨'),
-  decorSet('A Cozy Corner', '🛋️');
+  decorSet('A Cozy Corner', '🛋️'),
+  season('A Season Together', '🌤️');
 
   const KeepsakeKind(this.displayName, this.emoji);
   final String displayName;

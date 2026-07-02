@@ -13,6 +13,7 @@ import '../game/model/care_streak.dart';
 import '../game/model/inventory.dart';
 import '../game/model/kindness.dart';
 import '../game/model/life_stage.dart';
+import '../game/model/season_progress.dart';
 import '../game/model/pet_state.dart';
 import '../game/model/species.dart';
 import '../game/model/wallet.dart';
@@ -29,6 +30,7 @@ import 'migrations/v5_to_v6.dart';
 import 'migrations/v6_to_v7.dart';
 import 'migrations/v7_to_v8.dart';
 import 'migrations/v8_to_v9.dart';
+import 'migrations/v9_to_v10.dart';
 import 'save_envelope.dart';
 
 class KindredSaveState {
@@ -41,10 +43,11 @@ class KindredSaveState {
     this.personality = PersonalityProfile.neutral,
     this.inventory = const Inventory(),
     this.kindness,
+    this.seasonProgress,
   });
 
   /// Schema version this app writes. Bump + add a migration on change.
-  static const int currentSchemaVersion = 9;
+  static const int currentSchemaVersion = 10;
 
   /// Ordered migration chain → [currentSchemaVersion].
   static const List<Migration> migrations = [
@@ -56,6 +59,7 @@ class KindredSaveState {
     V6ToV7(),
     V7ToV8(),
     V8ToV9(),
+    V9ToV10(),
   ];
 
   final PetState pet;
@@ -76,6 +80,10 @@ class KindredSaveState {
   /// session of the day offers a pair — the engine fills it lazily).
   final KindnessState? kindness;
 
+  /// Seasons-of-Us active-day count for the current season-window
+  /// (persisted from v10; null until the first counted day).
+  final SeasonProgress? seasonProgress;
+
   KindredSaveState copyWith({
     PetState? pet,
     BondLedger? ledger,
@@ -85,6 +93,7 @@ class KindredSaveState {
     PersonalityProfile? personality,
     Inventory? inventory,
     KindnessState? kindness,
+    SeasonProgress? seasonProgress,
   }) => KindredSaveState(
     pet: pet ?? this.pet,
     ledger: ledger ?? this.ledger,
@@ -94,6 +103,7 @@ class KindredSaveState {
     personality: personality ?? this.personality,
     inventory: inventory ?? this.inventory,
     kindness: kindness ?? this.kindness,
+    seasonProgress: seasonProgress ?? this.seasonProgress,
   );
 
   SaveEnvelope toEnvelope() => SaveEnvelope(
@@ -119,6 +129,7 @@ class KindredSaveState {
       'inventory': inventory.toMap(),
       'sleepingSinceMs': pet.sleepingSinceMs,
       'kindness': kindness?.toMap(),
+      'seasonProgress': seasonProgress?.toMap(),
     },
   );
 
@@ -182,6 +193,11 @@ class KindredSaveState {
           ? null
           : KindnessState.fromMap(
               (d['kindness'] as Map).cast<String, dynamic>(),
+            ),
+      seasonProgress: d['seasonProgress'] == null
+          ? null
+          : SeasonProgress.fromMap(
+              (d['seasonProgress'] as Map).cast<String, dynamic>(),
             ),
     );
   }

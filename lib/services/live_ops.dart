@@ -24,7 +24,8 @@ enum LiveFeature {
   keepsakeShare('keepsake_share'),
   notifications('notifications'),
   betaFeedback('beta_feedback'),
-  rescueBundles('rescue_bundles');
+  rescueBundles('rescue_bundles'),
+  seasons('seasons');
 
   const LiveFeature(this.key);
 

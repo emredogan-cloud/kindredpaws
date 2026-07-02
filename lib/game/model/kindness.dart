@@ -5,6 +5,8 @@
 /// and the pet never minds (Charter §4: variety without pressure).
 library;
 
+import '../sim/season_engine.dart';
+
 /// Which real care moment completes a kindness. Every trigger maps to an
 /// existing, honest interaction hook — kindnesses are *detected*, never
 /// claimed via a button (the moment itself is the proof).
@@ -59,6 +61,7 @@ class KindnessDef {
     required this.kibble,
     this.itemIds,
     this.requiresItem = false,
+    this.season,
   });
 
   /// Stable id (persisted in saves — never rename).
@@ -86,6 +89,11 @@ class KindnessDef {
 
   /// When true, the moment must involve a specific item (e.g. a real toy).
   final bool requiresItem;
+
+  /// When set, this kindness is only offered during that nature season
+  /// (GE-5 Seasons of Us) — seasonal VARIETY, never seasonal scarcity: the
+  /// same invitations return every year.
+  final NatureSeason? season;
 
   /// Whether a concrete moment (trigger + optional item) completes this.
   bool matches(KindnessTrigger t, {String? itemId}) {
@@ -212,6 +220,90 @@ abstract final class KindnessCatalog {
     kibble: 10,
   );
 
+  // ── Seasonal kindnesses (GE-5) — the same invitations return every year ──
+  static const springPetalRomp = KindnessDef(
+    id: 'kind_spring_petal_romp',
+    trigger: KindnessTrigger.play,
+    title: 'A romp in the petals',
+    invitation: 'Spring is in the garden — go bounce through it together.',
+    emoji: '🌸',
+    room: 'Play Garden',
+    kibble: 14,
+    season: NatureSeason.spring,
+  );
+  static const springFreshBite = KindnessDef(
+    id: 'kind_spring_fresh_bite',
+    trigger: KindnessTrigger.feed,
+    title: 'A taste of spring',
+    invitation: 'Something crisp and new — an apple or a garden carrot.',
+    emoji: '🌱',
+    room: 'Kitchen',
+    kibble: 16,
+    itemIds: {'food_apple', 'food_carrot'},
+    season: NatureSeason.spring,
+  );
+  static const summerSplash = KindnessDef(
+    id: 'kind_summer_splash',
+    trigger: KindnessTrigger.clean,
+    title: 'A summer splash',
+    invitation: 'Warm day, cool water — bath time feels extra good.',
+    emoji: '🌞',
+    room: 'Bathroom',
+    kibble: 14,
+    season: NatureSeason.summer,
+  );
+  static const summerEveningGame = KindnessDef(
+    id: 'kind_summer_evening_game',
+    trigger: KindnessTrigger.miniGame,
+    title: 'A long-evening game',
+    invitation: 'Summer evenings were made for one more round.',
+    emoji: '🎈',
+    room: 'Play Garden',
+    kibble: 15,
+    season: NatureSeason.summer,
+  );
+  static const autumnCozySupper = KindnessDef(
+    id: 'kind_autumn_cozy_supper',
+    trigger: KindnessTrigger.feed,
+    title: 'A cozy autumn supper',
+    invitation: 'Leaves outside, something warm in the bowl.',
+    emoji: '🍂',
+    room: 'Kitchen',
+    kibble: 14,
+    season: NatureSeason.autumn,
+  );
+  static const autumnSnuggle = KindnessDef(
+    id: 'kind_autumn_snuggle',
+    trigger: KindnessTrigger.comfort,
+    title: 'A sweater-weather snuggle',
+    invitation: 'The air is crisp — a cuddle warms you both.',
+    emoji: '🧣',
+    room: 'Care Corner',
+    kibble: 13,
+    season: NatureSeason.autumn,
+  );
+  static const winterWarmBroth = KindnessDef(
+    id: 'kind_winter_warm_broth',
+    trigger: KindnessTrigger.supply,
+    title: 'A warm winter broth',
+    invitation: 'Steam curling from the cup — winter\'s kindest treat.',
+    emoji: '❄️',
+    room: 'Care Corner',
+    kibble: 15,
+    itemIds: {'care_warm_broth'},
+    season: NatureSeason.winter,
+  );
+  static const winterEarlyTuckIn = KindnessDef(
+    id: 'kind_winter_early_tuck_in',
+    trigger: KindnessTrigger.tuckIn,
+    title: 'A long winter\'s nap',
+    invitation: 'Dark comes early — the blanket is already waiting.',
+    emoji: '🌙',
+    room: 'Bedroom',
+    kibble: 13,
+    season: NatureSeason.winter,
+  );
+
   static const List<KindnessDef> all = [
     shareAMeal,
     gardenCrunch,
@@ -225,6 +317,15 @@ abstract final class KindnessCatalog {
     dressUpDay,
     pantryRestock,
     wellnessRitual,
+    // seasonal (offered only in-season; back every year)
+    springPetalRomp,
+    springFreshBite,
+    summerSplash,
+    summerEveningGame,
+    autumnCozySupper,
+    autumnSnuggle,
+    winterWarmBroth,
+    winterEarlyTuckIn,
   ];
 
   static KindnessDef? byId(String id) {

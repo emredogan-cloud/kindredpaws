@@ -52,6 +52,7 @@ GameController createGameController({
     liveOps: sl.get<LiveOps>(),
     feel: sl.get<FeelService>(),
     notificationsAllowed: () => sl.get<PrefsService>().notificationsEnabled,
+    southernHemisphere: () => sl.get<PrefsService>().southernHemisphere,
     clock: clock,
     idGenerator: idGenerator,
   );

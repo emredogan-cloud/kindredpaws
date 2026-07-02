@@ -12,6 +12,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../sim/season_engine.dart';
+
 enum AmbientVariant { homeMotes, kitchenSteam, bedroomStars, gardenButterflies }
 
 class AmbientScene extends StatefulWidget {
@@ -85,6 +87,165 @@ class _AmbientSceneState extends State<AmbientScene>
       ),
     );
   }
+}
+
+/// Seasons of Us accents (GE-5): a second whisper-quiet layer that turns
+/// with the real year — petals, sun-motes, leaves, snow. Same discipline as
+/// [AmbientScene]: decorative, pointer-transparent, budgeted, deterministic,
+/// still in tests/reduced-motion, and gone entirely when the founder's
+/// seasons kill-switch holds the world neutral (callers pass null then).
+class SeasonAccentScene extends StatefulWidget {
+  const SeasonAccentScene({required this.season, super.key});
+
+  final NatureSeason season;
+
+  @override
+  State<SeasonAccentScene> createState() => _SeasonAccentSceneState();
+}
+
+class _SeasonAccentSceneState extends State<SeasonAccentScene>
+    with SingleTickerProviderStateMixin {
+  AnimationController? _loop;
+
+  bool get _shouldAnimate =>
+      AmbientScene.motionEnabled &&
+      !(MediaQuery.maybeOf(context)?.disableAnimations ?? false);
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_shouldAnimate && _loop == null) {
+      _loop = AnimationController(
+        vsync: this,
+        duration: const Duration(seconds: 9),
+      )..repeat();
+    } else if (!_shouldAnimate && _loop != null) {
+      _loop!.dispose();
+      _loop = null;
+    }
+  }
+
+  @override
+  void dispose() {
+    _loop?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final loop = _loop;
+    Widget paint(double t) => CustomPaint(
+      size: Size.infinite,
+      painter: _SeasonPainter(season: widget.season, t: t),
+    );
+    return IgnorePointer(
+      child: ExcludeSemantics(
+        child: RepaintBoundary(
+          child: loop == null
+              ? paint(0.4)
+              : AnimatedBuilder(
+                  animation: loop,
+                  builder: (context, _) => paint(loop.value),
+                ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SeasonPainter extends CustomPainter {
+  _SeasonPainter({required this.season, required this.t});
+
+  final NatureSeason season;
+  final double t;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    switch (season) {
+      case NatureSeason.spring:
+        _petals(canvas, size);
+      case NatureSeason.summer:
+        _sunMotes(canvas, size);
+      case NatureSeason.autumn:
+        _leaves(canvas, size);
+      case NatureSeason.winter:
+        _snow(canvas, size);
+    }
+  }
+
+  /// Soft pink petals drifting down on a light breeze.
+  void _petals(Canvas canvas, Size size) {
+    final paint = Paint()..color = const Color(0x66F2B8C6);
+    for (var i = 0; i < 7; i++) {
+      final phase = (t + i * 0.143) % 1.0;
+      final x =
+          size.width * (0.08 + 0.12 * i) +
+          14 * math.sin(2 * math.pi * (phase * 1.4 + i * 0.7));
+      final y = size.height * (phase * 0.85 - 0.05);
+      canvas.save();
+      canvas.translate(x, y);
+      canvas.rotate(phase * 4 + i);
+      canvas.drawOval(
+        Rect.fromCenter(center: Offset.zero, width: 7.5, height: 4.6),
+        paint,
+      );
+      canvas.restore();
+    }
+  }
+
+  /// Warm golden motes floating in high summer light.
+  void _sunMotes(Canvas canvas, Size size) {
+    for (var i = 0; i < 6; i++) {
+      final phase = (t + i * 0.167) % 1.0;
+      final x =
+          size.width * (0.1 + 0.15 * i) +
+          9 * math.sin(2 * math.pi * (t + i * 0.4));
+      final y = size.height * (0.32 - 0.2 * phase);
+      final alpha = 0.18 * (1 - (phase - 0.5).abs() * 2).clamp(0.0, 1.0);
+      canvas.drawCircle(
+        Offset(x, y),
+        2.4 + (i % 3),
+        Paint()..color = Color.fromRGBO(255, 214, 130, alpha + 0.06),
+      );
+    }
+  }
+
+  /// Amber leaves tumbling — the garden's quiet applause.
+  void _leaves(Canvas canvas, Size size) {
+    const tints = [Color(0x77D9903F), Color(0x77C2703A), Color(0x77E0B052)];
+    for (var i = 0; i < 6; i++) {
+      final phase = (t + i * 0.167) % 1.0;
+      final x =
+          size.width * (0.06 + 0.16 * i) +
+          20 * math.sin(2 * math.pi * (phase + i * 0.5));
+      final y = size.height * (phase * 0.9 - 0.04);
+      canvas.save();
+      canvas.translate(x, y);
+      canvas.rotate(phase * 6.28 * 1.5 + i);
+      final leaf = Path()
+        ..moveTo(0, -5)
+        ..quadraticBezierTo(4.5, 0, 0, 5.5)
+        ..quadraticBezierTo(-4.5, 0, 0, -5);
+      canvas.drawPath(leaf, Paint()..color = tints[i % tints.length]);
+      canvas.restore();
+    }
+  }
+
+  /// Gentle snow — slow, soft, never a storm.
+  void _snow(Canvas canvas, Size size) {
+    final paint = Paint()..color = const Color(0x8FFFFFFF);
+    for (var i = 0; i < 9; i++) {
+      final phase = (t + i * 0.111) % 1.0;
+      final x =
+          size.width * (0.05 + 0.11 * i) +
+          8 * math.sin(2 * math.pi * (phase * 0.8 + i));
+      final y = size.height * (phase * 0.92 - 0.03);
+      canvas.drawCircle(Offset(x, y), 1.8 + (i % 2) * 1.1, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_SeasonPainter old) => old.t != t || old.season != season;
 }
 
 class _AmbientPainter extends CustomPainter {

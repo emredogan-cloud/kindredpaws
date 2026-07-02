@@ -127,7 +127,9 @@ void main() {
 
     final runner = MigrationRunner(KindredSaveState.migrations);
     final up = runner.upgrade(v8, KindredSaveState.currentSchemaVersion);
-    expect(up.schemaVersion, 9);
+    expect(up.schemaVersion, KindredSaveState.currentSchemaVersion);
+    // The v8→v9 step is what this test proves: décor fields materialize.
+    expect(up.data['inventory'], isA<Map<String, dynamic>>());
     final state = KindredSaveState.fromEnvelope(up);
     expect(state.pet.name, 'Mochi');
     expect(state.inventory.decor, isEmpty);

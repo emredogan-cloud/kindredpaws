@@ -9,12 +9,19 @@ abstract interface class PrefsService {
   bool get soundEnabled;
   bool get hapticsEnabled;
   bool get notificationsEnabled;
+
+  /// Southern-hemisphere seasons (GE-5): flips the nature-season calendar
+  /// for friends below the equator. Presentation-only — never gameplay.
+  bool get southernHemisphere;
+
   Future<void> setSoundEnabled(bool value);
   Future<void> setHapticsEnabled(bool value);
   Future<void> setNotificationsEnabled(bool value);
+  Future<void> setSouthernHemisphere(bool value);
 }
 
-/// Deterministic in-memory prefs (dev/CI/tests). Defaults: everything on.
+/// Deterministic in-memory prefs (dev/CI/tests). Defaults: everything on,
+/// northern seasons.
 class InMemoryPrefsService implements PrefsService {
   @override
   bool soundEnabled = true;
@@ -22,6 +29,8 @@ class InMemoryPrefsService implements PrefsService {
   bool hapticsEnabled = true;
   @override
   bool notificationsEnabled = true;
+  @override
+  bool southernHemisphere = false;
 
   @override
   Future<void> setSoundEnabled(bool value) async => soundEnabled = value;
@@ -30,6 +39,9 @@ class InMemoryPrefsService implements PrefsService {
   @override
   Future<void> setNotificationsEnabled(bool value) async =>
       notificationsEnabled = value;
+  @override
+  Future<void> setSouthernHemisphere(bool value) async =>
+      southernHemisphere = value;
 }
 
 /// SharedPreferences-backed prefs (production). Reads are memoized so the UI
@@ -38,11 +50,13 @@ class SharedPrefsService implements PrefsService {
   static const _kSound = 'prefs.sound_enabled';
   static const _kHaptics = 'prefs.haptics_enabled';
   static const _kNotifications = 'prefs.notifications_enabled';
+  static const _kSouthern = 'prefs.southern_hemisphere';
 
   SharedPreferences? _prefs;
   bool _sound = true;
   bool _haptics = true;
   bool _notifications = true;
+  bool _southern = false;
 
   Future<void> initialize() async {
     final p = await SharedPreferences.getInstance();
@@ -50,6 +64,7 @@ class SharedPrefsService implements PrefsService {
     _sound = p.getBool(_kSound) ?? true;
     _haptics = p.getBool(_kHaptics) ?? true;
     _notifications = p.getBool(_kNotifications) ?? true;
+    _southern = p.getBool(_kSouthern) ?? false;
   }
 
   @override
@@ -76,5 +91,14 @@ class SharedPrefsService implements PrefsService {
   Future<void> setNotificationsEnabled(bool value) async {
     _notifications = value;
     await _prefs?.setBool(_kNotifications, value);
+  }
+
+  @override
+  bool get southernHemisphere => _southern;
+
+  @override
+  Future<void> setSouthernHemisphere(bool value) async {
+    _southern = value;
+    await _prefs?.setBool(_kSouthern, value);
   }
 }

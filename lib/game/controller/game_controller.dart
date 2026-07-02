@@ -42,8 +42,10 @@ import '../model/pet_status_snapshot.dart';
 import '../model/species.dart';
 import '../sim/bond_engine.dart';
 import '../sim/game_simulation.dart';
+import '../model/season_progress.dart';
 import '../sim/interaction.dart';
 import '../sim/kindness_engine.dart';
+import '../sim/season_engine.dart';
 import '../sim/shopping.dart';
 import '../sim/sim_config.dart';
 
@@ -63,6 +65,7 @@ class GameController extends ChangeNotifier {
     LiveOps? liveOps,
     FeelService? feel,
     bool Function()? notificationsAllowed,
+    bool Function()? southernHemisphere,
     int Function()? clock,
     String Function()? idGenerator,
   }) : _feedback = feedback ?? const NoopFeedbackService(),
@@ -70,6 +73,7 @@ class GameController extends ChangeNotifier {
        _liveOps = liveOps,
        _feel = feel,
        _notificationsAllowed = notificationsAllowed,
+       _southern = southernHemisphere,
        _now = clock ?? (() => DateTime.now().millisecondsSinceEpoch),
        _idGenerator =
            idGenerator ??
@@ -106,6 +110,9 @@ class GameController extends ChangeNotifier {
 
   /// Player-side notification preference (Settings toggle), or null in tests.
   final bool Function()? _notificationsAllowed;
+
+  /// Southern-hemisphere seasons (Settings toggle, GE-5), or null (northern).
+  final bool Function()? _southern;
 
   /// Notifications are live unless the founder's LiveOps kill-switch OR the
   /// player's own Settings toggle has disabled them.
@@ -783,6 +790,43 @@ class GameController extends ChangeNotifier {
     return true;
   }
 
+  // ---- Seasons of Us (GE-5, Genre Evolution) ----
+
+  bool get _seasonsLive => _liveOps?.isKilled(LiveFeature.seasons) != true;
+
+  /// The current nature season (hemisphere-aware; pure date math).
+  NatureSeason get season =>
+      seasonFor(_now(), southern: _southern?.call() ?? false);
+
+  /// The season the rooms should dress for, or null while the founder's
+  /// kill-switch holds the world neutral (instant revert, no restart).
+  NatureSeason? get seasonAccent => _seasonsLive ? season : null;
+
+  /// Counts one active day toward the season keepsake (called only on a
+  /// real new-day session start). Five gentle days → the keepsake, once
+  /// per season-window; every season is earnable again next year.
+  void _countSeasonDay() {
+    final save = _save;
+    if (save == null) return;
+    final key = seasonWindowKey(_now(), southern: _southern?.call() ?? false);
+    final prior = save.seasonProgress;
+    final days = prior != null && prior.windowKey == key ? prior.days + 1 : 1;
+    _save = save.copyWith(
+      seasonProgress: SeasonProgress(windowKey: key, days: days),
+    );
+    if (days == seasonKeepsakeDays) {
+      final s = season;
+      _collect(
+        _keepsakes.season(save.pet, key, s.displayName.toLowerCase(), _now()),
+      );
+      _cue(SfxCue.tada, HapticKind.celebrate);
+      lastMessage =
+          '${s.emoji} Five ${s.displayName.toLowerCase()} days together — '
+          'a keepsake for the book!';
+      _say(HeartmindIntent.milestone);
+    }
+  }
+
   // ---- Daily Kindnesses (GE-1, Genre Evolution) ----
 
   static const KindnessEngine _kindnessEngine = KindnessEngine();
@@ -806,6 +850,7 @@ class GameController extends ChangeNotifier {
       nowMs: _now(),
       petId: save.pet.petId,
       prior: save.kindness,
+      season: _seasonsLive ? season : null,
     );
     if (!identical(synced, save.kindness)) {
       _save = save.copyWith(kindness: synced);
@@ -823,6 +868,7 @@ class GameController extends ChangeNotifier {
       nowMs: _now(),
       petId: save.pet.petId,
       prior: save.kindness,
+      season: _seasonsLive ? season : null,
     );
     final res = _kindnessEngine.record(slate, trigger, itemId: itemId);
     if (res.completed.isEmpty) {
@@ -895,6 +941,9 @@ class GameController extends ChangeNotifier {
         : HeartmindIntent.greeting;
     _say(intent, tryCallback: true);
     _syncKindness(); // today's pair greets the day (deterministic, quiet)
+    // A real new day (the daily Kibble marks it) counts toward the season
+    // keepsake — five gentle days, never a streak (GE-5).
+    if (resume.dailyKibble > 0 && _seasonsLive) _countSeasonDay();
     _recordRetentionBeats();
   }
 
@@ -936,6 +985,9 @@ class GameController extends ChangeNotifier {
   void onAppForegrounded() {
     if (!hasPet || _sessionStartMs != null) return;
     _resumeSession();
+    // The fresh kindness slate + season-day count must stick even if the
+    // session ends abruptly (they're not derivable after the fact).
+    unawaited(_persist());
     notifyListeners();
   }
 

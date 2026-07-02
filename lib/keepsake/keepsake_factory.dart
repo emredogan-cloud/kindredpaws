@@ -85,4 +85,20 @@ class KeepsakeFactory {
         'We finished the $setTitle corner together. 🛋️',
         nowMs,
       );
+
+  /// Five gentle days in one season (GE-5) — once per season-window (the
+  /// window key holds the year, so every season is earnable again next
+  /// year: anti-FOMO by id design).
+  Keepsake season(
+    PetState pet,
+    String windowKey,
+    String seasonName,
+    int nowMs,
+  ) => _card(
+    pet,
+    KeepsakeKind.season,
+    windowKey,
+    'A $seasonName spent together, day by gentle day. 🌤️',
+    nowMs,
+  );
 }

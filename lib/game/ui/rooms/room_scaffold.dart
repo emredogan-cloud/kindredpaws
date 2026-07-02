@@ -11,8 +11,10 @@ import '../../../render/pet_renderer.dart';
 import '../../controller/game_controller.dart';
 import '../../model/items.dart';
 import '../../rooms/room_id.dart';
+import '../../sim/season_engine.dart';
 import '../care_cues.dart';
 import '../mood_visuals.dart';
+import '../widgets/ambient_scene.dart';
 import '../widgets/cozy.dart';
 import '../widgets/feel_fx.dart';
 import 'decor_ui.dart';
@@ -30,6 +32,7 @@ class RoomScaffold extends StatelessWidget {
     this.petFooter,
     this.ambient,
     this.decorRoom,
+    this.seasonAccent,
     super.key,
   });
 
@@ -54,6 +57,10 @@ class RoomScaffold extends StatelessWidget {
   /// into the scene and a small decorate button opens the two-tap sheet.
   final RoomId? decorRoom;
 
+  /// The nature season the room dresses for (GE-5), or null for neutral
+  /// (tests, reduced content, or the founder's seasons kill-switch).
+  final NatureSeason? seasonAccent;
+
   @override
   Widget build(BuildContext context) {
     final decor = decorRoom;
@@ -64,6 +71,8 @@ class RoomScaffold extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           ?ambient,
+          if (seasonAccent case final season?)
+            SeasonAccentScene(season: season),
           if (decor != null) DecorLayer(controller: controller, room: decor),
           SafeArea(
             child: Column(
