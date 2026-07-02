@@ -59,12 +59,15 @@ abstract final class KpAssets {
   static const entitledGlow = 'assets/premium/entitled_glow.png';
   static const rescueBundleBadge = 'assets/shop/rescue_bundle_badge.png';
 
-  /// Every background, for precaching.
+  /// Every room scene + onboarding backdrop, for precaching — room hops must
+  /// paint instantly (no loading screens between rooms, no cream flash).
   static const backgrounds = [
-    cozyRoomDay,
-    cozyRoomNight,
-    rainyWindow,
-    onboardingDark,
+    cozyRoomDay, // Home (day) · Kitchen · Grocery · Wardrobe bases
+    cozyRoomNight, // Home (night) · Bedroom
+    bathroomScene, // Bathroom
+    gardenDay, // Play Garden
+    rainyWindow, // Care Corner
+    onboardingDark, // Rescue Day
   ];
 }
 
@@ -148,6 +151,63 @@ class CozyBackground extends StatelessWidget {
         if (scrim != null) ColoredBox(color: scrim!),
         ?child,
       ],
+    );
+  }
+}
+
+/// A soft translucent cream chip — makes text legible over a busy cozy scene
+/// without hiding it (premium readability). Shared by every room surface.
+class CozyChip extends StatelessWidget {
+  const CozyChip({required this.child, super.key});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFBF5).withValues(alpha: 0.86),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFE9A178).withValues(alpha: 0.18),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+}
+
+/// The pet's spoken line (Heartmind Companion Presence) — a cozy cream bubble
+/// that reads clearly over any scene. Warm, never guilt.
+class CozySpeechBubble extends StatelessWidget {
+  const CozySpeechBubble({required this.text, super.key});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+      child: CozyChip(
+        child: Container(
+          key: const Key('pet-speech'),
+          constraints: const BoxConstraints(minWidth: double.infinity),
+          child: Text(
+            text,
+            textAlign: TextAlign.center,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500),
+          ),
+        ),
+      ),
     );
   }
 }

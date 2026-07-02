@@ -4,6 +4,8 @@
 /// rebuilds on change. The clock is injectable so tests stay deterministic.
 library;
 
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../../core/name_input_validator.dart';
@@ -21,13 +23,17 @@ import '../../render/pet_renderer.dart';
 import '../../services/analytics_service.dart';
 import '../../services/beta_feedback_pipeline.dart';
 import '../../services/feedback_service.dart';
+import '../../services/feel_service.dart';
 import '../../services/home_widget_service.dart';
 import '../../services/live_ops.dart';
 import '../../services/notification_scheduler.dart';
 import '../../services/observability.dart';
 import '../../services/share_service.dart';
 import '../../services/status_snapshot_service.dart';
+import '../minigames/mini_games.dart' show miniGameKibble;
 import '../model/bond.dart';
+import '../model/inventory.dart';
+import '../model/items.dart';
 import '../model/mood.dart';
 import '../model/pet_state.dart';
 import '../model/pet_status_snapshot.dart';
@@ -35,6 +41,7 @@ import '../model/species.dart';
 import '../sim/bond_engine.dart';
 import '../sim/game_simulation.dart';
 import '../sim/interaction.dart';
+import '../sim/shopping.dart';
 import '../sim/sim_config.dart';
 
 class GameController extends ChangeNotifier {
@@ -51,11 +58,15 @@ class GameController extends ChangeNotifier {
     FeedbackService? feedback,
     BetaFeedbackPipeline? betaFeedback,
     LiveOps? liveOps,
+    FeelService? feel,
+    bool Function()? notificationsAllowed,
     int Function()? clock,
     String Function()? idGenerator,
   }) : _feedback = feedback ?? const NoopFeedbackService(),
        _betaFeedback = betaFeedback,
        _liveOps = liveOps,
+       _feel = feel,
+       _notificationsAllowed = notificationsAllowed,
        _now = clock ?? (() => DateTime.now().millisecondsSinceEpoch),
        _idGenerator =
            idGenerator ??
@@ -80,9 +91,24 @@ class GameController extends ChangeNotifier {
   /// kill-switch so the founder can silence them live (incident mitigation).
   final LiveOps? _liveOps;
 
-  /// Notifications are live unless a LiveOps kill-switch has disabled them.
+  /// The Feel layer (E1): one warm cue (sound + soft haptic, both gated by
+  /// player toggles) per meaningful moment. Null-safe — pure-logic tests that
+  /// construct the controller directly simply feel nothing.
+  final FeelService? _feel;
+
+  void _cue(SfxCue sfx, [HapticKind kind = HapticKind.tap]) {
+    final feel = _feel;
+    if (feel != null) unawaited(feel.cue(sfx, kind));
+  }
+
+  /// Player-side notification preference (Settings toggle), or null in tests.
+  final bool Function()? _notificationsAllowed;
+
+  /// Notifications are live unless the founder's LiveOps kill-switch OR the
+  /// player's own Settings toggle has disabled them.
   bool get _notificationsLive =>
-      _liveOps?.isKilled(LiveFeature.notifications) != true;
+      _liveOps?.isKilled(LiveFeature.notifications) != true &&
+      (_notificationsAllowed?.call() ?? true);
 
   final int Function() _now;
   final String Function() _idGenerator;
@@ -140,11 +166,22 @@ class GameController extends ChangeNotifier {
   /// after adopt/resume (the pet shows its resting expression for the mood).
   CareInteraction? lastInteraction;
 
+  /// A pending one-time Streak Repair offer (the count that just broke), or
+  /// null. Welcome-back framing only — ignoring it costs nothing (§11.2).
+  int? streakRepairOffer;
+
   bool get loading => _loading;
   bool get hasPet => _save != null;
   PetState? get pet => _save?.pet;
   Mood get mood => _mood;
   List<MemoryFact> get facts => _save?.facts ?? const [];
+
+  /// The household inventory (pantry, toys, supplies, closet) — empty until a
+  /// pet is adopted.
+  Inventory get inventory => _save?.inventory ?? const Inventory();
+
+  /// True while the pet naps in the Bedroom (shared across every room).
+  bool get isSleeping => _save?.pet.isSleeping ?? false;
 
   /// The pet's evolving personality (drifts with care; persisted across restarts
   /// from save v6 — P3-4). Read-only; drift happens via [interact].
@@ -186,6 +223,7 @@ class GameController extends ChangeNotifier {
       ledger: BondLedger.empty,
       facts: _seedMemories(pet, now),
       keepsakes: [_keepsakes.rescueDay(pet, now)], // the first card
+      inventory: Inventory.starter(), // the rescue kit — no room starts empty
     );
     _session = SessionInteractions.empty;
     _sessionStartMs = now;
@@ -206,9 +244,59 @@ class GameController extends ChangeNotifier {
   }
 
   /// Perform a care interaction (feed/clean/play) and surface warm feedback.
-  Future<void> interact(CareInteraction interaction) async {
+  Future<void> interact(CareInteraction interaction) =>
+      _applyInteraction(interaction);
+
+  /// Feeds a specific pantry food (Kitchen). Consumes one from the pantry;
+  /// when the pantry is out, surfaces a warm nudge toward the Grocery Store
+  /// instead (never an error, never guilt).
+  Future<void> feedWith(ItemDef food) async {
+    final save = _save;
+    if (save == null || food.kind != ItemKind.food) return;
+    if (_guardSleeping()) return;
+    final remaining = save.inventory.consume(food);
+    if (remaining == null) {
+      lastMessage =
+          'The ${food.displayName} shelf is empty — '
+          'the Grocery Store has more! 🧺';
+      notifyListeners();
+      return;
+    }
+    _save = save.copyWith(inventory: remaining);
+    await _applyInteraction(
+      CareInteraction.feed,
+      item: food,
+      warmLine: (name) =>
+          '$name munched the ${food.displayName} right up! ${food.emoji}',
+    );
+  }
+
+  /// Plays with a specific owned toy (Play Garden) and deepens that toy's
+  /// affection (pure delight progression — never Bond).
+  Future<void> playWith(ItemDef toy) async {
+    final save = _save;
+    if (save == null || toy.kind != ItemKind.toy) return;
+    if (_guardSleeping()) return;
+    if (!save.inventory.ownsToy(toy.id)) return;
+    _save = save.copyWith(inventory: save.inventory.bumpAffinity(toy.id));
+    await _applyInteraction(
+      CareInteraction.play,
+      item: toy,
+      toyAffinity: save.inventory.affinity(toy.id),
+      warmLine: (name) =>
+          '$name and the ${toy.displayName} had the best time! ${toy.emoji}',
+    );
+  }
+
+  Future<void> _applyInteraction(
+    CareInteraction interaction, {
+    ItemDef? item,
+    int toyAffinity = 0,
+    String Function(String petName)? warmLine,
+  }) async {
     final save = _save;
     if (save == null) return;
+    if (_guardSleeping()) return;
     final preStage = save.pet.bond.stage;
     final outcome = sim.interact(
       state: save.pet,
@@ -216,6 +304,8 @@ class GameController extends ChangeNotifier {
       session: _session,
       ledger: save.ledger,
       nowMs: _now(),
+      item: item,
+      toyAffinity: toyAffinity,
     );
     _save = save.copyWith(
       pet: outcome.state,
@@ -225,12 +315,30 @@ class GameController extends ChangeNotifier {
           : save.facts,
     );
     _captureKeepsakes(outcome, preStage);
+    if (outcome.streakBrokeFromCount > 0) {
+      streakRepairOffer = outcome.streakBrokeFromCount;
+    } else if (outcome.streakIncremented) {
+      streakRepairOffer = null; // a fresh day of care moves us forward
+    }
+    if (outcome.grew || outcome.state.bond.stage != preStage) {
+      _cue(SfxCue.tada, HapticKind.celebrate);
+    } else if (outcome.comfortBeat) {
+      _cue(SfxCue.heartGlow, HapticKind.success);
+    } else {
+      _cue(switch (interaction) {
+        CareInteraction.feed => SfxCue.feedChime,
+        CareInteraction.clean => SfxCue.splash,
+        CareInteraction.play => SfxCue.boing,
+      });
+    }
     _session = outcome.session;
     _mood = outcome.mood;
     lastOutcome = outcome;
     lastInteraction = interaction;
     ambientEmotion = null; // a reaction takes over from any ambient idle
-    lastMessage = _warmLine(interaction, outcome);
+    lastMessage = outcome.comfortBeat || warmLine == null
+        ? _warmLine(interaction, outcome)
+        : warmLine(outcome.state.name);
     _driftPersonality(interaction);
     _save = _save?.copyWith(
       personality: _personality,
@@ -277,6 +385,317 @@ class GameController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// True (and surfaces a warm hush) when the pet is asleep — care actions
+  /// wait until the player wakes them gently in the Bedroom.
+  bool _guardSleeping() {
+    if (!isSleeping) return false;
+    final name = _save?.pet.name ?? 'Your friend';
+    lastMessage = '$name is fast asleep 💤 — wake them gently first';
+    notifyListeners();
+    return true;
+  }
+
+  // ---- Grocery Store & inventory (Immersive Pet Experience) ----
+
+  /// Buys [item] with Kibble (soft currency only — no real money in rooms).
+  /// Every outcome is warm: success celebrates, "not enough Kibble" invites
+  /// more care moments (never pressure).
+  Future<bool> purchase(ItemDef item) async {
+    final save = _save;
+    if (save == null) return false;
+    final outcome = tryPurchase(
+      state: save.pet,
+      inventory: save.inventory,
+      item: item,
+    );
+    if (!outcome.success) {
+      lastMessage = switch (outcome.block!) {
+        PurchaseBlock.kibble =>
+          'A few more care moments and the ${item.displayName} is yours! 💛',
+        PurchaseBlock.alreadyOwned =>
+          'You already have the ${item.displayName} — it\'s yours forever!',
+        PurchaseBlock.notSoldHere =>
+          'The ${item.displayName} isn\'t on these shelves.',
+      };
+      notifyListeners();
+      return false;
+    }
+    _save = save.copyWith(pet: outcome.state, inventory: outcome.inventory);
+    _cue(SfxCue.basket, HapticKind.success);
+    lastMessage = '${item.emoji} ${item.displayName} — into the basket!';
+    observability.event(AnalyticsEvent.careAction, {
+      'verb': 'purchase',
+      'bond_awarded': 0,
+      'needed': false,
+    });
+    await _persist();
+    notifyListeners();
+    return true;
+  }
+
+  // ---- Care Corner (gentle wellness — never frightening) ----
+
+  /// Offers a care supply (vitamin chew, soothing balm, warm broth…): consumes
+  /// one and applies its comfort. Out-of-stock nudges the Grocery Store warmly.
+  Future<void> useSupply(ItemDef supply) async {
+    final save = _save;
+    if (save == null || supply.kind != ItemKind.careSupply) return;
+    if (_guardSleeping()) return;
+    final remaining = save.inventory.consume(supply);
+    if (remaining == null) {
+      lastMessage =
+          'No ${supply.displayName} left — '
+          'the Grocery Store keeps them in stock 🧺';
+      notifyListeners();
+      return;
+    }
+    final outcome = sim.applySupply(
+      state: save.pet,
+      item: supply,
+      ledger: save.ledger,
+      nowMs: _now(),
+    );
+    _save = save.copyWith(
+      pet: outcome.state,
+      ledger: outcome.ledger,
+      inventory: remaining,
+    );
+    _mood = outcome.mood;
+    lastInteraction = null;
+    ambientEmotion = null;
+    _cue(
+      outcome.comfortBeat ? SfxCue.heartGlow : SfxCue.sparkle,
+      outcome.comfortBeat ? HapticKind.success : HapticKind.tap,
+    );
+    lastMessage = outcome.comfortBeat
+        ? '${outcome.state.name} feels so much better with you here 💛'
+        : '${supply.emoji} ${outcome.state.name} feels cozier already';
+    if (outcome.comfortBeat) {
+      _collect(_keepsakes.comfort(outcome.state, _now()));
+    }
+    _say(
+      outcome.comfortBeat ? HeartmindIntent.comfort : HeartmindIntent.careAck,
+    );
+    observability.event(AnalyticsEvent.careAction, {
+      'verb': 'supply',
+      'bond_awarded': outcome.bondAwarded,
+      'needed': outcome.comfortBeat,
+    });
+    await _persist();
+    notifyListeners();
+  }
+
+  /// A gentle comfort touch (Care Corner & Bedroom): tiny capped Bond, a
+  /// little joy, and the signature Comfort beat when it lifts a Low pet.
+  Future<void> comfortPet() async {
+    final save = _save;
+    if (save == null) return;
+    if (_guardSleeping()) return;
+    final outcome = sim.comfort(
+      state: save.pet,
+      session: _session,
+      ledger: save.ledger,
+      nowMs: _now(),
+    );
+    _save = save.copyWith(pet: outcome.state, ledger: outcome.ledger);
+    _session = outcome.session;
+    _mood = outcome.mood;
+    lastInteraction = null;
+    ambientEmotion = null;
+    _cue(SfxCue.heartGlow, HapticKind.success);
+    lastMessage = outcome.comfortBeat
+        ? '${outcome.state.name} feels so much better with you here 💛'
+        : '${outcome.state.name} leans into your hand 💛';
+    if (outcome.comfortBeat) {
+      _collect(_keepsakes.comfort(outcome.state, _now()));
+    }
+    _say(HeartmindIntent.comfort);
+    observability.event(AnalyticsEvent.careAction, {
+      'verb': 'comfort',
+      'bond_awarded': outcome.bondAwarded,
+      'needed': outcome.comfortBeat,
+    });
+    await _persist();
+    notifyListeners();
+  }
+
+  /// The Care Corner temperature check — always reassuring, by design: the
+  /// pet can never be sick (no-death floor, Health/Illness removed from canon).
+  /// It's a warm ritual that reflects the pet's coziness back to the player.
+  void wellnessCheck() {
+    final save = _save;
+    if (save == null) return;
+    final name = save.pet.name;
+    final lowest = save.pet.meters.lowest;
+    _cue(SfxCue.sparkle);
+    lastMessage = lowest >= config.needsCareThreshold
+        ? '🌡️ Snug as a sunbeam — $name is doing wonderfully!'
+        : '🌡️ All safe and sound — a little extra love and '
+              '$name will be beaming';
+    lastInteraction = null;
+    ambientEmotion = null;
+    _say(HeartmindIntent.careAck);
+    notifyListeners();
+  }
+
+  // ---- Wardrobe (cosmetic delight — zero gameplay power) ----
+
+  /// Wears an owned cosmetic (or, for a Forever Friends premium keepsake the
+  /// player is entitled to, grants + wears it). Never sold for money in-room.
+  Future<void> equipCosmetic(ItemDef item, {bool entitled = false}) async {
+    final save = _save;
+    if (save == null || item.kind != ItemKind.cosmetic) return;
+    var inv = save.inventory;
+    if (!inv.ownsCosmetic(item.id)) {
+      if (!item.premium || !entitled) return; // UI gates; defense in depth
+      inv = inv.add(item); // the Forever Friends keepsake joins the closet
+    }
+    _save = save.copyWith(inventory: inv.equip(item));
+    _cue(SfxCue.softPop);
+    lastMessage =
+        '${item.emoji} ${save.pet.name} is wearing the '
+        '${item.displayName}!';
+    await _persist();
+    notifyListeners();
+  }
+
+  /// Takes a cosmetic off (back to the closet — it stays owned forever).
+  Future<void> unequipCosmetic(ItemDef item) async {
+    final save = _save;
+    if (save == null) return;
+    _save = save.copyWith(inventory: save.inventory.unequip(item.id));
+    await _persist();
+    notifyListeners();
+  }
+
+  // ---- Bedroom (sleep, dreams, mornings) ----
+
+  /// Tucks the pet in. Sleep persists across app restarts; energy regenerates
+  /// for the whole nap when the pet wakes (§5.1 rest +20/h).
+  Future<void> tuckIn() async {
+    final save = _save;
+    if (save == null || save.pet.isSleeping) return;
+    _save = save.copyWith(pet: save.pet.tuckedIn(_now()));
+    lastInteraction = null;
+    ambientEmotion = null;
+    _cue(SfxCue.lullabyDip);
+    lastMessage = 'Sweet dreams, ${save.pet.name} 🌙';
+    _say(HeartmindIntent.goodbye);
+    await _persist();
+    notifyListeners();
+  }
+
+  /// Gently wakes the pet: credits the nap's energy and greets the morning.
+  Future<void> wakeUp() async {
+    final save = _save;
+    if (save == null || !save.pet.isSleeping) return;
+    final outcome = sim.wake(state: save.pet, nowMs: _now());
+    _save = save.copyWith(pet: outcome.state);
+    _mood = outcome.mood;
+    lastInteraction = null;
+    ambientEmotion = null;
+    _cue(SfxCue.morningChirp, HapticKind.success);
+    lastMessage = outcome.sleptHours >= 1
+        ? '☀️ ${outcome.state.name} stretches — what a lovely nap!'
+        : '☀️ ${outcome.state.name} blinks awake, happy to see you';
+    _say(HeartmindIntent.greeting);
+    observability.event(AnalyticsEvent.careAction, {
+      'verb': 'wake',
+      'bond_awarded': 0,
+      'needed': false,
+    });
+    await _persist();
+    notifyListeners();
+  }
+
+  /// Right-to-be-forgotten (§8.3, Settings): erases the save everywhere
+  /// (local + backend + analytics identifiers via the repo), cancels every
+  /// pending notification, clears the runtime, and returns to Rescue Day.
+  /// Returns false (with a calm message) if the erase failed — never silent.
+  Future<bool> deleteAccountAndStartOver() async {
+    final result = await repo.deleteAccount(petId: _save?.pet.petId);
+    if (result.isErr) {
+      lastMessage =
+          'Something went wrong and nothing was deleted — please try again.';
+      notifyListeners();
+      return false;
+    }
+    await notifications.cancelAll();
+    _save = null;
+    _session = SessionInteractions.empty;
+    _mood = Mood.content;
+    _personality = PersonalityProfile.neutral;
+    petLine = null;
+    lastMessage = null;
+    lastOutcome = null;
+    lastInteraction = null;
+    ambientEmotion = null;
+    _sessionStartMs = null;
+    _onboardingStartMs = null;
+    notifyListeners();
+    return true;
+  }
+
+  /// Wraps up a Play Garden mini-game session: one canonical play verb (the
+  /// game IS play — bond/energy/happiness semantics identical) plus a small
+  /// capped Kibble thank-you for the joy scored. No-fail by design upstream;
+  /// a zero score still ends warmly (the verb alone).
+  Future<void> finishMiniGame({
+    required String gameId,
+    required int score,
+  }) async {
+    if (_save == null) return;
+    if (_guardSleeping()) return;
+    await _applyInteraction(
+      CareInteraction.play,
+      warmLine: (name) => '$name had the best time playing! \u{1F389}',
+    );
+    final bonus = miniGameKibble(score);
+    final save = _save;
+    if (save == null) return;
+    if (bonus > 0) {
+      _save = save.copyWith(
+        pet: save.pet.copyWith(wallet: save.pet.wallet.addKibble(bonus)),
+      );
+      lastMessage = '+$bonus Kibble \u2014 what a game! \u{1F9B4}';
+      _cue(SfxCue.tada, HapticKind.success);
+    }
+    observability.event(AnalyticsEvent.careAction, {
+      'verb': 'minigame_$gameId',
+      'bond_awarded': lastOutcome?.bondAwarded ?? 0,
+      'needed': false,
+    });
+    await _persist();
+    notifyListeners();
+  }
+
+  /// The one-time Streak Repair (§11.2): spends Kibble to rekindle the streak
+  /// that just broke. Only available while [streakRepairOffer] stands; always
+  /// optional, never nagged. Returns false when Kibble is short (warm copy).
+  Future<bool> repairStreak() async {
+    final save = _save;
+    final offer = streakRepairOffer;
+    if (save == null || offer == null) return false;
+    final debited = save.pet.wallet.spendKibble(config.streakRepairKibbleCost);
+    if (debited == null) {
+      lastMessage =
+          'A few more care moments and the streak can be rekindled 💛';
+      notifyListeners();
+      return false;
+    }
+    final rekindled = sim.repairStreak(save.pet.careStreak, offer + 1);
+    _save = save.copyWith(
+      pet: save.pet.copyWith(wallet: debited, careStreak: rekindled),
+    );
+    streakRepairOffer = null;
+    _cue(SfxCue.tada, HapticKind.success);
+    lastMessage = 'Your streak is glowing again — day ${offer + 1} 🔥';
+    observability.event(AnalyticsEvent.streakEvent, {'count': rekindled.count});
+    await _persist();
+    notifyListeners();
+    return true;
+  }
+
   void _resumeSession() {
     final save = _save!;
     final resume = sim.resolveOnResume(
@@ -299,6 +718,11 @@ class GameController extends ChangeNotifier {
     observability.event(AnalyticsEvent.sessionStart, {
       'offline_hours': resume.offlineHours.round(),
     });
+    if (resume.dailyKibble > 0) {
+      lastMessage =
+          '+${resume.dailyKibble} Kibble — happy new day together! 🦴';
+      _cue(SfxCue.sparkle);
+    }
     // The pet greets you back — a "returning" beat after a real absence,
     // otherwise a normal greeting; a memory callback when one is available.
     // The returning line is warm + longing, NEVER guilt (the comeback model).
@@ -519,9 +943,17 @@ class GameController extends ChangeNotifier {
 
   /// Tap-the-pet ambient life: a fresh idle expression (weighted by mood +
   /// daypart) + an idle line. Makes the pet feel alive between care actions.
+  /// A sleeping pet just snoozes on (soft dream murmur, never startled awake).
   void nudgeAmbient() {
     if (_save == null) return;
+    if (isSleeping) {
+      ambientEmotion = PetEmotion.sleepy;
+      petLine = '💤 …';
+      notifyListeners();
+      return;
+    }
     _ambientTick++;
+    _cue(SfxCue.softPop);
     lastInteraction = null; // ambient idle takes over from a stale reaction
     ambientEmotion = _ambient.idleEmotion(
       mood: petMood,

@@ -24,6 +24,7 @@ class PetState {
     required this.lastActiveDayEpoch,
     required this.createdAtMs,
     required this.lastSimTimestampMs,
+    this.sleepingSinceMs,
   });
 
   final String petId;
@@ -45,6 +46,34 @@ class PetState {
 
   /// Last time the deterministic sim was resolved (for offline catch-up §5.7).
   final int lastSimTimestampMs;
+
+  /// When the pet was tucked in (Bedroom), or null while awake. Sleep persists
+  /// across app restarts — energy regenerates for the whole nap on wake.
+  final int? sleepingSinceMs;
+
+  bool get isSleeping => sleepingSinceMs != null;
+
+  /// Tucked in at [nowMs] (no-op if already sleeping — sleep start is kept).
+  PetState tuckedIn(int nowMs) => isSleeping ? this : _sleep(nowMs);
+
+  /// Awake again (the wake-time energy credit is the simulation's job).
+  PetState wokenUp() => _sleep(null);
+
+  PetState _sleep(int? sinceMs) => PetState(
+    petId: petId,
+    species: species,
+    name: name,
+    lifeStage: lifeStage,
+    meters: meters,
+    bond: bond,
+    careStreak: careStreak,
+    wallet: wallet,
+    activeDays: activeDays,
+    lastActiveDayEpoch: lastActiveDayEpoch,
+    createdAtMs: createdAtMs,
+    lastSimTimestampMs: lastSimTimestampMs,
+    sleepingSinceMs: sinceMs,
+  );
 
   /// A freshly-rescued pet: topped meters, Bond=Stranger, Pup/Kit, day 0.
   factory PetState.newlyRescued({
@@ -93,6 +122,7 @@ class PetState {
     lastActiveDayEpoch: lastActiveDayEpoch ?? this.lastActiveDayEpoch,
     createdAtMs: createdAtMs,
     lastSimTimestampMs: lastSimTimestampMs ?? this.lastSimTimestampMs,
+    sleepingSinceMs: sleepingSinceMs,
   );
 
   @override
@@ -109,7 +139,8 @@ class PetState {
       other.activeDays == activeDays &&
       other.lastActiveDayEpoch == lastActiveDayEpoch &&
       other.createdAtMs == createdAtMs &&
-      other.lastSimTimestampMs == lastSimTimestampMs;
+      other.lastSimTimestampMs == lastSimTimestampMs &&
+      other.sleepingSinceMs == sleepingSinceMs;
 
   @override
   int get hashCode => Object.hash(
@@ -125,5 +156,6 @@ class PetState {
     lastActiveDayEpoch,
     createdAtMs,
     lastSimTimestampMs,
+    sleepingSinceMs,
   );
 }

@@ -11,15 +11,22 @@ import 'core/service_locator.dart';
 import 'data/prefs_save_store.dart';
 import 'game/controller/game_controller.dart';
 import 'game/game_wiring.dart';
+import 'game/model/species.dart';
 import 'game/ui/cozy_theme.dart';
 import 'game/ui/game_root.dart';
+import 'render/pet_renderer.dart';
+import 'render/pet_renderer_factory.dart';
 import 'services/analytics_service.dart';
+import 'services/audioplayers_sink.dart';
 import 'services/crash_reporter.dart';
+import 'services/feel_service.dart';
+import 'services/prefs_service.dart';
 import 'services/firebase_provisioning.dart';
 import 'services/firebase/firebase_services.dart';
 import 'services/home_widget_service.dart';
 import 'services/live_ops.dart';
 import 'services/local_notification_scheduler.dart';
+import 'services/logger.dart';
 import 'services/notification_scheduler.dart';
 import 'services/notifications/flutter_local_notifications_sink.dart';
 import 'services/observability.dart';
@@ -29,7 +36,10 @@ import 'services/remote_config_service.dart';
 Future<void> main() async {
   final startMs = DateTime.now().millisecondsSinceEpoch;
   WidgetsFlutterBinding.ensureInitialized();
-  final config = bootstrap();
+  // Players meet the animated vector pet (the temporary renderer honouring
+  // the Rive contract); tests/CI keep the deterministic placeholder default.
+  // An explicit KP_PET_RENDERER (e.g. `rive` once the .riv lands) always wins.
+  final config = bootstrap(fallbackRenderer: PetRendererBackend.vector);
   final sl = ServiceLocator.instance;
   // Activate crash capture as early as possible (P3-7): route uncaught Flutter +
   // platform errors to the CrashReporter so the closed beta gets crash-free-rate
@@ -39,6 +49,14 @@ Future<void> main() async {
   // Production native bridges (the prefs-backed home-widget writer feeds the
   // OS widget; bootstrap's defaults are the test-safe in-memory versions).
   sl.registerSingleton<HomeWidgetService>(PrefsHomeWidgetService());
+  // The Feel layer goes live (E1): persisted player prefs + the audioplayers
+  // sink over the original synthesized cue set. Same production-swap idiom.
+  final prefsService = SharedPrefsService();
+  await prefsService.initialize();
+  sl.registerSingleton<PrefsService>(prefsService);
+  sl.registerSingleton<FeelService>(
+    FeelService(prefs: prefsService, audio: AudioplayersSink()),
+  );
 
   // Real Firebase stack (P3-0): activates ONLY when provisioned
   // (KP_FIREBASE_PROVISIONED + flutterfire configure). Otherwise the mock/
@@ -72,6 +90,20 @@ Future<void> main() async {
   unawaited(notifications.requestPermission());
 
   final controller = createGameController(sl: sl, store: PrefsSaveStore());
+  // The vector rig follows the adopted species (puppy ↔ kitten) — a
+  // production re-bind in the same idiom as the home-widget/notification
+  // swaps above. The Rive/placeholder backends ignore the resolver.
+  sl.registerSingleton<PetRenderer>(
+    createPetRenderer(
+      config.petRendererBackend,
+      riveAsset: config.riveAssetPath,
+      onDiagnostic: riveDiagnosticSink(
+        sl.get<Logger>(),
+        sl.get<CrashReporter>(),
+      ),
+      speciesOf: () => controller.pet?.species ?? Species.puppy,
+    ),
+  );
   // Cold-start metric (P3-7): boot duration → first runApp. Feeds the startup
   // perf budget alongside the host-side performance tests.
   final coldStartMs = DateTime.now().millisecondsSinceEpoch - startMs;

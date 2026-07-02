@@ -11,9 +11,11 @@ enum BackendMode { mock, firebase }
 
 /// Which pet-rendering backend is wired (ADR-001; engine = Flutter + **Rive**,
 /// locked at P1-0 after the animation spike — see `docs/ANIMATION_SPIKE_REPORT.md`).
-/// `placeholder` is the deterministic Flutter-drawn stand-in used until the
-/// commissioned `.riv` rig asset arrives (P2); `rive` activates the real seam.
-enum PetRendererBackend { placeholder, rive }
+/// `placeholder` is the deterministic Flutter-drawn stand-in; `vector` is the
+/// original hand-authored animated pet (the temporary renderer, honouring the
+/// same state contract) shipped until the commissioned `.riv` rig arrives;
+/// `rive` activates the real seam.
+enum PetRendererBackend { placeholder, rive, vector }
 
 /// Which billing implementation is wired (RevenueCat is the locked choice,
 /// ADR-007; `noop` simulates purchases offline until the SDK + store products
@@ -34,16 +36,25 @@ class AppConfig {
   });
 
   /// Default config used when nothing is overridden via `--dart-define`.
-  /// Mock backend, placeholder renderer, live chat OFF, no proxy — fully
-  /// offline-safe and deterministic for dev/CI/golden tests.
-  factory AppConfig.fromEnvironment() {
-    return const AppConfig(
+  /// Mock backend, live chat OFF, no proxy — fully offline-safe.
+  ///
+  /// [fallbackRenderer] applies only when `KP_PET_RENDERER` is unset: tests
+  /// and CI (bare `bootstrap()`) stay on the deterministic placeholder, while
+  /// the production app passes `vector` so players meet the animated pet.
+  /// An explicit `KP_PET_RENDERER=placeholder|vector|rive` always wins.
+  factory AppConfig.fromEnvironment({
+    PetRendererBackend fallbackRenderer = PetRendererBackend.placeholder,
+  }) {
+    return AppConfig(
       backendMode: _backend == 'firebase'
           ? BackendMode.firebase
           : BackendMode.mock,
-      petRendererBackend: _renderer == 'rive'
-          ? PetRendererBackend.rive
-          : PetRendererBackend.placeholder,
+      petRendererBackend: switch (_renderer) {
+        'rive' => PetRendererBackend.rive,
+        'vector' => PetRendererBackend.vector,
+        'placeholder' => PetRendererBackend.placeholder,
+        _ => fallbackRenderer,
+      },
       // Empty `--dart-define` ⇒ null ⇒ the Rive seam paints its stand-in.
       riveAssetPath: _riveAsset == '' ? null : _riveAsset,
       heartmindLiveChatEnabled: _liveChat,
@@ -94,7 +105,9 @@ class AppConfig {
   );
   static const String _renderer = String.fromEnvironment(
     'KP_PET_RENDERER',
-    defaultValue: 'placeholder',
+    // Empty sentinel = "unset" → AppConfig.fromEnvironment's fallbackRenderer
+    // decides (placeholder for tests/CI, vector for the shipped app).
+    defaultValue: '',
   );
   static const String _riveAsset = String.fromEnvironment(
     'KP_RIV_ASSET',

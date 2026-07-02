@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kindredpaws/game/model/species.dart';
-import 'package:kindredpaws/game/ui/companion_home_screen.dart';
+import 'package:kindredpaws/game/ui/rooms/room_host.dart';
 import 'package:kindredpaws/game/ui/memory_book_screen.dart';
 
 import '../support/harness.dart';
@@ -14,9 +14,7 @@ void main() {
       await c.load();
       await c.adopt(species: Species.puppy, name: 'Biscuit');
 
-      await tester.pumpWidget(
-        MaterialApp(home: CompanionHomeScreen(controller: c)),
-      );
+      await tester.pumpWidget(MaterialApp(home: RoomHost(controller: c)));
       await tester.pumpAndSettle();
 
       expect(find.byKey(const Key('companion-home')), findsOneWidget);
@@ -37,9 +35,7 @@ void main() {
     await c.load();
     await c.adopt(species: Species.puppy, name: 'Biscuit');
 
-    await tester.pumpWidget(
-      MaterialApp(home: CompanionHomeScreen(controller: c)),
-    );
+    await tester.pumpWidget(MaterialApp(home: RoomHost(controller: c)));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('play-button')));
@@ -58,9 +54,7 @@ void main() {
     await c.load();
     await c.adopt(species: Species.puppy, name: 'Biscuit');
 
-    await tester.pumpWidget(
-      MaterialApp(home: CompanionHomeScreen(controller: c)),
-    );
+    await tester.pumpWidget(MaterialApp(home: RoomHost(controller: c)));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('memory-book-button')));
@@ -84,9 +78,7 @@ void main() {
     await c.load();
     await c.adopt(species: Species.puppy, name: 'Biscuit');
 
-    await tester.pumpWidget(
-      MaterialApp(home: CompanionHomeScreen(controller: c)),
-    );
+    await tester.pumpWidget(MaterialApp(home: RoomHost(controller: c)));
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('companion-home')), findsOneWidget);

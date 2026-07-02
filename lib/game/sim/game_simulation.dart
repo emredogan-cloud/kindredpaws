@@ -8,6 +8,8 @@
 library;
 
 import '../model/care_meters.dart';
+import '../model/care_streak.dart';
+import '../model/items.dart';
 import '../model/mood.dart';
 import '../model/pet_state.dart';
 import 'bond_engine.dart';
@@ -28,6 +30,7 @@ class ResumeOutcome {
     required this.offlineHours,
     required this.isNewDay,
     required this.greetingBond,
+    required this.dailyKibble,
     required this.grewWhileAway,
   });
 
@@ -37,6 +40,9 @@ class ResumeOutcome {
   final double offlineHours;
   final bool isNewDay;
   final int greetingBond;
+
+  /// Kibble granted for the first open of the day (§8.1), 0 otherwise.
+  final int dailyKibble;
   final bool grewWhileAway;
 }
 
@@ -51,6 +57,7 @@ class InteractionOutcome {
     required this.wasNeeded,
     required this.streakIncremented,
     required this.freezeUsed,
+    required this.streakBrokeFromCount,
     required this.comfortBeat,
     required this.grew,
   });
@@ -64,6 +71,10 @@ class InteractionOutcome {
   final bool wasNeeded;
   final bool streakIncremented;
   final bool freezeUsed;
+
+  /// If > 0, the streak reset with this count before the break — the UI may
+  /// offer the one-time Streak Repair (welcome-back framing, never penalty).
+  final int streakBrokeFromCount;
   final bool comfortBeat;
   final bool grew;
 }
@@ -91,6 +102,11 @@ class GameSimulation {
   final LifeStageEngine _life;
 
   MoodResolver get mood => _mood;
+
+  /// One-time Streak Repair (§11.2): restores a just-broken streak to
+  /// [toCount]. The caller charges the Kibble (config.streakRepairKibbleCost).
+  CareStreak repairStreak(CareStreak streak, int toCount) =>
+      _streak.repair(streak, toCount);
 
   /// Resolve elapsed time on foreground: decay (never below floor, longing not
   /// guilt), count the active day, award the first-daily greeting, and check
@@ -143,10 +159,12 @@ class GameSimulation {
       workingLedger = award.ledger;
     }
 
+    final dailyKibble = isNewDay ? config.dailyKibbleBonus : 0;
     final next = state.copyWith(
       meters: decayed,
       bond: bond,
       lifeStage: life.stage,
+      wallet: state.wallet.addKibble(dailyKibble),
       activeDays: activeDays,
       lastActiveDayEpoch: today,
       lastSimTimestampMs: nowMs,
@@ -159,6 +177,7 @@ class GameSimulation {
       offlineHours: offlineHours,
       isNewDay: isNewDay,
       greetingBond: greetingBond,
+      dailyKibble: dailyKibble,
       grewWhileAway: life.advanced,
     );
   }
@@ -172,11 +191,19 @@ class GameSimulation {
     required SessionInteractions session,
     required BondLedger ledger,
     required int nowMs,
+    ItemDef? item,
+    int toyAffinity = 0,
   }) {
     final today = dayOfMs(nowMs);
     final preMood = _mood.resolve(state.meters);
 
-    final effect = _interaction.apply(state.meters, interaction, session);
+    final effect = _interaction.apply(
+      state.meters,
+      interaction,
+      session,
+      item: item,
+      toyAffinity: toyAffinity,
+    );
     final postMood = _mood.resolve(effect.meters, recentAttentionBonus: 100);
 
     var bond = state.bond;
@@ -242,6 +269,7 @@ class GameSimulation {
       wasNeeded: effect.wasNeeded,
       streakIncremented: streakUpdate.isNewCareDay,
       freezeUsed: streakUpdate.freezeUsed,
+      streakBrokeFromCount: streakUpdate.brokeFromCount,
       comfortBeat: comfortBeat,
       grew: life.advanced,
     );
@@ -250,4 +278,206 @@ class GameSimulation {
   /// Current mood for [meters] (UI read).
   Mood moodOf(CareMeters meters, {double recentAttentionBonus = 0}) =>
       _mood.resolve(meters, recentAttentionBonus: recentAttentionBonus);
+
+  /// Applies a gentle care supply (Care Corner): the item's comfort profile
+  /// lifts the meters (clamped, floor-safe). Supplies are aids, not care
+  /// verbs — they award no verb Bond and never touch the Care Streak (so the
+  /// streak can't be farmed from a shelf) — but comforting a Low pet back out
+  /// of the Low band still earns the Comfort beat (§5.4, the signature moment).
+  SupplyOutcome applySupply({
+    required PetState state,
+    required ItemDef item,
+    required BondLedger ledger,
+    required int nowMs,
+  }) {
+    final today = dayOfMs(nowMs);
+    final preMood = _mood.resolve(state.meters);
+    double clamp(double v) => v.clamp(config.floor, 100.0);
+    final lifted = CareMeters(
+      hunger: clamp(state.meters.hunger + item.satiety),
+      energy: clamp(state.meters.energy + item.energy),
+      hygiene: clamp(state.meters.hygiene + item.hygiene),
+      happiness: clamp(state.meters.happiness + item.joy),
+    );
+    final postMood = _mood.resolve(lifted, recentAttentionBonus: 100);
+
+    var bond = state.bond;
+    var workingLedger = ledger.forDay(today);
+    var awarded = 0;
+    final comfortBeat = preMood == Mood.low && postMood != Mood.low;
+    if (comfortBeat) {
+      final a = _bond.award(
+        bond: bond,
+        rawPoints: config.bondPoints.comfortLowMood,
+        mood: postMood,
+        ledger: workingLedger,
+        todayEpochDay: today,
+      );
+      bond = a.bond;
+      workingLedger = a.ledger;
+      awarded = a.awarded;
+    }
+
+    return SupplyOutcome(
+      state: state.copyWith(
+        meters: lifted,
+        bond: bond,
+        lastSimTimestampMs: nowMs,
+      ),
+      ledger: workingLedger,
+      mood: postMood,
+      bondAwarded: awarded,
+      comfortBeat: comfortBeat,
+    );
+  }
+
+  /// A comfort touch (petting/cuddle — Care Corner & Bedroom): tiny Bond
+  /// (§5.4 petting +0.5, its own diminishing session track), a little joy,
+  /// and the Comfort beat when it lifts a Low pet. Never touches the streak.
+  ComfortOutcome comfort({
+    required PetState state,
+    required SessionInteractions session,
+    required BondLedger ledger,
+    required int nowMs,
+  }) {
+    final today = dayOfMs(nowMs);
+    final preMood = _mood.resolve(state.meters);
+    final soothed = state.meters.copyWith(
+      happiness:
+          (state.meters.happiness +
+                  config.bondPoints.pettingTouch *
+                      10 *
+                      _pettingDiminish(session.petting))
+              .clamp(config.floor, 100.0),
+    );
+    final postMood = _mood.resolve(soothed, recentAttentionBonus: 100);
+
+    var bond = state.bond;
+    var workingLedger = ledger.forDay(today);
+    var awarded = 0;
+
+    void grant(double pts) {
+      final a = _bond.award(
+        bond: bond,
+        rawPoints: pts,
+        mood: postMood,
+        ledger: workingLedger,
+        todayEpochDay: today,
+      );
+      bond = a.bond;
+      workingLedger = a.ledger;
+      awarded += a.awarded;
+    }
+
+    grant(config.bondPoints.pettingTouch * _pettingDiminish(session.petting));
+    final comfortBeat = preMood == Mood.low && postMood != Mood.low;
+    if (comfortBeat) grant(config.bondPoints.comfortLowMood);
+
+    return ComfortOutcome(
+      state: state.copyWith(
+        meters: soothed,
+        bond: bond,
+        lastSimTimestampMs: nowMs,
+      ),
+      session: session.incrementPetting(),
+      ledger: workingLedger,
+      mood: postMood,
+      bondAwarded: awarded,
+      comfortBeat: comfortBeat,
+    );
+  }
+
+  double _pettingDiminish(int priorPets) =>
+      _pow(config.diminishingFactor, priorPets);
+
+  static double _pow(double base, int n) {
+    var v = 1.0;
+    for (var i = 0; i < n; i++) {
+      v *= base;
+    }
+    return v;
+  }
+
+  /// Wakes a sleeping pet: credits +[SimConfig.sleepRegenPerHour] energy per
+  /// hour napped (on top of the ordinary resume decay, so a full night still
+  /// nets a bright-eyed morning), capped at the catch-up window. Pure in
+  /// `nowMs`; a no-op for an awake pet.
+  WakeOutcome wake({required PetState state, required int nowMs}) {
+    final since = state.sleepingSinceMs;
+    if (since == null) {
+      return WakeOutcome(
+        state: state,
+        mood: _mood.resolve(state.meters),
+        sleptHours: 0,
+      );
+    }
+    final cappedMs = (nowMs - since).clamp(
+      0,
+      (config.maxCatchupDays * Duration.millisecondsPerDay).round(),
+    );
+    final hours = cappedMs / Duration.millisecondsPerHour;
+    final rested = state.meters.copyWith(
+      energy: (state.meters.energy + hours * config.sleepRegenPerHour).clamp(
+        config.floor,
+        100.0,
+      ),
+    );
+    final next = state
+        .copyWith(meters: rested, lastSimTimestampMs: nowMs)
+        .wokenUp();
+    return WakeOutcome(
+      state: next,
+      mood: _mood.resolve(rested, recentAttentionBonus: 100),
+      sleptHours: hours,
+    );
+  }
+}
+
+/// Outcome of a Care Corner supply (meters lifted; Comfort beat when earned).
+class SupplyOutcome {
+  const SupplyOutcome({
+    required this.state,
+    required this.ledger,
+    required this.mood,
+    required this.bondAwarded,
+    required this.comfortBeat,
+  });
+
+  final PetState state;
+  final BondLedger ledger;
+  final Mood mood;
+  final int bondAwarded;
+  final bool comfortBeat;
+}
+
+/// Outcome of a comfort touch (tiny capped Bond; Comfort beat when earned).
+class ComfortOutcome {
+  const ComfortOutcome({
+    required this.state,
+    required this.session,
+    required this.ledger,
+    required this.mood,
+    required this.bondAwarded,
+    required this.comfortBeat,
+  });
+
+  final PetState state;
+  final SessionInteractions session;
+  final BondLedger ledger;
+  final Mood mood;
+  final int bondAwarded;
+  final bool comfortBeat;
+}
+
+/// Outcome of waking up (energy credited for the nap).
+class WakeOutcome {
+  const WakeOutcome({
+    required this.state,
+    required this.mood,
+    required this.sleptHours,
+  });
+
+  final PetState state;
+  final Mood mood;
+  final double sleptHours;
 }
