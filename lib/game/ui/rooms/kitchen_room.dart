@@ -68,9 +68,7 @@ class _KitchenRoomState extends State<KitchenRoom> {
         RoomScaffold(
           controller: controller,
           rig: rig,
-          sceneAsset: KpAssets.cozyRoomDay,
-          // A warm, buttery morning-kitchen light.
-          tint: const Color(0x2EFFD9A0),
+          sceneAsset: KpAssets.kitchenScene,
           content: ShelfPanel(
             title: 'Pantry',
             trailing: NeedGlow(

@@ -212,6 +212,11 @@ class _VectorPetState extends State<_VectorPet> with TickerProviderStateMixin {
             emotion: widget.emotion,
             reactionT: _reaction.isAnimating ? _reaction.value : 1.0,
             reactionActive: _reaction.isAnimating,
+            // A sleeping pet stays asleep: the sleepy reaction holds its end
+            // pose (eyes closed, yawn settled) for as long as the emotion
+            // remains `sleepy`, instead of blinking back to idle.
+            holdSleepy:
+                !_reaction.isAnimating && widget.emotion == PetEmotion.sleepy,
             idlePhase: _idle.value,
             stageT: _stageT(widget.lifeStage),
             species: widget.species,
@@ -393,6 +398,17 @@ class _Pose {
     ),
   };
 
+  /// The peaceful held-sleep pose (E-final polish): eyes shut, ears low,
+  /// head nestled, a calm mouth — held for as long as the pet stays asleep.
+  _Pose get heldSleep => _lerp(
+    1.0,
+    eyeOpen: -0.9,
+    headDrop: 0.45,
+    earLift: -0.3,
+    smile: 0.45,
+    browSoft: 0.3,
+  );
+
   _Pose _lerp(
     double t, {
     double hop = 0,
@@ -511,6 +527,7 @@ class _PetPainter extends CustomPainter {
     required this.idlePhase,
     required this.stageT,
     required this.species,
+    this.holdSleepy = false,
   });
 
   final PetMood mood;
@@ -522,6 +539,9 @@ class _PetPainter extends CustomPainter {
   final double idlePhase;
   final double stageT;
   final Species species;
+
+  /// Holds the sleepy end-pose while the pet stays asleep (see _VectorPet).
+  final bool holdSleepy;
 
   static const _outline = Color(0xFF6B5844); // soft warm line, never black
   static const _eyeColor = Color(0xFF4A3F38);
@@ -540,6 +560,8 @@ class _PetPainter extends CustomPainter {
           ? Curves.easeOutBack.transform(reactionT / 0.3)
           : 1 - Curves.easeInOut.transform((reactionT - 0.3) / 0.7);
       pose = pose.react(emotion, t.clamp(0.0, 1.0));
+    } else if (holdSleepy) {
+      pose = pose.heldSleep; // asleep: eyes closed, breath soft, mouth calm
     }
 
     final phase = idlePhase * 2 * math.pi;
@@ -1048,5 +1070,6 @@ class _PetPainter extends CustomPainter {
       old.idlePhase != idlePhase ||
       old.moodBlend != moodBlend ||
       old.stageT != stageT ||
-      old.species != species;
+      old.species != species ||
+      old.holdSleepy != holdSleepy;
 }

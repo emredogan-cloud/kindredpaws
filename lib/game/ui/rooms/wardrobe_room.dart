@@ -51,9 +51,7 @@ class WardrobeRoom extends StatelessWidget {
     return RoomScaffold(
       controller: controller,
       rig: rig,
-      sceneAsset: KpAssets.cozyRoomDay,
-      // A soft boutique-lavender morning light.
-      tint: const Color(0x1FB9A7D9),
+      sceneAsset: KpAssets.wardrobeScene,
       content: ShelfPanel(
         title: 'Closet',
         child: ListView(
