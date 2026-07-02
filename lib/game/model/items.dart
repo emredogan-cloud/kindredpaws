@@ -19,7 +19,11 @@ enum ItemKind {
   careSupply('careSupply'),
 
   /// Wardrobe cosmetics — pure delight, zero gameplay power.
-  cosmetic('cosmetic');
+  cosmetic('cosmetic'),
+
+  /// Cozy Corners décor (GE-3) — placeable room stickers, owned forever,
+  /// pure expression (never a meter, never power).
+  decor('decor');
 
   const ItemKind(this.id);
   final String id;
@@ -44,6 +48,7 @@ class ItemDef {
     this.hygiene = 0,
     this.slot,
     this.premium = false,
+    this.decorSlotId,
   });
 
   /// Stable id (persisted in saves — never rename).
@@ -79,6 +84,10 @@ class ItemDef {
   /// True ⇒ needs the Forever Friends entitlement (cosmetic-only premium;
   /// the pet's wellbeing NEVER depends on it).
   final bool premium;
+
+  /// The [DecorSlot] id this décor piece fits (décor only). One honest home
+  /// per piece keeps placement two taps and the scene composition curated.
+  final String? decorSlotId;
 
   bool get purchasable => kibblePrice > 0 && !premium;
 
@@ -333,6 +342,137 @@ abstract final class ItemCatalog {
     premium: true,
   );
 
+  // ── Cozy Corners décor (GE-3) — 40–260 Kibble, owned forever ───────────
+  // Starry Night set (Bedroom).
+  static const starLamp = ItemDef(
+    id: 'decor_star_lamp',
+    kind: ItemKind.decor,
+    displayName: 'Star Lamp',
+    flavor: 'A little star that stays up with you.',
+    emoji: '⭐',
+    kibblePrice: 120,
+    decorSlotId: 'slot_bedroom_bedside',
+  );
+  static const moonTapestry = ItemDef(
+    id: 'decor_moon_tapestry',
+    kind: ItemKind.decor,
+    displayName: 'Moon Tapestry',
+    flavor: 'The quiet moon, woven in silver thread.',
+    emoji: '🌙',
+    kibblePrice: 160,
+    decorSlotId: 'slot_bedroom_wall',
+  );
+  static const dreamMobile = ItemDef(
+    id: 'decor_dream_mobile',
+    kind: ItemKind.decor,
+    displayName: 'Dream Mobile',
+    flavor: 'Tiny clouds that turn slowly in the night air.',
+    emoji: '☁️',
+    kibblePrice: 140,
+    decorSlotId: 'slot_bedroom_window',
+  );
+  // Sunny Meadow set (Play Garden).
+  static const sunflowerPot = ItemDef(
+    id: 'decor_sunflower_pot',
+    kind: ItemKind.decor,
+    displayName: 'Sunflower Pot',
+    flavor: 'It follows the sun all afternoon.',
+    emoji: '🌻',
+    kibblePrice: 110,
+    decorSlotId: 'slot_garden_flowerbed',
+  );
+  static const beeHouse = ItemDef(
+    id: 'decor_bee_house',
+    kind: ItemKind.decor,
+    displayName: 'Bee House',
+    flavor: 'A tiny inn for very busy guests.',
+    emoji: '🐝',
+    kibblePrice: 150,
+    decorSlotId: 'slot_garden_fence',
+  );
+  static const picnicGnome = ItemDef(
+    id: 'decor_picnic_gnome',
+    kind: ItemKind.decor,
+    displayName: 'Picnic Gnome',
+    flavor: 'He guards the stump and the sandwiches.',
+    emoji: '🍄',
+    kibblePrice: 130,
+    decorSlotId: 'slot_garden_stump',
+  );
+  // Singles across the home.
+  static const familyFrame = ItemDef(
+    id: 'decor_family_frame',
+    kind: ItemKind.decor,
+    displayName: 'Family Frame',
+    flavor: 'Us, on a very good day.',
+    emoji: '🖼️',
+    kibblePrice: 90,
+    decorSlotId: 'slot_home_wall',
+  );
+  static const bookNook = ItemDef(
+    id: 'decor_book_nook',
+    kind: ItemKind.decor,
+    displayName: 'Book Nook',
+    flavor: 'Bedtime stories live here.',
+    emoji: '📚',
+    kibblePrice: 70,
+    decorSlotId: 'slot_home_shelf',
+  );
+  static const snuggleRug = ItemDef(
+    id: 'decor_snuggle_rug',
+    kind: ItemKind.decor,
+    displayName: 'Snuggle Rug',
+    flavor: 'The warmest square meter in the house.',
+    emoji: '🧶',
+    kibblePrice: 180,
+    decorSlotId: 'slot_home_floor',
+  );
+  static const herbJars = ItemDef(
+    id: 'decor_herb_jars',
+    kind: ItemKind.decor,
+    displayName: 'Herb Jars',
+    flavor: 'Basil, mint, and something mysterious.',
+    emoji: '🌿',
+    kibblePrice: 60,
+    decorSlotId: 'slot_kitchen_counter',
+  );
+  static const recipeBoard = ItemDef(
+    id: 'decor_recipe_board',
+    kind: ItemKind.decor,
+    displayName: 'Recipe Board',
+    flavor: 'Today\'s special: whatever makes you happy.',
+    emoji: '📋',
+    kibblePrice: 80,
+    decorSlotId: 'slot_kitchen_wall',
+  );
+  static const duckParade = ItemDef(
+    id: 'decor_duck_parade',
+    kind: ItemKind.decor,
+    displayName: 'Duck Parade',
+    flavor: 'Three small captains for the bath sea.',
+    emoji: '🦆',
+    kibblePrice: 40,
+    decorSlotId: 'slot_bathroom_shelf',
+  );
+  static const cloudNightlight = ItemDef(
+    id: 'decor_cloud_nightlight',
+    kind: ItemKind.decor,
+    displayName: 'Cloud Nightlight',
+    flavor: 'A pocket of soft evening glow.',
+    emoji: '🌥️',
+    kibblePrice: 100,
+    decorSlotId: 'slot_bedroom_bedside',
+  );
+  static const wildflowerJar = ItemDef(
+    id: 'decor_wildflower_jar',
+    kind: ItemKind.decor,
+    displayName: 'Wildflower Jar',
+    flavor: 'Picked on this morning\'s walk.',
+    emoji: '🌼',
+    kibblePrice: 55,
+    decorSlotId: 'slot_kitchen_counter',
+  );
+
   /// Every catalog item (order = shelf display order).
   static const List<ItemDef> all = [
     // foods
@@ -345,6 +485,10 @@ abstract final class ItemCatalog {
     // cosmetics
     bobbleHat, flowerCrown, cozyBeanie, bellCollar, starCharm, heartBandana,
     sunbeamBandana, moonlightCap,
+    // décor (Cozy Corners)
+    starLamp, moonTapestry, dreamMobile, sunflowerPot, beeHouse, picnicGnome,
+    familyFrame, bookNook, snuggleRug, herbJars, recipeBoard, duckParade,
+    cloudNightlight, wildflowerJar,
   ];
 
   static final Map<String, ItemDef> _byId = {for (final i in all) i.id: i};

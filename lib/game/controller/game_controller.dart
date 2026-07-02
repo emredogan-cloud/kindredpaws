@@ -32,6 +32,7 @@ import '../../services/share_service.dart';
 import '../../services/status_snapshot_service.dart';
 import '../minigames/mini_games.dart' show miniGameKibble;
 import '../model/bond.dart';
+import '../model/decor.dart';
 import '../model/inventory.dart';
 import '../model/items.dart';
 import '../model/kindness.dart';
@@ -432,9 +433,29 @@ class GameController extends ChangeNotifier {
       notifyListeners();
       return false;
     }
-    _save = save.copyWith(pet: outcome.state, inventory: outcome.inventory);
+    var inventory = outcome.inventory!;
+    // A wished-for item coming home empties the jar (quietly, proudly).
+    if (inventory.wishlistId == item.id) {
+      inventory = inventory.copyWith(clearWishlist: true);
+    }
+    _save = save.copyWith(pet: outcome.state, inventory: inventory);
     _cue(SfxCue.basket, HapticKind.success);
     lastMessage = '${item.emoji} ${item.displayName} — into the basket!';
+    // Décor set completion (GE-3): exactly once per set (stable keepsake id).
+    if (item.kind == ItemKind.decor) {
+      for (final set in DecorSets.containing(item.id)) {
+        if (set.completedBy(inventory.decor)) {
+          _collect(
+            _keepsakes.decorSet(outcome.state!, set.id, set.title, _now()),
+          );
+          _cue(SfxCue.tada, HapticKind.celebrate);
+          lastMessage =
+              '${set.emoji} The ${set.title} set is complete — '
+              'a keepsake for the book!';
+          _say(HeartmindIntent.milestone);
+        }
+      }
+    }
     _recordKindness(KindnessTrigger.grocery, itemId: item.id);
     observability.event(AnalyticsEvent.careAction, {
       'verb': 'purchase',
@@ -444,6 +465,51 @@ class GameController extends ChangeNotifier {
     await _persist();
     notifyListeners();
     return true;
+  }
+
+  // ---- Cozy Corners décor (GE-3 — pure expression, never power) ----
+
+  /// Places an owned décor piece in [slot] (two taps: spot → piece).
+  Future<void> placeDecor(DecorSlot slot, ItemDef item) async {
+    final save = _save;
+    if (save == null || item.kind != ItemKind.decor) return;
+    if (!save.inventory.ownsDecor(item.id)) return;
+    _save = save.copyWith(inventory: save.inventory.place(slot.id, item.id));
+    _cue(SfxCue.softPop);
+    lastMessage =
+        '${item.emoji} The ${item.displayName} looks lovely on '
+        '${slot.label}!';
+    await _persist();
+    notifyListeners();
+  }
+
+  /// Empties a décor slot (the piece stays owned — back to the box).
+  Future<void> clearDecor(DecorSlot slot) async {
+    final save = _save;
+    if (save == null || save.inventory.placedIn(slot.id) == null) return;
+    _save = save.copyWith(inventory: save.inventory.clearSlot(slot.id));
+    _cue(SfxCue.softPop);
+    await _persist();
+    notifyListeners();
+  }
+
+  /// Sets (or clears, with null) the one wished-for shop item — the saving
+  /// jar. Pure intent: no notifications, no badges, no nagging, ever.
+  Future<void> setWishlist(ItemDef? item) async {
+    final save = _save;
+    if (save == null) return;
+    final inv = item == null
+        ? save.inventory.copyWith(clearWishlist: true)
+        : save.inventory.copyWith(wishlistId: item.id);
+    _save = save.copyWith(inventory: inv);
+    if (item != null) {
+      _cue(SfxCue.sparkle);
+      lastMessage =
+          '${item.emoji} Wished for the ${item.displayName} — '
+          'the jar is on the shelf!';
+    }
+    await _persist();
+    notifyListeners();
   }
 
   // ---- Care Corner (gentle wellness — never frightening) ----

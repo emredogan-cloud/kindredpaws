@@ -10,10 +10,12 @@ import 'package:flutter/material.dart';
 import '../../../render/pet_renderer.dart';
 import '../../controller/game_controller.dart';
 import '../../model/items.dart';
+import '../../rooms/room_id.dart';
 import '../care_cues.dart';
 import '../mood_visuals.dart';
 import '../widgets/cozy.dart';
 import '../widgets/feel_fx.dart';
+import 'decor_ui.dart';
 import 'room_host.dart' show kRoomDockClearance;
 
 /// A room's canvas: full-bleed scene, an optional warm tint that gives the
@@ -27,6 +29,7 @@ class RoomScaffold extends StatelessWidget {
     this.tint,
     this.petFooter,
     this.ambient,
+    this.decorRoom,
     super.key,
   });
 
@@ -47,8 +50,13 @@ class RoomScaffold extends StatelessWidget {
   /// pointer-transparent, semantics-silent (see [AmbientScene]).
   final Widget? ambient;
 
+  /// When set, the room joins Cozy Corners (GE-3): placed décor composes
+  /// into the scene and a small decorate button opens the two-tap sheet.
+  final RoomId? decorRoom;
+
   @override
   Widget build(BuildContext context) {
+    final decor = decorRoom;
     return CozyBackground(
       asset: sceneAsset,
       scrim: tint,
@@ -56,6 +64,7 @@ class RoomScaffold extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           ?ambient,
+          if (decor != null) DecorLayer(controller: controller, room: decor),
           SafeArea(
             child: Column(
               children: [
@@ -66,6 +75,14 @@ class RoomScaffold extends StatelessWidget {
               ],
             ),
           ),
+          if (decor != null)
+            Positioned(
+              top: 6,
+              right: 10,
+              child: SafeArea(
+                child: DecorateButton(controller: controller, room: decor),
+              ),
+            ),
         ],
       ),
     );
@@ -304,6 +321,7 @@ class ItemCard extends StatelessWidget {
     this.badgeIcon,
     this.enabled = true,
     this.cardKey,
+    this.onLongPress,
     super.key,
   });
 
@@ -315,6 +333,9 @@ class ItemCard extends StatelessWidget {
   final Widget? badgeIcon;
   final bool enabled;
   final Key? cardKey;
+
+  /// Optional secondary gesture (GE-3: long-press a décor piece to wish).
+  final VoidCallback? onLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -332,6 +353,7 @@ class ItemCard extends StatelessWidget {
             key: cardKey,
             borderRadius: BorderRadius.circular(18),
             onTap: enabled ? onTap : null,
+            onLongPress: enabled ? onLongPress : null,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
               child: Column(

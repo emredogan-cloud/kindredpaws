@@ -51,6 +51,7 @@ PurchaseOutcome tryPurchase({
   final ownedForever = switch (item.kind) {
     ItemKind.toy => inventory.ownsToy(item.id),
     ItemKind.cosmetic => inventory.ownsCosmetic(item.id),
+    ItemKind.decor => inventory.ownsDecor(item.id),
     _ => false,
   };
   if (ownedForever) {

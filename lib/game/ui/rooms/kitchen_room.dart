@@ -71,6 +71,7 @@ class _KitchenRoomState extends State<KitchenRoom> {
           rig: rig,
           sceneAsset: KpAssets.kitchenScene,
           ambient: const AmbientScene(variant: AmbientVariant.kitchenSteam),
+          decorRoom: RoomId.kitchen,
           content: ShelfPanel(
             title: 'Pantry',
             trailing: NeedGlow(

@@ -75,4 +75,14 @@ class KeepsakeFactory {
     'A quiet, gentle moment with ${pet.name}. 🤍',
     nowMs,
   );
+
+  /// A décor set completed (GE-3 Cozy Corners) — once per set (stable id).
+  Keepsake decorSet(PetState pet, String setId, String setTitle, int nowMs) =>
+      _card(
+        pet,
+        KeepsakeKind.decorSet,
+        setId,
+        'We finished the $setTitle corner together. 🛋️',
+        nowMs,
+      );
 }

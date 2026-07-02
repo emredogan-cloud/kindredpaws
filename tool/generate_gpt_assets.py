@@ -105,6 +105,23 @@ ITEMS = {
     "wear_heart_bandana": "a soft pet bandana with a little heart print",
     "wear_sunbeam_bandana": "a radiant golden-yellow pet bandana with a tiny sun embroidery",
     "wear_moonlight_cap": "a dreamy midnight-blue tiny nightcap with a crescent moon",
+    # décor — Cozy Corners (GE-3): Starry Night set
+    "decor_star_lamp": "a small bedside lamp shaped like a smiling golden star on a wooden base",
+    "decor_moon_tapestry": "a soft hanging wall tapestry of a sleepy crescent moon and tiny stars",
+    "decor_dream_mobile": "a gentle hanging baby mobile of pastel clouds and stars on strings",
+    # décor — Sunny Meadow set
+    "decor_sunflower_pot": "a cheerful terracotta pot with one big smiling sunflower",
+    "decor_bee_house": "a tiny wooden bee house with a round door and a friendly bee",
+    "decor_picnic_gnome": "a small garden gnome with a mushroom hat holding a picnic basket",
+    # décor — singles
+    "decor_family_frame": "a warm wooden picture frame with a heart doodle portrait",
+    "decor_book_nook": "a tiny stack of pastel storybooks with a star bookmark",
+    "decor_snuggle_rug": "a round braided rug in cream and peach swirls",
+    "decor_herb_jars": "three little glass jars of green kitchen herbs on a tiny tray",
+    "decor_recipe_board": "a small wooden kitchen chalkboard with a chalk heart and spoon",
+    "decor_duck_parade": "three tiny rubber ducks in a row, each a different pastel colour",
+    "decor_cloud_nightlight": "a soft glowing cloud-shaped nightlight with a sleepy face",
+    "decor_wildflower_jar": "a small glass jar holding fresh pastel wildflowers",
 }
 
 

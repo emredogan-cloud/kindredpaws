@@ -29,7 +29,7 @@ void main() {
       downgraded,
       KindredSaveState.currentSchemaVersion,
     );
-    expect(up.schemaVersion, 8);
+    expect(up.schemaVersion, KindredSaveState.currentSchemaVersion);
     expect(up.data.containsKey('kindness'), isTrue);
     final state = KindredSaveState.fromEnvelope(up);
     expect(state.pet.name, 'Biscuit');

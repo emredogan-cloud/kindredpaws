@@ -17,6 +17,7 @@ Factory): every bundled asset is logged here with its origin and license.
 |---|---|---|
 | `assets/backgrounds/{kitchen,bedroom,wardrobe,grocery}_scene.png` (4) | Generated via `tool/generate_gpt_assets.py` (gpt-image-1; prompts in the script, storybook style suffix, empty pet spot, no characters) | Original outputs; 1024×1536, ~3 MB each, decoded at screen width |
 | `assets/items/*.png` (24 stickers: 7 foods, 6 toys, 3 supplies, 8 cosmetics) | Same pipeline, transparent 1024² → optimized to 512² (36 MB → 4 MB, Lanczos + PNG optimize) | Replace the emoji interim treatment on shelf cards and worn overlays (emoji remains the fallback) |
+| `assets/items/decor_*.png` (14 stickers, Cozy Corners GE-3, 2026-07-02) | Same pipeline (`tool/generate_gpt_assets.py`, prompts in the script's décor section), transparent 1024² → optimized to 512² (22 MB → 2.8 MB) | Shelf cards + in-scene décor layer (emoji remains the fallback) |
 
 ## Generated imagery (GPT Image, UI integration sprint)
 

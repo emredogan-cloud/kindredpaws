@@ -1,4 +1,4 @@
-/// The persisted save (schema v8), mirroring GAME_TECHNICAL_SYSTEMS.md §3.4.
+/// The persisted save (schema v9), mirroring GAME_TECHNICAL_SYSTEMS.md §3.4.
 /// Holds the full runtime [PetState], the daily Bond [BondLedger], the Memory
 /// Book facts, Keepsakes, the pet's evolving [PersonalityProfile], the
 /// household [Inventory] (the room-based home), and the Daily Kindness slate
@@ -28,6 +28,7 @@ import 'migrations/v4_to_v5.dart';
 import 'migrations/v5_to_v6.dart';
 import 'migrations/v6_to_v7.dart';
 import 'migrations/v7_to_v8.dart';
+import 'migrations/v8_to_v9.dart';
 import 'save_envelope.dart';
 
 class KindredSaveState {
@@ -43,7 +44,7 @@ class KindredSaveState {
   });
 
   /// Schema version this app writes. Bump + add a migration on change.
-  static const int currentSchemaVersion = 8;
+  static const int currentSchemaVersion = 9;
 
   /// Ordered migration chain → [currentSchemaVersion].
   static const List<Migration> migrations = [
@@ -54,6 +55,7 @@ class KindredSaveState {
     V5ToV6(),
     V6ToV7(),
     V7ToV8(),
+    V8ToV9(),
   ];
 
   final PetState pet;
@@ -120,7 +122,8 @@ class KindredSaveState {
     },
   );
 
-  /// Reads a v8 envelope. Upgrade older envelopes with [MigrationRunner] first.
+  /// Reads a current-schema envelope. Upgrade older ones with
+  /// [MigrationRunner] first.
   factory KindredSaveState.fromEnvelope(SaveEnvelope env) {
     if (env.schemaVersion != currentSchemaVersion) {
       throw StateError(

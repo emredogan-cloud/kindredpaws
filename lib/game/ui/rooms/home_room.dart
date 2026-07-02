@@ -11,11 +11,13 @@ import '../../../render/pet_renderer.dart';
 import '../../controller/game_controller.dart';
 import '../../model/bond.dart';
 import '../../model/kindness.dart';
+import '../../rooms/room_id.dart';
 import '../../sim/interaction.dart';
 import '../care_ring.dart';
 import '../mood_visuals.dart';
 import '../widgets/ambient_scene.dart';
 import '../widgets/cozy.dart';
+import 'decor_ui.dart';
 import 'room_host.dart' show kRoomDockClearance;
 import 'room_scaffold.dart' show DressedPet;
 
@@ -45,6 +47,8 @@ class HomeRoom extends StatelessWidget {
         children: [
           // Warm dust motes drifting through the hearth light (GE-2).
           const AmbientScene(variant: AmbientVariant.homeMotes),
+          // Placed décor lives in the scene (GE-3 Cozy Corners).
+          DecorLayer(controller: controller, room: RoomId.home),
           SafeArea(
             child: Column(
               children: [
@@ -109,6 +113,13 @@ class HomeRoom extends StatelessWidget {
                 _verbBar(context),
                 const SizedBox(height: kRoomDockClearance),
               ],
+            ),
+          ),
+          Positioned(
+            top: 6,
+            right: 10,
+            child: SafeArea(
+              child: DecorateButton(controller: controller, room: RoomId.home),
             ),
           ),
         ],
