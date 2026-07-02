@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import '../../../render/pet_renderer.dart';
 import '../../controller/game_controller.dart';
 import '../../model/bond.dart';
+import '../../model/kindness.dart';
 import '../../sim/interaction.dart';
 import '../care_ring.dart';
 import '../mood_visuals.dart';
@@ -44,6 +45,7 @@ class HomeRoom extends StatelessWidget {
             _bondBar(context, pet.bond),
             if (controller.streakRepairOffer != null)
               _RepairOfferChip(controller: controller),
+            _KindnessInvite(controller: controller),
             if (controller.petLine != null)
               CozySpeechBubble(text: controller.petLine!),
             Expanded(
@@ -209,6 +211,169 @@ class HomeRoom extends StatelessWidget {
           onTap: () => controller.interact(CareInteraction.play),
         ),
       ],
+    );
+  }
+}
+
+/// Today's Daily Kindnesses (GE-1) — a warm invitation chip. Two gentle ideas
+/// a day, detected from real care moments (never a claim button, never a
+/// countdown); skipping costs nothing and is never mentioned again.
+class _KindnessInvite extends StatelessWidget {
+  const _KindnessInvite({required this.controller});
+  final GameController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final slate = controller.kindnessToday;
+    final defs = controller.todaysKindnesses;
+    if (slate == null || defs.isEmpty) return const SizedBox.shrink();
+    final done = slate.completed.length;
+    final total = slate.offered.length;
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Semantics(
+        button: true,
+        label: 'Today\'s kindnesses: $done of $total complete',
+        child: GestureDetector(
+          key: const Key('kindness-chip'),
+          onTap: () => _showKindnessSheet(context, controller),
+          child: CozyChip(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const ExcludeSemantics(child: Text('💛 ')),
+                Flexible(
+                  child: Text(
+                    slate.allDone
+                        ? 'All kindnesses done today!'
+                        : 'Today\'s kindnesses · $done/$total',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showKindnessSheet(BuildContext context, GameController controller) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xFFFFFBF5),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => ListenableBuilder(
+        listenable: controller,
+        builder: (context, _) {
+          final slate = controller.kindnessToday;
+          final defs = controller.todaysKindnesses;
+          final name = controller.pet?.name ?? 'your friend';
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Today\'s kindnesses 💛',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Two little ways to make $name\'s day — '
+                    'whenever you like.',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 14),
+                  for (final def in defs) ...[
+                    _KindnessCard(
+                      def: def,
+                      done: slate?.isCompleted(def.id) ?? false,
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// One kindness card: the invitation, where it naturally happens, and the
+/// visible thank-you. Completed cards glow with a check — nothing expires.
+class _KindnessCard extends StatelessWidget {
+  const _KindnessCard({required this.def, required this.done});
+  final KindnessDef def;
+  final bool done;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Semantics(
+      label:
+          '${def.title}. ${def.invitation} '
+          '${done ? "Done — thank you!" : "In the ${def.room}."}',
+      child: Container(
+        key: Key('kindness-card-${def.id}'),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: done
+              ? scheme.primary.withValues(alpha: 0.10)
+              : Colors.white.withValues(alpha: 0.7),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: done
+                ? scheme.primary.withValues(alpha: 0.35)
+                : const Color(0xFFE9A178).withValues(alpha: 0.30),
+          ),
+        ),
+        child: Row(
+          children: [
+            ExcludeSemantics(
+              child: Text(def.emoji, style: const TextStyle(fontSize: 26)),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    def.title,
+                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    def.invitation,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    done
+                        ? 'Done — thank you! 💛'
+                        : '${def.room} · +${def.kibble} 🦴',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: scheme.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (done) Icon(Icons.check_circle_rounded, color: scheme.primary),
+          ],
+        ),
+      ),
     );
   }
 }

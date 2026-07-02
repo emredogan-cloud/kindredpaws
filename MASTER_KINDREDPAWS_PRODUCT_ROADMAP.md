@@ -146,7 +146,7 @@ Program rules (apply to every phase):
 
 ### GE-1 · Daily Kindnesses (G1) — retention variety, canon-safe
 
-- **Objectives:** a data-driven daily-objective engine offering exactly 2 varied, gentle "kindnesses" per local day (e.g., *share a garden snack*, *a good brushing*, *teach a new game*), deterministic from the date + pet id; completing one credits Kibble (+10–20), a small Bond gesture, and occasionally a Memory Book line; skipping costs nothing and is never mentioned again.
+- **Objectives:** a data-driven daily-objective engine offering exactly 2 varied, gentle "kindnesses" per day (e.g., *share a meal*, *bubble-bath time*, *a little game together*), deterministic from the date + pet id; completing one credits Kibble (+10–20) and an affectionate celebration beat (cue + the pet's own words — not a Memory Book write: the Memory Book is a closed validated fact set by canon, and stays that way); skipping costs nothing and is never mentioned again.
 - **UX goals:** a warm "Today's kindnesses" chip on Home (next to the streak chip) opening a two-card sheet; cards show the verb, the room, and the visible reward; completion celebrates inline (particles + chime), never modally interrupts.
 - **Architecture:** `lib/game/model/kindness.dart` (template catalog, const + code-defined like `ItemCatalog`), `lib/game/sim/kindness_engine.dart` (pure: pick-of-day via seeded hash, progress detection from existing `Interaction` events, no new timers), state persisted in save **schema v8** (`kindness` map: date, offered ids, completed ids) with `V7ToV8` migration; wired in `GameController` beside the daily-bonus hook.
 - **Dependencies:** none beyond current tree.

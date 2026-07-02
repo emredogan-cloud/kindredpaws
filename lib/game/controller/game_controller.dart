@@ -34,6 +34,7 @@ import '../minigames/mini_games.dart' show miniGameKibble;
 import '../model/bond.dart';
 import '../model/inventory.dart';
 import '../model/items.dart';
+import '../model/kindness.dart';
 import '../model/mood.dart';
 import '../model/pet_state.dart';
 import '../model/pet_status_snapshot.dart';
@@ -41,6 +42,7 @@ import '../model/species.dart';
 import '../sim/bond_engine.dart';
 import '../sim/game_simulation.dart';
 import '../sim/interaction.dart';
+import '../sim/kindness_engine.dart';
 import '../sim/shopping.dart';
 import '../sim/sim_config.dart';
 
@@ -237,6 +239,7 @@ class GameController extends ChangeNotifier {
     if (_notificationsLive) {
       await notifications.scheduleDailyPresence(petName: pet.name, fromMs: now);
     }
+    _syncKindness(); // Rescue Day ends with today's first two kindnesses
     await _persist();
     lastMessage = 'Welcome home, ${pet.name}! 💛';
     _say(HeartmindIntent.greeting); // the pet's first words
@@ -345,6 +348,11 @@ class GameController extends ChangeNotifier {
     ); // persist the drift (P3-4)
     // The pet speaks: a milestone celebration if it grew, else a care ack.
     _say(outcome.grew ? HeartmindIntent.milestone : HeartmindIntent.careAck);
+    _recordKindness(switch (interaction) {
+      CareInteraction.feed => KindnessTrigger.feed,
+      CareInteraction.clean => KindnessTrigger.clean,
+      CareInteraction.play => KindnessTrigger.play,
+    }, itemId: item?.id);
 
     observability.event(AnalyticsEvent.careAction, {
       'verb': interaction.id,
@@ -423,6 +431,7 @@ class GameController extends ChangeNotifier {
     _save = save.copyWith(pet: outcome.state, inventory: outcome.inventory);
     _cue(SfxCue.basket, HapticKind.success);
     lastMessage = '${item.emoji} ${item.displayName} — into the basket!';
+    _recordKindness(KindnessTrigger.grocery, itemId: item.id);
     observability.event(AnalyticsEvent.careAction, {
       'verb': 'purchase',
       'bond_awarded': 0,
@@ -476,6 +485,7 @@ class GameController extends ChangeNotifier {
     _say(
       outcome.comfortBeat ? HeartmindIntent.comfort : HeartmindIntent.careAck,
     );
+    _recordKindness(KindnessTrigger.supply, itemId: supply.id);
     observability.event(AnalyticsEvent.careAction, {
       'verb': 'supply',
       'bond_awarded': outcome.bondAwarded,
@@ -510,6 +520,7 @@ class GameController extends ChangeNotifier {
       _collect(_keepsakes.comfort(outcome.state, _now()));
     }
     _say(HeartmindIntent.comfort);
+    _recordKindness(KindnessTrigger.comfort);
     observability.event(AnalyticsEvent.careAction, {
       'verb': 'comfort',
       'bond_awarded': outcome.bondAwarded,
@@ -535,6 +546,9 @@ class GameController extends ChangeNotifier {
     lastInteraction = null;
     ambientEmotion = null;
     _say(HeartmindIntent.careAck);
+    if (_recordKindness(KindnessTrigger.wellness)) {
+      unawaited(_persist()); // the only sync caller — completion must stick
+    }
     notifyListeners();
   }
 
@@ -555,6 +569,7 @@ class GameController extends ChangeNotifier {
     lastMessage =
         '${item.emoji} ${save.pet.name} is wearing the '
         '${item.displayName}!';
+    _recordKindness(KindnessTrigger.dressUp, itemId: item.id);
     await _persist();
     notifyListeners();
   }
@@ -581,6 +596,7 @@ class GameController extends ChangeNotifier {
     _cue(SfxCue.lullabyDip);
     lastMessage = 'Sweet dreams, ${save.pet.name} 🌙';
     _say(HeartmindIntent.goodbye);
+    _recordKindness(KindnessTrigger.tuckIn);
     await _persist();
     notifyListeners();
   }
@@ -660,6 +676,7 @@ class GameController extends ChangeNotifier {
       lastMessage = '+$bonus Kibble \u2014 what a game! \u{1F9B4}';
       _cue(SfxCue.tada, HapticKind.success);
     }
+    _recordKindness(KindnessTrigger.miniGame);
     observability.event(AnalyticsEvent.careAction, {
       'verb': 'minigame_$gameId',
       'bond_awarded': lastOutcome?.bondAwarded ?? 0,
@@ -693,6 +710,83 @@ class GameController extends ChangeNotifier {
     observability.event(AnalyticsEvent.streakEvent, {'count': rekindled.count});
     await _persist();
     notifyListeners();
+    return true;
+  }
+
+  // ---- Daily Kindnesses (GE-1, Genre Evolution) ----
+
+  static const KindnessEngine _kindnessEngine = KindnessEngine();
+
+  /// Today's kindness slate (offered pair + completion) — null before the
+  /// first session of the day resolves it.
+  KindnessState? get kindnessToday => _save?.kindness;
+
+  /// Today's offered kindnesses resolved to their defs (retired ids skip).
+  List<KindnessDef> get todaysKindnesses => [
+    for (final id in _save?.kindness?.offered ?? const <String>[])
+      ?KindnessCatalog.byId(id),
+  ];
+
+  /// Ensures the slate belongs to today (a new day quietly brings a fresh
+  /// pair; yesterday's simply fades — nothing lost, nothing mentioned).
+  void _syncKindness() {
+    final save = _save;
+    if (save == null) return;
+    final synced = _kindnessEngine.today(
+      nowMs: _now(),
+      petId: save.pet.petId,
+      prior: save.kindness,
+    );
+    if (!identical(synced, save.kindness)) {
+      _save = save.copyWith(kindness: synced);
+    }
+  }
+
+  /// A real care moment happened — detect completions, thank with Kibble, and
+  /// celebrate. The moment already carried its own bond/meters through the
+  /// sim; the kindness adds delight, never a second scoop of power. Returns
+  /// true when something completed (sync callers persist on that signal).
+  bool _recordKindness(KindnessTrigger trigger, {String? itemId}) {
+    final save = _save;
+    if (save == null) return false;
+    final slate = _kindnessEngine.today(
+      nowMs: _now(),
+      petId: save.pet.petId,
+      prior: save.kindness,
+    );
+    final res = _kindnessEngine.record(slate, trigger, itemId: itemId);
+    if (res.completed.isEmpty) {
+      if (!identical(res.state, save.kindness)) {
+        _save = save.copyWith(kindness: res.state);
+      }
+      return false;
+    }
+    var wallet = save.pet.wallet;
+    var thanks = 0;
+    for (final def in res.completed) {
+      wallet = wallet.addKibble(def.kibble);
+      thanks += def.kibble;
+    }
+    _save = save.copyWith(
+      pet: save.pet.copyWith(wallet: wallet),
+      kindness: res.state,
+    );
+    _cue(SfxCue.tada, HapticKind.celebrate);
+    lastMessage = res.state.allDone
+        ? 'Every kindness done today — +$thanks Kibble! 💛'
+        : '${res.completed.first.emoji} A kindness complete — '
+              '+$thanks Kibble!';
+    _say(
+      res.state.allDone ? HeartmindIntent.milestone : HeartmindIntent.careAck,
+    );
+    // Its own event kind — kindnesses must never skew the careAction funnel.
+    for (final def in res.completed) {
+      observability.event(AnalyticsEvent.kindnessComplete, {
+        'kindness': def.id,
+        'kibble': def.kibble,
+        'all_done': res.state.allDone,
+      });
+    }
     return true;
   }
 
@@ -730,6 +824,7 @@ class GameController extends ChangeNotifier {
         ? HeartmindIntent.returning
         : HeartmindIntent.greeting;
     _say(intent, tryCallback: true);
+    _syncKindness(); // today's pair greets the day (deterministic, quiet)
     _recordRetentionBeats();
   }
 

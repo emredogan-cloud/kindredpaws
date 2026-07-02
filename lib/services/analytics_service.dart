@@ -29,6 +29,7 @@ enum AnalyticsEvent {
   // ---- Phase 5 (soft-launch readiness) ----
   onboardingStep, // Rescue Day funnel step (beat/species/name)
   retentionMilestone, // returned on a D1/D3/D7/D14/D30 boundary since adopt
+  kindnessComplete, // a Daily Kindness completed (GE-1) — never a careAction
   notificationOpened, // re-engagement effectiveness (app opened from a notification)
   paywallStep, // monetization funnel step (shown/dismissed/start)
   experimentExposure, // A/B experiment assignment (LiveOps cohorts)

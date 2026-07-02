@@ -204,6 +204,15 @@ abstract final class Telemetry {
           'Feeds the D1≥42% / D7≥20% / D30≥10% retention gates (G4).',
       required: {'day'},
     ),
+    AnalyticsEvent.kindnessComplete: EventSpec(
+      gate: TelemetryGate.retention,
+      description:
+          'A Daily Kindness completed through a real care moment (GE-1). '
+          'Kept separate from careAction so the care funnel stays pure; '
+          'measures whether the daily-variety loop lands (Genre Evolution).',
+      required: {'kindness', 'kibble'},
+      optional: {'all_done'},
+    ),
     AnalyticsEvent.notificationOpened: EventSpec(
       gate: TelemetryGate.retention,
       description:

@@ -27,6 +27,7 @@ GameController createGameController({
   required ServiceLocator sl,
   required LocalSaveStore store,
   int Function()? clock,
+  String Function()? idGenerator,
 }) {
   final config = SimConfig.fromRemoteConfig(sl.get<RemoteConfigService>());
   final repo = SaveRepository(
@@ -52,5 +53,6 @@ GameController createGameController({
     feel: sl.get<FeelService>(),
     notificationsAllowed: () => sl.get<PrefsService>().notificationsEnabled,
     clock: clock,
+    idGenerator: idGenerator,
   );
 }
