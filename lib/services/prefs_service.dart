@@ -14,10 +14,21 @@ abstract interface class PrefsService {
   /// for friends below the equator. Presentation-only — never gameplay.
   bool get southernHemisphere;
 
+  /// First-visit verb hints already shown (GE-6): a room's primary hint
+  /// pulses exactly once per install. Device-local, never in the pet save.
+  Set<String> get seenHints;
+
+  /// A 24-bucket histogram of the local hours the app has been opened
+  /// (GE-6 rhythm-aware notifications). On-device only — never leaves the
+  /// phone, never a pet-save field.
+  List<int> get openHourHistogram;
+
   Future<void> setSoundEnabled(bool value);
   Future<void> setHapticsEnabled(bool value);
   Future<void> setNotificationsEnabled(bool value);
   Future<void> setSouthernHemisphere(bool value);
+  Future<void> markHintSeen(String id);
+  Future<void> recordOpenHour(int hour);
 }
 
 /// Deterministic in-memory prefs (dev/CI/tests). Defaults: everything on,
@@ -31,6 +42,10 @@ class InMemoryPrefsService implements PrefsService {
   bool notificationsEnabled = true;
   @override
   bool southernHemisphere = false;
+  @override
+  final Set<String> seenHints = {};
+  @override
+  final List<int> openHourHistogram = List<int>.filled(24, 0);
 
   @override
   Future<void> setSoundEnabled(bool value) async => soundEnabled = value;
@@ -42,6 +57,12 @@ class InMemoryPrefsService implements PrefsService {
   @override
   Future<void> setSouthernHemisphere(bool value) async =>
       southernHemisphere = value;
+  @override
+  Future<void> markHintSeen(String id) async => seenHints.add(id);
+  @override
+  Future<void> recordOpenHour(int hour) async {
+    if (hour >= 0 && hour < 24) openHourHistogram[hour]++;
+  }
 }
 
 /// SharedPreferences-backed prefs (production). Reads are memoized so the UI
@@ -51,12 +72,16 @@ class SharedPrefsService implements PrefsService {
   static const _kHaptics = 'prefs.haptics_enabled';
   static const _kNotifications = 'prefs.notifications_enabled';
   static const _kSouthern = 'prefs.southern_hemisphere';
+  static const _kSeenHints = 'prefs.seen_hints';
+  static const _kOpenHours = 'prefs.open_hour_histogram';
 
   SharedPreferences? _prefs;
   bool _sound = true;
   bool _haptics = true;
   bool _notifications = true;
   bool _southern = false;
+  final Set<String> _seenHints = {};
+  final List<int> _openHours = List<int>.filled(24, 0);
 
   Future<void> initialize() async {
     final p = await SharedPreferences.getInstance();
@@ -65,6 +90,15 @@ class SharedPrefsService implements PrefsService {
     _haptics = p.getBool(_kHaptics) ?? true;
     _notifications = p.getBool(_kNotifications) ?? true;
     _southern = p.getBool(_kSouthern) ?? false;
+    _seenHints
+      ..clear()
+      ..addAll(p.getStringList(_kSeenHints) ?? const []);
+    final hours = p.getStringList(_kOpenHours);
+    if (hours != null) {
+      for (var i = 0; i < 24 && i < hours.length; i++) {
+        _openHours[i] = int.tryParse(hours[i]) ?? 0;
+      }
+    }
   }
 
   @override
@@ -100,5 +134,28 @@ class SharedPrefsService implements PrefsService {
   Future<void> setSouthernHemisphere(bool value) async {
     _southern = value;
     await _prefs?.setBool(_kSouthern, value);
+  }
+
+  @override
+  Set<String> get seenHints => _seenHints;
+
+  @override
+  Future<void> markHintSeen(String id) async {
+    if (_seenHints.add(id)) {
+      await _prefs?.setStringList(_kSeenHints, _seenHints.toList());
+    }
+  }
+
+  @override
+  List<int> get openHourHistogram => _openHours;
+
+  @override
+  Future<void> recordOpenHour(int hour) async {
+    if (hour < 0 || hour >= 24) return;
+    _openHours[hour]++;
+    await _prefs?.setStringList(
+      _kOpenHours,
+      _openHours.map((h) => '$h').toList(),
+    );
   }
 }

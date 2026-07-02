@@ -47,14 +47,54 @@ class PetNotification {
   final NotificationKind kind;
 }
 
+/// Rhythm-aware anchor hours (GE-6). Given a 24-bucket histogram of when the
+/// household actually opens the app, returns the [cap] best hours to say
+/// hello — the peaks of their real rhythm, nudged toward morning/evening and
+/// kept apart so two-a-day never bunch up. Falls back to the gentle default
+/// anchors when there isn't enough signal yet. Pure + deterministic; the
+/// histogram never leaves the device (privacy-first).
+List<int> preferredNotificationHours(List<int> histogram, int cap) {
+  const morning = 10, evening = 19; // the safe defaults
+  final safeCap = cap.clamp(1, 2);
+  final total = histogram.fold<int>(0, (a, b) => a + b);
+  // Need a little evidence before personalizing (≥ 3 opens); else defaults.
+  if (histogram.length != 24 || total < 3) {
+    return safeCap == 1 ? const [evening] : const [morning, evening];
+  }
+  // Rank hours by frequency (ties → earlier hour, for stability).
+  final order = List<int>.generate(24, (i) => i)
+    ..sort((a, b) {
+      final d = histogram[b].compareTo(histogram[a]);
+      return d != 0 ? d : a.compareTo(b);
+    });
+  final best = order.first;
+  if (safeCap == 1) return [best];
+  // A second, well-separated peak (≥ 4 h from the first) so a pair feels
+  // like morning + evening, not two pings in one hour.
+  for (final h in order.skip(1)) {
+    if ((h - best).abs() >= 4) {
+      final pair = [best, h]..sort();
+      return pair;
+    }
+  }
+  // No separated second peak → pair the best with the far default anchor.
+  final partner = (best - morning).abs() >= (best - evening).abs()
+      ? morning
+      : evening;
+  return ([best, partner]..sort()).toSet().toList();
+}
+
 abstract interface class NotificationScheduler {
   /// Schedule the next [days] of warm presence notifications for [petName],
   /// honouring the [dailyCap] (1–2). Replaces any previously-scheduled set.
+  /// [preferredHours] (GE-6) overrides the default anchor hours with the
+  /// household's real rhythm; when null the gentle 10/19 anchors stand.
   Future<void> scheduleDailyPresence({
     required String petName,
     required int fromMs,
     int dailyCap = 1,
     int days = 3,
+    List<int>? preferredHours,
   });
 
   /// Schedule a single event-driven notification of [kind] at [atMs] (e.g. a
@@ -138,16 +178,20 @@ class InMemoryNotificationScheduler implements NotificationScheduler {
     required int fromMs,
     int dailyCap = 1,
     int days = 3,
+    List<int>? preferredHours,
   }) async {
     _scheduled.clear();
     final cap = dailyCap.clamp(1, InMemoryNotificationScheduler.dailyCap);
     final startDay = fromMs ~/ Duration.millisecondsPerDay;
     var templateIndex = 0;
+    // The household's real rhythm (GE-6) if provided, else the gentle anchors.
+    final anchors = preferredHours != null && preferredHours.isNotEmpty
+        ? (preferredHours.take(cap).toList()..sort())
+        : (cap == 1 ? const [_evening] : const [_morning, _evening]);
 
     for (var d = 0; d < days; d++) {
       final dayStartMs = (startDay + d + 1) * Duration.millisecondsPerDay;
-      final hours = cap == 1 ? const [_evening] : const [_morning, _evening];
-      for (final h in hours) {
+      for (final h in anchors) {
         final body = warmTemplates[templateIndex % warmTemplates.length]
             .replaceAll('{name}', petName);
         templateIndex++;
@@ -156,9 +200,9 @@ class InMemoryNotificationScheduler implements NotificationScheduler {
             whenMs: dayStartMs + h * Duration.millisecondsPerHour,
             title: petName,
             body: body,
-            // The morning anchor reads as a daypart-habit nudge; evening as
-            // general re-engagement.
-            kind: h == _morning
+            // On a two-a-day, the earlier anchor reads as a daypart-habit
+            // nudge and the later as general re-engagement.
+            kind: (anchors.length > 1 && h == anchors.first)
                 ? NotificationKind.daypart
                 : NotificationKind.reEngagement,
           ),

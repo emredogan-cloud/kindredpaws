@@ -33,6 +33,7 @@ class RoomScaffold extends StatelessWidget {
     this.ambient,
     this.decorRoom,
     this.seasonAccent,
+    this.firstVisitHint,
     super.key,
   });
 
@@ -60,6 +61,10 @@ class RoomScaffold extends StatelessWidget {
   /// The nature season the room dresses for (GE-5), or null for neutral
   /// (tests, reduced content, or the founder's seasons kill-switch).
   final NatureSeason? seasonAccent;
+
+  /// A one-time first-visit verb hint (GE-6): (stable id, warm line). Shows a
+  /// gentle pulse the first time this room is seen, then never again.
+  final (String, String)? firstVisitHint;
 
   @override
   Widget build(BuildContext context) {
@@ -92,9 +97,144 @@ class RoomScaffold extends StatelessWidget {
                 child: DecorateButton(controller: controller, room: decor),
               ),
             ),
+          if (firstVisitHint case (final id, final line))
+            FirstVisitHint(controller: controller, hintId: id, line: line),
         ],
       ),
     );
+  }
+}
+
+/// A one-time, gentle first-visit hint (GE-6 onboarding): a soft pulsing chip
+/// that names the room's primary verb the first time it's seen, then marks
+/// itself seen and never returns. Reduced-motion shows a still chip. Warm and
+/// dismissible — a tap (or a few seconds) sends it on its way.
+class FirstVisitHint extends StatefulWidget {
+  const FirstVisitHint({
+    required this.controller,
+    required this.hintId,
+    required this.line,
+    super.key,
+  });
+
+  final GameController controller;
+  final String hintId;
+  final String line;
+
+  @override
+  State<FirstVisitHint> createState() => _FirstVisitHintState();
+}
+
+class _FirstVisitHintState extends State<FirstVisitHint> {
+  bool _dismissed = false;
+
+  void _dismiss() {
+    if (_dismissed) return;
+    _dismissed = true;
+    widget.controller.markHintSeen(widget.hintId);
+    if (mounted) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_dismissed || !widget.controller.shouldShowHint(widget.hintId)) {
+      return const SizedBox.shrink();
+    }
+    // Pinned to the "sky" just below the top-right decorate button row and
+    // well above every room's controls (pet stage + content below), so the
+    // hint never steals a tap from the decorate button or the very verb it
+    // points to. It dismisses on tap and never returns.
+    return Positioned(
+      left: 24,
+      right: 24,
+      top: 58,
+      child: SafeArea(
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: Semantics(
+            button: true,
+            label: widget.line,
+            child: GestureDetector(
+              key: Key('hint-${widget.hintId}'),
+              onTap: _dismiss,
+              child: _PulseChip(line: widget.line),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PulseChip extends StatefulWidget {
+  const _PulseChip({required this.line});
+  final String line;
+
+  @override
+  State<_PulseChip> createState() => _PulseChipState();
+}
+
+class _PulseChipState extends State<_PulseChip>
+    with SingleTickerProviderStateMixin {
+  AnimationController? _pulse;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final reduced = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    // The same master motion switch as ambient life: OFF in tests/CI (so
+    // pumpAndSettle settles) and under reduced-motion (a still chip).
+    if (AmbientScene.motionEnabled && !reduced && _pulse == null) {
+      _pulse = AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 1100),
+        lowerBound: 0.97,
+        upperBound: 1.03,
+      )..repeat(reverse: true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _pulse?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final chip = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFE9A178).withValues(alpha: 0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text('👉 ', style: TextStyle(fontSize: 16)),
+          Flexible(
+            child: Text(
+              widget.line,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    final pulse = _pulse;
+    if (pulse == null) return chip;
+    return ScaleTransition(scale: pulse, child: chip);
   }
 }
 
@@ -208,6 +348,13 @@ class _PetStageState extends State<PetStage> {
   /// pet — roughly one warm cuddle per full stroke across the pet).
   double _strokeDistance = 0;
 
+  /// Camera intimacy (GE-6): the last care-message we pushed in for. A fresh
+  /// warm line means a care beat just happened → a gentle scale push-in that
+  /// settles back. Tracking the message (not a raw counter) ties the beat to
+  /// the moment the room actually surfaces feedback.
+  String? _lastBeatMessage;
+  bool _pushedIn = false;
+
   void _onStroke(DragUpdateDetails d) {
     _strokeDistance += d.delta.distance;
     if (_strokeDistance >= 220) {
@@ -221,6 +368,21 @@ class _PetStageState extends State<PetStage> {
     final pet = controller.pet;
     if (pet == null) return const SizedBox.shrink();
     final scheme = Theme.of(context).colorScheme;
+    final reducedMotion =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+
+    // Detect a fresh care beat and schedule a brief intimacy push-in.
+    final msg = controller.lastMessage;
+    if (msg != null && msg != _lastBeatMessage) {
+      _lastBeatMessage = msg;
+      if (!reducedMotion && controller.lastInteraction != null) {
+        _pushedIn = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) setState(() => _pushedIn = false);
+        });
+      }
+    }
+    final beatScale = _pushedIn ? 1.06 : 1.0;
 
     return Column(
       children: [
@@ -235,8 +397,12 @@ class _PetStageState extends State<PetStage> {
           key: const Key('room-pet-tap'),
           onTap: controller.nudgeAmbient,
           onPanUpdate: _onStroke,
-          child: Transform.scale(
-            scale: widget.petScale,
+          // A gentle, ease-out push-in on care beats (GE-6 camera intimacy);
+          // reduced-motion holds it perfectly still (beatScale stays 1.0).
+          child: AnimatedScale(
+            scale: widget.petScale * beatScale,
+            duration: const Duration(milliseconds: 420),
+            curve: Curves.easeOutBack,
             child: DressedPet(controller: controller, rig: rig),
           ),
         ),

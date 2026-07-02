@@ -54,6 +54,7 @@ class LocalNotificationScheduler implements NotificationScheduler {
     required int fromMs,
     int dailyCap = 1,
     int days = 3,
+    List<int>? preferredHours,
   }) async {
     // Kill-switch: clear the calendar + deliver nothing.
     if (_killed) {
@@ -66,6 +67,7 @@ class LocalNotificationScheduler implements NotificationScheduler {
       fromMs: fromMs,
       dailyCap: dailyCap,
       days: days,
+      preferredHours: preferredHours,
     );
     await _sink.cancelAll();
     var i = 0;

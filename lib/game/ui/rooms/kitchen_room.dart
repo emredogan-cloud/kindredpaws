@@ -73,6 +73,10 @@ class _KitchenRoomState extends State<KitchenRoom> {
           ambient: const AmbientScene(variant: AmbientVariant.kitchenSteam),
           decorRoom: RoomId.kitchen,
           seasonAccent: controller.seasonAccent,
+          firstVisitHint: const (
+            'hint_kitchen',
+            'Tap a food on the pantry shelf to share a meal 🍽️',
+          ),
           content: ShelfPanel(
             title: 'Pantry',
             trailing: NeedGlow(

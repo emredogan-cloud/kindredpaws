@@ -66,6 +66,10 @@ class GameController extends ChangeNotifier {
     FeelService? feel,
     bool Function()? notificationsAllowed,
     bool Function()? southernHemisphere,
+    void Function(int hour)? recordOpenHour,
+    List<int> Function()? openHourHistogram,
+    Set<String> Function()? seenHints,
+    void Function(String id)? markHintSeen,
     int Function()? clock,
     String Function()? idGenerator,
   }) : _feedback = feedback ?? const NoopFeedbackService(),
@@ -74,6 +78,10 @@ class GameController extends ChangeNotifier {
        _feel = feel,
        _notificationsAllowed = notificationsAllowed,
        _southern = southernHemisphere,
+       _recordOpenHour = recordOpenHour,
+       _openHourHistogram = openHourHistogram,
+       _seenHints = seenHints,
+       _markHintSeen = markHintSeen,
        _now = clock ?? (() => DateTime.now().millisecondsSinceEpoch),
        _idGenerator =
            idGenerator ??
@@ -113,6 +121,26 @@ class GameController extends ChangeNotifier {
 
   /// Southern-hemisphere seasons (Settings toggle, GE-5), or null (northern).
   final bool Function()? _southern;
+
+  /// Rhythm-aware notifications (GE-6): records the local open-hour and reads
+  /// the on-device open-hour histogram. Null in pure-logic tests.
+  final void Function(int hour)? _recordOpenHour;
+  final List<int> Function()? _openHourHistogram;
+
+  /// First-visit verb hints (GE-6): the device-local seen-set + recorder.
+  /// Null in pure-logic tests (hints simply never show).
+  final Set<String> Function()? _seenHints;
+  final void Function(String id)? _markHintSeen;
+
+  /// True if [hintId]'s one-time pulse hasn't been shown yet (GE-6).
+  bool shouldShowHint(String hintId) =>
+      !(_seenHints?.call().contains(hintId) ?? true);
+
+  /// Marks [hintId] shown so its pulse never repeats (once per install).
+  void markHintSeen(String hintId) {
+    _markHintSeen?.call(hintId);
+    notifyListeners();
+  }
 
   /// Notifications are live unless the founder's LiveOps kill-switch OR the
   /// player's own Settings toggle has disabled them.
@@ -249,7 +277,11 @@ class GameController extends ChangeNotifier {
       'species': species.id,
     });
     if (_notificationsLive) {
-      await notifications.scheduleDailyPresence(petName: pet.name, fromMs: now);
+      await notifications.scheduleDailyPresence(
+        petName: pet.name,
+        fromMs: now,
+        preferredHours: _preferredHours(),
+      );
     }
     _syncKindness(); // Rescue Day ends with today's first two kindnesses
     await _persist();
@@ -906,8 +938,20 @@ class GameController extends ChangeNotifier {
     return true;
   }
 
+  /// The household's preferred notification hours from the on-device rhythm
+  /// histogram (GE-6), or null in tests without the seam (defaults stand).
+  List<int>? _preferredHours() {
+    final hist = _openHourHistogram?.call();
+    if (hist == null) return null;
+    return preferredNotificationHours(hist, 1);
+  }
+
   void _resumeSession() {
     final save = _save!;
+    // Rhythm-aware notifications (GE-6): note the local hour this session
+    // opened, on-device only (privacy-first — never a pet-save field).
+    final openHour = (_now() ~/ Duration.millisecondsPerHour) % 24;
+    _recordOpenHour?.call(openHour);
     final resume = sim.resolveOnResume(
       state: save.pet,
       ledger: save.ledger,
@@ -944,6 +988,18 @@ class GameController extends ChangeNotifier {
     // A real new day (the daily Kibble marks it) counts toward the season
     // keepsake — five gentle days, never a streak (GE-5).
     if (resume.dailyKibble > 0 && _seasonsLive) _countSeasonDay();
+    // Re-arm presence notifications on the freshly-updated rhythm (GE-6):
+    // as the open-hour histogram grows, the hellos drift toward when this
+    // household actually plays.
+    if (_notificationsLive) {
+      unawaited(
+        notifications.scheduleDailyPresence(
+          petName: resume.state.name,
+          fromMs: _now(),
+          preferredHours: _preferredHours(),
+        ),
+      );
+    }
     _recordRetentionBeats();
   }
 

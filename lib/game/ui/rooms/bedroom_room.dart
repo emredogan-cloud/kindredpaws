@@ -57,6 +57,10 @@ class BedroomRoom extends StatelessWidget {
           ambient: const AmbientScene(variant: AmbientVariant.bedroomStars),
           decorRoom: RoomId.bedroom,
           seasonAccent: controller.seasonAccent,
+          firstVisitHint: const (
+            'hint_bedroom',
+            'Tuck your friend in for a cozy nap 🌙',
+          ),
           // Deep starlit hush while sleeping; soft dusk otherwise.
           tint: sleeping ? const Color(0x59283B5C) : const Color(0x26283B5C),
           petFooter: sleeping

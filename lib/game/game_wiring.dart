@@ -53,6 +53,10 @@ GameController createGameController({
     feel: sl.get<FeelService>(),
     notificationsAllowed: () => sl.get<PrefsService>().notificationsEnabled,
     southernHemisphere: () => sl.get<PrefsService>().southernHemisphere,
+    recordOpenHour: (h) => sl.get<PrefsService>().recordOpenHour(h),
+    openHourHistogram: () => sl.get<PrefsService>().openHourHistogram,
+    seenHints: () => sl.get<PrefsService>().seenHints,
+    markHintSeen: (id) => sl.get<PrefsService>().markHintSeen(id),
     clock: clock,
     idGenerator: idGenerator,
   );

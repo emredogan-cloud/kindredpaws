@@ -65,6 +65,10 @@ class PlayRoom extends StatelessWidget {
       ),
       decorRoom: RoomId.playRoom,
       seasonAccent: controller.seasonAccent,
+      firstVisitHint: const (
+        'hint_play',
+        'Pick a toy or a garden game to play together 🎈',
+      ),
       petFooter: tired
           ? Padding(
               padding: const EdgeInsets.only(top: 4),
