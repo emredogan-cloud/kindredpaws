@@ -55,15 +55,55 @@ enum PetEmotion {
   };
 }
 
+/// Gentle, tangible care cues layered onto the pet's look (GE-2, "the pet
+/// visibly carries its state"). Derived from the care meters by the game
+/// layer; renderers may express or ignore them. Always warm — a mussed coat,
+/// heavy eyelids, a peckish glance — never distress, never alarm (Charter §4:
+/// tangible state without guilt).
+class PetCareCues {
+  const PetCareCues({
+    this.mussed = false,
+    this.drowsy = false,
+    this.peckish = false,
+  });
+
+  /// Hygiene is low → soft smudges and a stray hair or two.
+  final bool mussed;
+
+  /// Energy is low → heavier eyelids, slower breathing.
+  final bool drowsy;
+
+  /// Hunger is low → a wistful glance toward the tummy.
+  final bool peckish;
+
+  bool get any => mussed || drowsy || peckish;
+
+  static const PetCareCues none = PetCareCues();
+
+  @override
+  bool operator ==(Object other) =>
+      other is PetCareCues &&
+      other.mussed == mussed &&
+      other.drowsy == drowsy &&
+      other.peckish == peckish;
+
+  @override
+  int get hashCode => Object.hash(mussed, drowsy, peckish);
+}
+
 abstract interface class PetRenderer {
   /// Builds the pet visual for the given mood + life stage. [emotion] is the
   /// current expression (a reaction or ambient idle); when null the renderer
-  /// uses the resting expression for [mood].
+  /// uses the resting expression for [mood]. [cues] are optional tangible
+  /// care cues (GE-2) — renderers may express or ignore them; they are NOT
+  /// part of the Rive `PetStateMachine` contract (mood/lifeStage/emotion
+  /// stays exactly 3 inputs — cue layers are composited renderer-side).
   Widget build(
     BuildContext context, {
     required PetMood mood,
     required String lifeStage,
     PetEmotion? emotion,
+    PetCareCues? cues,
   });
 
   /// Identifies the concrete backend (e.g. "placeholder", "live2d", "rive").
@@ -86,6 +126,7 @@ class PlaceholderPetRenderer implements PetRenderer {
     required PetMood mood,
     required String lifeStage,
     PetEmotion? emotion,
+    PetCareCues? cues, // the deterministic stand-in stays cue-less
   }) {
     return _ExpressivePet(
       mood: mood,

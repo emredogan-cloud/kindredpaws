@@ -174,6 +174,10 @@ class GameController extends ChangeNotifier {
 
   bool get loading => _loading;
   bool get hasPet => _save != null;
+
+  /// This session's interaction tallies (read-only — e.g. the garden
+  /// songbird visits after play; GE-2 ambient presence).
+  SessionInteractions get session => _session;
   PetState? get pet => _save?.pet;
   Mood get mood => _mood;
   List<MemoryFact> get facts => _save?.facts ?? const [];

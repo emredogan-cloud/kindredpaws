@@ -14,6 +14,7 @@ import '../../model/kindness.dart';
 import '../../sim/interaction.dart';
 import '../care_ring.dart';
 import '../mood_visuals.dart';
+import '../widgets/ambient_scene.dart';
 import '../widgets/cozy.dart';
 import 'room_host.dart' show kRoomDockClearance;
 import 'room_scaffold.dart' show DressedPet;
@@ -39,71 +40,78 @@ class HomeRoom extends StatelessWidget {
 
     return CozyBackground(
       asset: sceneFor(DateTime.now()),
-      child: SafeArea(
-        child: Column(
-          children: [
-            _bondBar(context, pet.bond),
-            if (controller.streakRepairOffer != null)
-              _RepairOfferChip(controller: controller),
-            _KindnessInvite(controller: controller),
-            if (controller.petLine != null)
-              CozySpeechBubble(text: controller.petLine!),
-            Expanded(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  // Clamp the ring so it can never overflow a squeezed Expanded
-                  // on short screens (responsive fix).
-                  final ringSize = constraints.maxHeight.isFinite
-                      ? constraints.maxHeight.clamp(0.0, 232.0)
-                      : 232.0;
-                  return Align(
-                    alignment: const Alignment(0, 0.35),
-                    child: GestureDetector(
-                      key: const Key('pet-tap'),
-                      onTap: controller.nudgeAmbient,
-                      child: CareRing(
-                        meters: pet.meters,
-                        size: ringSize,
-                        child: DressedPet(controller: controller, rig: rig),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            CozyChip(
-              child: Text(
-                moodLine(pet.name, controller.mood),
-                key: const Key('mood-line'),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-              ),
-            ),
-            if (controller.lastMessage != null) ...[
-              const SizedBox(height: 6),
-              CozyChip(
-                child: Text(
-                  controller.lastMessage!,
-                  key: const Key('feedback-message'),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: scheme.primary,
-                    fontWeight: FontWeight.w700,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Warm dust motes drifting through the hearth light (GE-2).
+          const AmbientScene(variant: AmbientVariant.homeMotes),
+          SafeArea(
+            child: Column(
+              children: [
+                _bondBar(context, pet.bond),
+                if (controller.streakRepairOffer != null)
+                  _RepairOfferChip(controller: controller),
+                _KindnessInvite(controller: controller),
+                if (controller.petLine != null)
+                  CozySpeechBubble(text: controller.petLine!),
+                Expanded(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      // Clamp the ring so it can never overflow a squeezed Expanded
+                      // on short screens (responsive fix).
+                      final ringSize = constraints.maxHeight.isFinite
+                          ? constraints.maxHeight.clamp(0.0, 232.0)
+                          : 232.0;
+                      return Align(
+                        alignment: const Alignment(0, 0.35),
+                        child: GestureDetector(
+                          key: const Key('pet-tap'),
+                          onTap: controller.nudgeAmbient,
+                          child: CareRing(
+                            meters: pet.meters,
+                            size: ringSize,
+                            child: DressedPet(controller: controller, rig: rig),
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
-              ),
-            ],
-            const SizedBox(height: 14),
-            _verbBar(context),
-            const SizedBox(height: kRoomDockClearance),
-          ],
-        ),
+                CozyChip(
+                  child: Text(
+                    moodLine(pet.name, controller.mood),
+                    key: const Key('mood-line'),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                if (controller.lastMessage != null) ...[
+                  const SizedBox(height: 6),
+                  CozyChip(
+                    child: Text(
+                      controller.lastMessage!,
+                      key: const Key('feedback-message'),
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: scheme.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 14),
+                _verbBar(context),
+                const SizedBox(height: kRoomDockClearance),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

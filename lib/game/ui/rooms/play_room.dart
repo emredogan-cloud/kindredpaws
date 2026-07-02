@@ -12,7 +12,9 @@ import '../../controller/game_controller.dart';
 import '../../model/care_meters.dart';
 import '../../model/items.dart';
 import '../../rooms/room_id.dart';
+import '../../sim/ambient_presence.dart';
 import '../minigames/mini_game_screen.dart';
+import '../widgets/ambient_scene.dart';
 import '../widgets/cozy.dart';
 import 'room_scaffold.dart';
 import 'widgets/need_glow.dart';
@@ -52,6 +54,15 @@ class PlayRoom extends StatelessWidget {
       controller: controller,
       rig: rig,
       sceneAsset: KpAssets.gardenDay,
+      // Butterflies always drift here; the songbird visits a happy,
+      // played-in garden (ambient presence — a reflection, never a chore).
+      ambient: AmbientScene(
+        variant: AmbientVariant.gardenButterflies,
+        visitor: gardenVisitorVisible(
+          happiness: pet.meters.happiness,
+          playsThisSession: controller.session.play,
+        ),
+      ),
       petFooter: tired
           ? Padding(
               padding: const EdgeInsets.only(top: 4),

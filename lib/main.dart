@@ -14,6 +14,7 @@ import 'game/game_wiring.dart';
 import 'game/model/species.dart';
 import 'game/ui/cozy_theme.dart';
 import 'game/ui/game_root.dart';
+import 'game/ui/widgets/ambient_scene.dart';
 import 'render/pet_renderer.dart';
 import 'render/pet_renderer_factory.dart';
 import 'services/analytics_service.dart';
@@ -40,6 +41,10 @@ Future<void> main() async {
   // the Rive contract); tests/CI keep the deterministic placeholder default.
   // An explicit KP_PET_RENDERER (e.g. `rive` once the .riv lands) always wins.
   final config = bootstrap(fallbackRenderer: PetRendererBackend.vector);
+  // Ambient room life goes live (GE-2): steam, stars, butterflies, motes.
+  // Tests/CI never flip this, so their frames stay deterministic; the system
+  // reduced-motion setting always wins regardless.
+  AmbientScene.motionEnabled = true;
   final sl = ServiceLocator.instance;
   // Activate crash capture as early as possible (P3-7): route uncaught Flutter +
   // platform errors to the CrashReporter so the closed beta gets crash-free-rate

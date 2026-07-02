@@ -59,15 +59,26 @@ class VectorPetRenderer implements PetRenderer {
     required PetMood mood,
     required String lifeStage,
     PetEmotion? emotion,
+    PetCareCues? cues,
   }) {
     final expression = emotion ?? PetEmotion.restingFor(mood);
+    final careCues = cues ?? PetCareCues.none;
     final box = size * petLifeStageScale(lifeStage);
     // Accessibility: the system reduced-motion setting stills the idle loop
     // (the pet keeps its pose and one-shot expressions, nothing loops).
     final reducedMotion =
         MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    // Care cues join the semantics so the state is READ, not only seen
+    // (a11y: color/paint is never the sole signal).
+    final cueHints = [
+      if (careCues.mussed) 'could use a bath',
+      if (careCues.drowsy) 'looking sleepy',
+      if (careCues.peckish) 'a little peckish',
+    ];
     return Semantics(
-      label: 'pet ($lifeStage, ${mood.name}, ${expression.displayName})',
+      label:
+          'pet ($lifeStage, ${mood.name}, ${expression.displayName}'
+          '${cueHints.isEmpty ? '' : ', ${cueHints.join(', ')}'})',
       child: SizedBox(
         key: const Key('pet-renderer'),
         width: box,
@@ -78,6 +89,7 @@ class VectorPetRenderer implements PetRenderer {
           lifeStage: lifeStage,
           species: speciesOf?.call() ?? Species.puppy,
           continuousMotion: continuousMotion && !reducedMotion,
+          cues: careCues,
         ),
       ),
     );
@@ -98,6 +110,7 @@ class _VectorPet extends StatefulWidget {
     required this.lifeStage,
     required this.species,
     required this.continuousMotion,
+    this.cues = PetCareCues.none,
   });
 
   final PetMood mood;
@@ -105,6 +118,7 @@ class _VectorPet extends StatefulWidget {
   final String lifeStage;
   final Species species;
   final bool continuousMotion;
+  final PetCareCues cues;
 
   @override
   State<_VectorPet> createState() => _VectorPetState();
@@ -147,12 +161,16 @@ class _VectorPetState extends State<_VectorPet> with TickerProviderStateMixin {
     PetEmotion.comforted => const Duration(milliseconds: 1500),
   };
 
+  /// A drowsy pet breathes slower — the idle cycle stretches gently.
+  Duration _idleFor(PetMood mood) =>
+      widget.cues.drowsy ? _idleDuration(mood) * 1.35 : _idleDuration(mood);
+
   @override
   void initState() {
     super.initState();
     _idle = AnimationController(
       vsync: this,
-      duration: _idleDuration(widget.mood),
+      duration: _idleFor(widget.mood),
       // A fixed mid-cycle phase keeps the frozen (test) pose natural.
       value: 0.35,
     );
@@ -184,8 +202,10 @@ class _VectorPetState extends State<_VectorPet> with TickerProviderStateMixin {
     if (oldWidget.mood != widget.mood) {
       // Contract: mood changes blend idles (~0.3 s), never cut.
       _previousMood = oldWidget.mood;
-      _idle.duration = _idleDuration(widget.mood);
+      _idle.duration = _idleFor(widget.mood);
       _moodBlend.forward(from: 0);
+    } else if (oldWidget.cues.drowsy != widget.cues.drowsy) {
+      _idle.duration = _idleFor(widget.mood); // breath pace follows the cue
     }
   }
 
@@ -220,6 +240,7 @@ class _VectorPetState extends State<_VectorPet> with TickerProviderStateMixin {
             idlePhase: _idle.value,
             stageT: _stageT(widget.lifeStage),
             species: widget.species,
+            cues: widget.cues,
           ),
         );
       },
@@ -528,6 +549,7 @@ class _PetPainter extends CustomPainter {
     required this.stageT,
     required this.species,
     this.holdSleepy = false,
+    this.cues = PetCareCues.none,
   });
 
   final PetMood mood;
@@ -542,6 +564,12 @@ class _PetPainter extends CustomPainter {
 
   /// Holds the sleepy end-pose while the pet stays asleep (see _VectorPet).
   final bool holdSleepy;
+
+  /// Tangible care cues (GE-2): smudges / heavy lids / a peckish glance.
+  /// Layered over the SAME pose vocabulary — the moment care fixes the meter
+  /// the layer vanishes (cause → effect), and a sleeping pet stays serene
+  /// (no glance while asleep).
+  final PetCareCues cues;
 
   static const _outline = Color(0xFF6B5844); // soft warm line, never black
   static const _eyeColor = Color(0xFF4A3F38);
@@ -654,6 +682,64 @@ class _PetPainter extends CustomPainter {
       Paint()..color = palette.muzzle,
     );
 
+    // Mussed coat (GE-2): a few soft dusty smudges — cozy, never grimy, and
+    // instantly washed away by a bath (the layer reads from live meters).
+    if (cues.mussed) {
+      final smudge = Paint()
+        ..color = const Color(0x2E8A6B4F)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.5);
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: Offset(bodyCx - bodyW * 0.22, bodyCy - bodyH * 0.08),
+          width: bodyW * 0.2,
+          height: bodyH * 0.12,
+        ),
+        smudge,
+      );
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: Offset(bodyCx + bodyW * 0.18, bodyCy + bodyH * 0.16),
+          width: bodyW * 0.16,
+          height: bodyH * 0.1,
+        ),
+        smudge,
+      );
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: Offset(bodyCx + bodyW * 0.05, bodyCy - bodyH * 0.22),
+          width: bodyW * 0.12,
+          height: bodyH * 0.08,
+        ),
+        smudge,
+      );
+    }
+
+    // A peckish tummy speaks softly — two tiny rumble curves by the patch
+    // (asleep stays serene: no rumble while holding the sleep pose).
+    if (cues.peckish && !holdSleepy) {
+      final rumble = Paint()
+        ..color = _outline.withValues(alpha: 0.35)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.6
+        ..strokeCap = StrokeCap.round;
+      for (var i = 0; i < 2; i++) {
+        canvas.drawArc(
+          Rect.fromCenter(
+            center: Offset(
+              bodyCx + bodyW * 0.34 + i * 5.5,
+              bodyCy + bodyH * 0.1 - i * 4,
+            ),
+            width: 9,
+            height: 7,
+          ),
+          -math.pi * 0.4,
+          math.pi * 0.8,
+          false,
+          rumble,
+        );
+      }
+    }
+
     // ---- front paws ---------------------------------------------------------
     for (final dx in [-1, 1]) {
       canvas.drawOval(
@@ -699,6 +785,37 @@ class _PetPainter extends CustomPainter {
       ),
       Paint()..color = palette.muzzle,
     );
+
+    // Mussed cheek + a couple of fly-away hairs (still adorable).
+    if (cues.mussed) {
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: Offset(-headR * 0.52, headR * 0.05),
+          width: headR * 0.26,
+          height: headR * 0.16,
+        ),
+        Paint()
+          ..color = const Color(0x298A6B4F)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2),
+      );
+      final hair = Paint()
+        ..color = _outline.withValues(alpha: 0.55)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.4
+        ..strokeCap = StrokeCap.round;
+      for (var i = 0; i < 2; i++) {
+        final x = -headR * 0.15 + i * headR * 0.3;
+        final path = Path()
+          ..moveTo(x, -headR * 0.98)
+          ..quadraticBezierTo(
+            x + headR * 0.08,
+            -headR * 1.18,
+            x + headR * 0.2,
+            -headR * 1.08,
+          );
+        canvas.drawPath(path, hair);
+      }
+    }
 
     _paintFace(canvas, palette, headR, pose, eyeOpen);
     canvas.restore();
@@ -868,6 +985,11 @@ class _PetPainter extends CustomPainter {
       }
       // White, iris, catchlight — the "eye light" that carries sincerity.
       final open = eyeOpen.clamp(0.15, 1.0);
+      // A peckish pet glances softly downward (toward the tummy) — a wistful
+      // look, never distress; reactions and sleep override the glance.
+      final glanceDy = (cues.peckish && !holdSleepy && !reactionActive)
+          ? eyeR * 0.16
+          : 0.0;
       final eyeRect = Rect.fromCenter(
         center: c,
         width: eyeR * 2,
@@ -876,17 +998,42 @@ class _PetPainter extends CustomPainter {
       canvas.drawOval(eyeRect, Paint()..color = Colors.white);
       canvas.drawOval(
         Rect.fromCenter(
-          center: c.translate(0, eyeR * 0.06),
+          center: c.translate(0, eyeR * 0.06 + glanceDy),
           width: eyeR * 1.5,
           height: eyeR * 1.5 * open,
         ),
         Paint()..color = _eyeColor,
       );
       canvas.drawCircle(
-        c.translate(eyeR * 0.32, -eyeR * 0.3 * open),
+        c.translate(eyeR * 0.32, -eyeR * 0.3 * open + glanceDy),
         eyeR * 0.3,
         Paint()..color = Colors.white,
       );
+      // Drowsy lids — soft, coat-colored, gently rounded (never a hard bar).
+      if (cues.drowsy) {
+        final lid = Rect.fromLTRB(
+          eyeRect.left - 1.5,
+          eyeRect.top - 1.5,
+          eyeRect.right + 1.5,
+          eyeRect.top + eyeRect.height * 0.42,
+        );
+        canvas.drawRRect(
+          RRect.fromRectAndCorners(
+            lid,
+            bottomLeft: Radius.circular(eyeR * 0.9),
+            bottomRight: Radius.circular(eyeR * 0.9),
+          ),
+          Paint()..color = p.body,
+        );
+        canvas.drawLine(
+          Offset(lid.left + 1.5, lid.bottom),
+          Offset(lid.right - 1.5, lid.bottom),
+          Paint()
+            ..color = _outline.withValues(alpha: 0.5)
+            ..strokeWidth = 1.6
+            ..strokeCap = StrokeCap.round,
+        );
+      }
       if (pose.sparkleEyes) {
         _paintSparkle(
           canvas,
@@ -1071,5 +1218,6 @@ class _PetPainter extends CustomPainter {
       old.moodBlend != moodBlend ||
       old.stageT != stageT ||
       old.species != species ||
-      old.holdSleepy != holdSleepy;
+      old.holdSleepy != holdSleepy ||
+      old.cues != cues;
 }

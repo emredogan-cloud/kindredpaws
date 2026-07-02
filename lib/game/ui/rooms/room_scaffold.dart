@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import '../../../render/pet_renderer.dart';
 import '../../controller/game_controller.dart';
 import '../../model/items.dart';
+import '../care_cues.dart';
 import '../mood_visuals.dart';
 import '../widgets/cozy.dart';
 import '../widgets/feel_fx.dart';
@@ -25,6 +26,7 @@ class RoomScaffold extends StatelessWidget {
     required this.content,
     this.tint,
     this.petFooter,
+    this.ambient,
     super.key,
   });
 
@@ -41,20 +43,30 @@ class RoomScaffold extends StatelessWidget {
   /// Optional line pinned directly under the pet (e.g. sleep hint).
   final Widget? petFooter;
 
+  /// Optional ambient life layer (GE-2) — between the scene and the content,
+  /// pointer-transparent, semantics-silent (see [AmbientScene]).
+  final Widget? ambient;
+
   @override
   Widget build(BuildContext context) {
     return CozyBackground(
       asset: sceneAsset,
       scrim: tint,
-      child: SafeArea(
-        child: Column(
-          children: [
-            PetStage(controller: controller, rig: rig),
-            ?petFooter,
-            Expanded(child: content),
-            const SizedBox(height: kRoomDockClearance),
-          ],
-        ),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          ?ambient,
+          SafeArea(
+            child: Column(
+              children: [
+                PetStage(controller: controller, rig: rig),
+                ?petFooter,
+                Expanded(child: content),
+                const SizedBox(height: kRoomDockClearance),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -91,6 +103,9 @@ class DressedPet extends StatelessWidget {
       mood: petMoodFor(controller.mood),
       lifeStage: pet.lifeStage.id,
       emotion: currentPetEmotion(controller),
+      // Tangible state (GE-2): the pet carries its needs on its coat/eyes;
+      // the moment care fixes a meter the layer vanishes (cause → effect).
+      cues: cuesFor(pet.meters),
     );
     if (worn.isEmpty) {
       return PetFx(controller: controller, child: petVisual);

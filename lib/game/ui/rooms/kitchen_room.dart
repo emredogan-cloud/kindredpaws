@@ -12,6 +12,7 @@ import '../../controller/game_controller.dart';
 import '../../model/care_meters.dart';
 import '../../model/items.dart';
 import '../../rooms/room_id.dart';
+import '../widgets/ambient_scene.dart';
 import '../widgets/cozy.dart';
 import 'room_scaffold.dart';
 import 'widgets/need_glow.dart';
@@ -69,6 +70,7 @@ class _KitchenRoomState extends State<KitchenRoom> {
           controller: controller,
           rig: rig,
           sceneAsset: KpAssets.kitchenScene,
+          ambient: const AmbientScene(variant: AmbientVariant.kitchenSteam),
           content: ShelfPanel(
             title: 'Pantry',
             trailing: NeedGlow(
