@@ -3,16 +3,23 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kindredpaws/main.dart';
+import 'package:kindredpaws/game/ui/rescue_day_screen.dart';
 
-/// Golden / snapshot test. Reference images live in `test/golden/goldens/`.
-///
-/// Goldens are font-renderer sensitive, so they are generated and verified on
-/// the **same OS as CI** (Ubuntu/Linux). Regenerate with:
-///   flutter test --update-goldens --tags golden
+import '../support/harness.dart';
+
+/// Golden / snapshot test for the Rescue Day cold-open (the deterministic first
+/// screen — no clock, no pet). Reference images live in `test/golden/goldens/`
+/// and are Linux-rendered to match CI.
+/// Regenerate with: flutter test --update-goldens --tags golden
 void main() {
-  testWidgets('home page matches golden', (tester) async {
-    await tester.pumpWidget(const KindredPawsApp());
+  testWidgets('Rescue Day cold-open matches golden', (tester) async {
+    final controller = makeController();
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: RescueDayScreen(controller: controller),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await expectLater(

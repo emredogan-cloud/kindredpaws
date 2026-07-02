@@ -1,8 +1,38 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Production notifications (Task 1, flutter_local_notifications). POST_
+         NOTIFICATIONS is the Android 13+ runtime permission (requested in-app);
+         RECEIVE_BOOT_COMPLETED lets the plugin re-register scheduled, warm
+         notifications after a reboot. Scheduling is INEXACT (battery-friendly,
+         never intrusive) so no SCHEDULE_EXACT_ALARM permission is needed. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+
     <application
         android:label="kindredpaws"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+
+        <!-- ── Firebase is GATED (KP_FIREBASE_PROVISIONED + explicit
+             Firebase.initializeApp() in Dart, P3-0) ──────────────────────────
+             The firebase_* native SDKs otherwise auto-initialise at process
+             launch via FirebaseInitProvider (before any Dart runs), reading the
+             baked-in google-services.json. In gated/CI builds that (a) installs
+             Crashlytics' uncaught-exception handler + starts Analytics/Perf/
+             Installations against a build-only placeholder, crashing the process
+             at startup, and (b) defeats the runtime gate. So we remove the
+             auto-init provider and disable all auto-collection; the adapters in
+             firebase_services.dart re-enable collection programmatically only on
+             the provisioned path. -->
+        <meta-data android:name="firebase_crashlytics_collection_enabled" android:value="false" />
+        <meta-data android:name="firebase_analytics_collection_enabled" android:value="false" />
+        <meta-data android:name="firebase_performance_collection_enabled" android:value="false" />
+        <provider
+            android:name="com.google.firebase.provider.FirebaseInitProvider"
+            android:authorities="${applicationId}.firebaseinitprovider"
+            android:exported="false"
+            tools:node="remove" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -30,6 +60,36 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <!-- Companion Presence home widget (P2-6). Reads the single shared
+             PetStatusSnapshot the app writes to SharedPreferences. -->
+        <receiver
+            android:name=".PetWidgetProvider"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/pet_widget_info" />
+        </receiver>
+
+        <!-- flutter_local_notifications (Task 1): the scheduled-notification
+             receiver + the boot receiver that restores warm, scheduled
+             notifications after a device reboot / app update. -->
+        <receiver
+            android:exported="false"
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
+        <receiver
+            android:exported="false"
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+                <action android:name="android.intent.action.QUICKBOOT_POWERON"/>
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
+            </intent-filter>
+        </receiver>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

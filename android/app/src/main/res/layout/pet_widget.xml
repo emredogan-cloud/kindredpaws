@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Home widget layout (P2-6). RemoteViews-safe views only. Shows the pet name
+     + a warm status line (and, when assets exist, a pre-rendered mood image —
+     never a live rig render, §6.2). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="12dp"
+    android:background="#FFF3EAD9">
+
+    <TextView
+        android:id="@+id/pet_widget_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textStyle="bold"
+        android:textSize="18sp"
+        android:textColor="#FF3A2E22"
+        android:text="Your pet" />
+
+    <TextView
+        android:id="@+id/pet_widget_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textSize="13sp"
+        android:textColor="#FF6C5A45"
+        android:gravity="center"
+        android:text="Tap to open KindredPaws 🐾" />
+</LinearLayout>

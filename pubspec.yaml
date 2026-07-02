@@ -13,6 +13,22 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
+  # Rig runtime (ADR-001, locked at P1-0 — see docs/ANIMATION_SPIKE_REPORT.md).
+  # Pinned to the 0.13 line on purpose: it resolves WITHOUT the per-build native
+  # artifact download that 0.14's `rive_native` requires. Re-evaluate moving to
+  # 0.14.x at P2 when the real .riv rig lands. Do not bump to ^0.14 unintentionally.
+  rive: ^0.13.0
+  shared_preferences: ^2.5.5
+  firebase_core: ^4.11.0
+  cloud_firestore: ^6.6.0
+  firebase_auth: ^6.5.4
+  firebase_remote_config: ^6.5.3
+  firebase_analytics: ^12.4.3
+  firebase_crashlytics: ^5.2.4
+  firebase_performance: ^0.11.4+3
+  flutter_local_notifications: ^22.0.1
+  timezone: ^0.11.0
+  audioplayers: ^6.7.1
 
 dev_dependencies:
   flutter_test:
@@ -23,3 +39,23 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    # Commissioned Rive pet rigs (P2 art deliverable). The directory is bundled
+    # so dropping in `<species>.riv` needs no pubspec change; the active rig is
+    # selected at build time via `--dart-define=KP_RIV_ASSET=assets/rigs/<f>.riv`
+    # (see lib/render/rive_pet_renderer.dart, REQUIRED_ENVIRONMENTS.md §8).
+    - assets/rigs/
+    # Premium UI assets (UI integration sprint) — GPT-generated backgrounds,
+    # buttons, icons, cards, illustrations. Loaded with cacheWidth/Height since
+    # the source PNGs are large (see lib/game/ui/widgets/cozy.dart).
+    - assets/backgrounds/
+    - assets/ui/
+    - assets/ui/buttons/
+    - assets/icons/
+    - assets/cards/
+    - assets/illustrations/
+    - assets/premium/
+    - assets/shop/
+    - assets/wardrobe/
+    # Original synthesized SFX (tool/generate_sfx.dart — license-clean).
+    - assets/audio/

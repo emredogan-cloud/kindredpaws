@@ -101,6 +101,9 @@ jobs:
           channel: ${{ env.FLUTTER_CHANNEL }}
           cache: true
       - run: flutter pub get
+      - name: Generate google-services.json (Android)
+        if: matrix.platform == 'android'
+        run: python3 tool/gen_google_services.py
       - name: Build Android (release, unsigned)
         if: matrix.platform == 'android'
         run: flutter build apk --release

@@ -21,7 +21,7 @@ After cloning and running `just doctor`, a future Claude agent can autonomously:
 | Capability | How | Status |
 |---|---|---|
 | Write code | `lib/`, structured per `CLAUDE.md` | ✅ |
-| Run all tests | `just test` (unit/widget/golden/perf, coverage gate) | ✅ 6 tests, 93.3% |
+| Run all tests | `just test` (unit/widget/golden/perf, coverage gate) | ✅ 31 tests, 76.4% (as of Phase 0; 6 tests @ 93.3% at the close of Pre-Phase-0) |
 | Static analysis | `just analyze` (`--fatal-infos --fatal-warnings`) | ✅ clean |
 | Boot an emulator | `just emulator` (KVM AVD `kp_pixel_api34`) | ✅ |
 | Build an APK | `just build-apk` / release variants | ✅ built in ~47s |
@@ -29,7 +29,7 @@ After cloning and running `just doctor`, a future Claude agent can autonomously:
 | Drive UI + screenshot + video + logcat | `just e2e-android` | ✅ artifacts captured |
 | Detect crashes | `android_e2e.sh` greps logcat for FATAL/ANR | ✅ |
 | Open a PR | `gh pr create` (Conventional-Commit title) | ✅ gh authed |
-| Merge a PR after CI | `gh pr merge --squash` (no human review required) | 🟡 ruleset applied |
+| Merge a PR after CI | `gh pr merge --squash` (no human review required) | ✅ ruleset live & verified |
 | Ship a release | Release Please → tag → `release.yml` artifacts | 🟡 configured |
 
 ---
@@ -450,6 +450,16 @@ macOS-only (iOS), 📋: install Xcode + CocoaPods + `brew install fastlane`; `cd
 - `just e2e-android` → AVD booted (KVM, headless), app installed & driven, **e2e.mp4 + logcat.txt + final.png** captured, **exit 0**, no crash.
 - `actionlint` ✓, `yamllint` ✓, `shellcheck -S style` ✓ (all clean).
 - 116 files staged; secret/large-file sanity scan → clean; `build/` & `.dart_tool/` excluded.
+- **Adversarial verification pass** (5 independent reviewers) run against this foundation; all
+  high/critical findings fixed and re-validated (notably the Android release-signing wiring below).
+- **Release-signing fix verified:** with a throwaway `key.properties`, `flutter build apk --release`
+  produced an APK signed by the **release** key (`apksigner`: `V2 Signer: certificate DN:
+  CN=KindredPaws Release Test`), not the debug key; throwaway keystore removed (untracked).
+- **GitHub state (post-push, verified live):** `main` + `develop` pushed; branch protection on
+  **both** with required contexts `[analyze, test, build-android, integration-android, secret-scan]`,
+  PR required, 0 approvals, linear history, no force-push; squash-only + auto-delete branches;
+  secret-scanning push-protection on; **28 labels synced** (22 custom); 5 milestones; Release
+  Please + Security green on bootstrap; validation PR **#5** opened for founder approval.
 
 ---
 
@@ -464,9 +474,9 @@ Foundation is complete when future Claude agents can autonomously do all of the 
 - [x] **Analyze failures** — analyzer fatal, logcat crash-grep, golden diffs, CI annotations. ✅
 - [x] **Take screenshots/videos** — `tool/android_e2e.sh` ✅ verified (artifacts captured); `capture_screenshots.sh` 🟡 ready (wired, not independently run).
 - [x] **Open PRs** — `gh` authed, templates + Conventional-Commit gate. ✅
-- [x] **Merge PRs** — ruleset: CI-gated, 0 approvals, self-merge allowed. 🟡 applied.
-- [x] **Safely ship releases** — Release Please + `release.yml`. 🟡 configured.
-- [x] **CI/CD** — pr-ci/nightly/release/security all lint-clean. 🟡 runs on first PR/push.
+- [x] **Merge PRs** — ruleset CI-gated, 0 approvals, self-merge allowed. ✅ applied & verified (main + develop; 5 required contexts).
+- [x] **Safely ship releases** — Release Please + `release.yml`. ✅ Release Please ran green on bootstrap; 🟡 first tagged release pending.
+- [x] **CI/CD** — pr-ci/nightly/release/security all lint-clean. ✅ live (Release Please + Security green on bootstrap; PR CI running on validation PR #5).
 - [x] **Quality guardrails** — pre-commit, commitlint, dependabot, gitleaks/OSV/SBOM. 🟡/✅.
 - [x] **Device cloud strategy** — FTL + Codemagic decided & documented. 📋 provision when needed.
 - [x] **Observability** — local verified; cloud (Crashlytics/Perf/Sentry) documented for Phase 0. 📋

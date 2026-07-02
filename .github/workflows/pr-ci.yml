@@ -19,6 +19,10 @@ env:
   FLUTTER_VERSION: "3.41.9"
   FLUTTER_CHANNEL: "stable"
   MIN_COVERAGE: "60"
+  # Rig runtime is locked to Rive (D-053). CI builds/tests leave
+  # KP_PET_RENDERER at its default ('placeholder') so golden snapshots stay
+  # deterministic and no .riv asset is required; production sets it to 'rive'.
+  # See docs/ANIMATION_SPIKE_REPORT.md + REQUIRED_ENVIRONMENTS.md §8.
 
 jobs:
   analyze:
@@ -101,6 +105,12 @@ jobs:
           channel: ${{ env.FLUTTER_CHANNEL }}
           cache: true
       - run: flutter pub get
+      # The auto-applied google-services Gradle plugin needs google-services.json
+      # to exist. Real Firebase config is gitignored (never committed to this
+      # public repo), so for CI we write a BUILD-ONLY placeholder; the app never
+      # connects to it (live Firebase is gated behind KP_FIREBASE_PROVISIONED).
+      - name: Generate google-services.json (build-only placeholder)
+        run: python3 tool/gen_google_services.py
       - name: Build debug APK
         run: flutter build apk --debug
       - name: Upload APK artifact
@@ -132,6 +142,8 @@ jobs:
           channel: ${{ env.FLUTTER_CHANNEL }}
           cache: true
       - run: flutter pub get
+      - name: Generate google-services.json
+        run: python3 tool/gen_google_services.py
       - name: Run integration tests on emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:

@@ -24,7 +24,7 @@
     }
   },
   "version": "1.0.0",
-  "lastUpdated": "2026-06-22",
+  "lastUpdated": "2026-06-23",
   "canonicalSource": {
     "name": "KINDREDPAWS — CANONICAL DECISION BRIEF",
     "file": "KINDREDPAWS_CANONICAL_DECISION_BRIEF.md",
@@ -110,25 +110,33 @@
     "homeCustomization": "The Nest"
   },
   "currentPhase": {
-    "id": "P0",
-    "name": "Pre-production",
-    "duration": "6 wks",
-    "startState": "Phase 0 START. Canonical Decision Brief v1.0 LOCKED and committed on-disk as KINDREDPAWS_CANONICAL_DECISION_BRIEF.md (the SSOT root). The six downstream documents have been drafted and now cross-link the brief and each other by their exact on-disk filenames. This current_state.json is the machine-readable SSOT mirror of the brief.",
-    "goal": "Lock design, tech, legal frame, and asset style.",
+    "id": "P2",
+    "name": "Vertical slice (Heartmind + presence + collectibles)",
+    "duration": "10 wks",
+    "startState": "Phase 2 START (founder approval 2026-06-23). Phase 1 (core-loop prototype) engineering complete and merged. Built on the playable slice in verified micro-PRs (P2-0 status snapshot → P2-1 renderer state machine → P2-2 Heartmind engine → P2-3 memory v2 + ≥95% callback → P2-4 presence → P2-5 keepsakes → P2-6 home widget), each merged green into develop before the next.",
+    "goal": "Make the companion feel emotionally alive: hybrid Heartmind (pre-gen bank + structured memory, $0 runtime tokens), ≥95% callback reliability (G2), Companion Presence, Keepsake scrapbook, home-widget foundation, and the Rive renderer state machine — all child-safe + never-guilt, NO live free-form LLM.",
     "keyDeliverables": [
-      "This brief expanded into 6 docs",
-      "current_state.json (this file)",
-      "Live2D rig design locked via AI concept",
-      "tech stack provisioned",
-      "legal child-directedness determination scoped",
-      "LLM unit-economics model v1"
+      "PetStatusSnapshot shared payload (feeds notifications + home widget) + Firebase activation readiness behind flags",
+      "Pet renderer state machine (Rive PetStateMachine: mood/lifeStage/emotion) + expressive placeholder (12 emotion motions)",
+      "On-device hybrid Heartmind: deterministic dialogue selection + closed-set memory injection + anti-repetition + safety fail-closed (NO live LLM)",
+      "Memory System v2: categorized Memory Book + AUTOMATED ≥95% callback reliability (zero hallucination) — G2 evidence",
+      "Companion Presence: contextual greetings/returns/goodbyes/care-acks/comfort/milestones + daypart-aware ambient idle; never guilt",
+      "Keepsake Cards + emotional scrapbook (persisted, v4->v5 migration; cloud-mirror seam)",
+      "Home Widget Foundation (Android AppWidget built; iOS WidgetKit scaffold; one shared payload)"
     ],
     "exitGate": {
-      "id": "G0",
-      "passCriteria": "Brief ratified; rig contractor secured; LLM cost/DAU model shows < ARPDAU at projected mix; legal review booked.",
-      "status": "open"
+      "id": "G2",
+      "passCriteria": "Persona 'tell a friend' qualitative pass; AI memory callback reliability >=95% (no hallucinated facts); first-AI-line latency = 0 spinner; rig cost on-budget (else cut 2nd species).",
+      "status": "in-progress",
+      "criteriaProgress": {
+        "callbackReliability95": "MET (engineering) — automated harness proves accuracy >=95% with ZERO hallucination / unfilled-slots / false-callbacks; a control test proves the harness detects a bad bank.",
+        "firstAiLineZeroSpinner": "MET (by architecture) — lines are bank-selected on-device, $0 tokens, no network/spinner.",
+        "tellAFriendQualitative": "PENDING (founder action) — the emotional vertical slice is delivered; the persona playtest is a founder call.",
+        "rigCostOnBudget": "PENDING (founder action) — rig runtime de-risked (Rive); the commissioned .riv + 2nd-species ship/cut decision is the founder/contractor step."
+      },
+      "note": "Phase 2 ENGINEERING complete. Heartmind is hybrid + local only (live free-form LLM stays DEFERRED/gated/off). All companion content is closed-set/templated + child-safe (R1) + never-guilt (R6)."
     },
-    "status": "in-progress"
+    "status": "engineering-complete — Heartmind/presence/keepsake/widget/renderer merged; G2 qualitative + rig-commission pending founder"
   },
   "phases": [
     {
@@ -139,27 +147,27 @@
       "keyDeliverables": ["This brief -> 6 docs", "current_state.json", "Live2D rig design locked via AI concept", "tech stack provisioned", "legal child-directedness determination scoped", "LLM unit-economics model v1"],
       "exitGateId": "G0",
       "exitGateSummary": "Brief ratified; rig contractor secured; LLM cost/DAU model shows < ARPDAU at projected mix; legal review booked.",
-      "status": "in-progress"
+      "status": "engineering-complete; G0 exit-gate in-progress (rig-contractor + legal-review are founder actions). P1 + P2 engineering since merged."
     },
     {
       "id": "P1",
       "name": "Core-loop prototype",
       "duration": "8 wks",
       "goal": "Prove the daily loop is fun on cheap assets.",
-      "keyDeliverables": ["1 rig (puppy)", "4 Care Meters w/ no-death floor", "feed/clean/play", "The Bond", "1 placeholder room", "local notifications"],
+      "keyDeliverables": ["1 rig SEAM (Rive runtime + expressive placeholder; no commissioned .riv yet — that is P2)", "4 Care Meters w/ no-death floor", "feed/clean/play", "The Bond", "1 placeholder Nest", "local notifications", "Rescue Day onboarding + templated Memory Book (pulled forward from P2 per D-054, child-safe)"],
       "exitGateId": "G1",
       "exitGateSummary": "Internal playtest: core loop 'feels alive & cozy'; sim deterministic + offline-catch-up tested; no neglect-guilt present.",
-      "status": "planned"
+      "status": "engineering-complete (G1 qualitative playtest pending founder)"
     },
     {
       "id": "P2",
       "name": "Vertical slice",
       "duration": "10 wks",
       "goal": "One polished, emotionally complete experience incl. AI.",
-      "keyDeliverables": ["Rescue Day", "Heartmind hybrid (pre-gen bank + structured memory + Memory Book)", "3 life-stages", "home widget", "Keepsake Cards", "2nd species OR cut decision"],
+      "keyDeliverables": ["Heartmind hybrid (pre-gen bank + structured memory + Memory Book v2, >=95% callback)", "Pet renderer state machine (Rive) + expressive emotions", "Companion Presence (greetings/returns/idle/celebrations, never guilt)", "home widget foundation", "Keepsake Cards + scrapbook", "3 life-stages (engine)", "2nd species OR cut decision (founder/contractor)"],
       "exitGateId": "G2",
       "exitGateSummary": "Hand-test of personas (Maya/Tom/David) hit 'would tell a friend'; AI memory callback lands reliably; rig pipeline cost on-budget (else cut 2nd species); spinner-free first AI line.",
-      "status": "planned"
+      "status": "engineering-complete (G2 qualitative + rig-commission pending founder)"
     },
     {
       "id": "P3",
@@ -256,9 +264,9 @@
     "rule": "Always specify the CHEAPEST VIABLE VERSION that preserves the emotional core."
   },
   "gates": [
-    {"id": "G0", "phase": "P0", "name": "Pre-production gate", "passCriteria": "Brief ratified; rig contractor secured; LLM cost/DAU model shows < ARPDAU at projected mix; legal review booked.", "status": "open"},
-    {"id": "G1", "phase": "P1", "name": "Core-loop prototype gate", "passCriteria": "Loop 'fun' qualitative pass; deterministic sim + offline-catch-up tests green; zero neglect-guilt.", "status": "planned"},
-    {"id": "G2", "phase": "P2", "name": "Vertical-slice gate", "passCriteria": "Persona 'tell a friend' qualitative pass; AI memory callback reliability >=95% (no hallucinated facts); first-AI-line latency = 0 spinner; rig cost on-budget (else cut 2nd species).", "status": "planned"},
+    {"id": "G0", "phase": "P0", "name": "Pre-production gate", "passCriteria": "Brief ratified; rig contractor secured; LLM cost/DAU model shows < ARPDAU at projected mix; legal review booked.", "status": "in-progress (engineering-complete; rig-contractor + legal-review pending founder)"},
+    {"id": "G1", "phase": "P1", "name": "Core-loop prototype gate", "passCriteria": "Loop 'fun' qualitative pass; deterministic sim + offline-catch-up tests green; zero neglect-guilt.", "status": "in-progress (engineering-complete; qualitative playtest pending founder)"},
+    {"id": "G2", "phase": "P2", "name": "Vertical-slice gate", "passCriteria": "Persona 'tell a friend' qualitative pass; AI memory callback reliability >=95% (no hallucinated facts); first-AI-line latency = 0 spinner; rig cost on-budget (else cut 2nd species).", "status": "in-progress (engineering-complete: callback>=95% + 0-spinner MET; persona playtest + rig commission pending founder)"},
     {"id": "G3", "phase": "P3", "name": "Closed-beta gate", "passCriteria": "D1 >=40% · D7 >=18%; 0 child-safety incidents; cloud-restore proven; LLM cost/DAU within model; crash-free >=99%; legal green-light.", "status": "planned"},
     {"id": "G4", "phase": "P4", "name": "Soft-launch gate", "passCriteria": "D1 >=42% · D7 >=20% · D30 >=10%; ARPDAU >=$0.03; LLM cost/DAU < 35% ARPDAU; >=1 viral share / DAU-week; clean donation reconciliation.", "status": "planned"},
     {"id": "G5", "phase": "P5", "name": "Global-launch gate", "passCriteria": "Soft KPIs held 4 wks at scale; infra cost/DAU stable; crash-free >=99.5%; transparency badge live.", "status": "planned"},
@@ -341,9 +349,9 @@
     }
   },
   "techStack": {
-    "engine": "Unity (2D) OR Flutter + Live2D SDK — pick at P0/G0; must support Live2D Cubism runtime + native widget interop; bias to fastest solo+AI shipping path.",
-    "backend": "Managed BaaS — Firebase or Supabase (auth, DB, cloud save, remote config). No owned servers.",
-    "llmStrategy": "Hybrid: offline LLM pre-generates large human-reviewed dialogue bank; runtime selects by pet-state + injects structured memory facts into cached persona prompt. Live free-form LLM DEFERRED & gated (adult-verified + subscriber + token caps ~60–100 out + daily turn caps + per-user cost ceiling). This is the make-or-break OPEX model.",
+    "engine": "Flutter (LOCKED at G0, D-048) + **Rive** rig runtime (LOCKED at P1-0, 2026-06-23, D-053). The P1-0 animation spike found Live2D Cubism has NO first-party Flutter runtime (only an unproven community binding); Rive is first-party + mature and builds here, so the founder-pre-authorized Rive fallback is now the locked choice (PetRenderer seam made it a backend swap). Pinned `rive: ^0.13` (pure-Dart line). Evidence: docs/ANIMATION_SPIKE_REPORT.md. Art style unchanged (Live2D-styled, ADR-002). Native widget interop via WidgetKit/Glance.",
+    "backend": "Firebase — LOCKED at G0 (founder decision 2026-06-22; resolves ADR-003, D-049). Managed BaaS: auth, Firestore cloud save, Remote Config, Analytics, Crashlytics. No owned servers.",
+    "llmStrategy": "Hybrid: offline LLM pre-generates large human-reviewed dialogue bank; runtime selects by pet-state + injects structured memory facts into cached persona prompt. Live free-form LLM DEFERRED & gated (adult-verified + subscriber + token caps ~60–100 out + daily turn caps + per-user cost ceiling). Models LOCKED at G0 (D-050): runtime/live = claude-haiku-4-5 (founder: 'Claude Haiku 4'); offline pre-gen = claude-opus-4-8. LLM cost/DAU modeled at 2.7% (MVP) / 3.9% (soft-launch live pilot) of ARPDAU — well under the 35% gate (docs/LLM_UNIT_ECONOMICS_MODEL.md). This is the make-or-break OPEX model.",
     "aiMemory": "Structured key-value fact store (10–30 durable facts) in BaaS DB + short rolling turn window + batched off-peak fact extraction. Surfaced as the Memory Book. Reliability > breadth.",
     "moderation": "Two-sided input + output through cheap moderation/classification endpoint; hard system-prompt constraints; fixed safe-fallback line; self-harm -> static safe message; full audit logging. Under-13: templated/non-generative only.",
     "onDeviceVsCloud": "Sim runs client-side (deterministic, elapsed-time, server-validatable). Memory/entitlements/donation-ledger server-side. Voice mimic (deferred) = on-device DSP only, audio never leaves device.",
@@ -403,9 +411,9 @@
     {"id": "R10", "description": "Negative virality — one tone-deaf/unsafe AI screenshot defines the brand.", "severity": "Medium-High", "mitigation": "Hard guardrails + child-safe persona lock + per-turn moderation; many small authentic moments over one engineered spectacle; under-13 templated-only."}
   ],
   "openDecisions": [
-    {"id": 1, "decision": "Engine: Unity vs Flutter+Live2D", "resolveBy": "G0", "note": "Bias to fastest solo+AI shipping path with native widget interop."},
+    {"id": 1, "decision": "Engine: Unity vs Flutter+Live2D", "resolveBy": "G0", "status": "RESOLVED 2026-06-22 (engine) + 2026-06-23 (rig runtime)", "resolution": "Flutter engine (D-048). Rig runtime: P1-0 spike found Live2D-on-Flutter non-viable -> switched to Rive (founder pre-authorized). See D-053, docs/ANIMATION_SPIKE_REPORT.md.", "note": "Bias to fastest solo+AI shipping path with native widget interop."},
     {"id": 2, "decision": "2nd species ship-or-cut", "resolveBy": "G2", "note": "Based on rig-pipeline cost burn (budget for 2; ship 1 if hot)."},
-    {"id": 3, "decision": "LLM provider + exact model tiers and final token/turn caps", "resolveBy": "G0 (model), G3/G4 (validate)", "note": "Cheap routine model vs. live-chat model."},
+    {"id": 3, "decision": "LLM provider + exact model tiers and final token/turn caps", "resolveBy": "G0 (model), G3/G4 (validate)", "status": "PARTIALLY RESOLVED 2026-06-22", "resolution": "Anthropic Claude; runtime/live = claude-haiku-4-5, offline pre-gen = claude-opus-4-8 (D-050). Final token/turn caps validated at G3/G4.", "note": "Cheap routine model vs. live-chat model."},
     {"id": 4, "decision": "Donation intermediary choice + initial 1–3 partner shelters", "resolveBy": "before G4", "note": "PayPal Giving Fund vs Percent vs Benevity; must be live for soft launch."},
     {"id": 5, "decision": "Exact donation % per revenue type (net)", "resolveBy": "before G4", "note": "Finalize with accounting/legal; lock in Impact Pledge doc."},
     {"id": 6, "decision": "Launch localization languages (which 4–6 for static UI)", "resolveBy": "G3", "note": "AI-dialogue languages stay EN(+1–2), expand post-launch per-language safety validation."},
@@ -433,6 +441,22 @@
   ],
   "decisionLog": [
     {
+      "ts": "2026-06-23T00:00:00Z",
+      "owner_doc": "GAME_DECISION_LOG.md",
+      "decision": "P2 engineering complete; currentPhase advanced P1->P2. Phase-partition deviation (Rescue Day + Memory Book foundation pulled forward P2->P1) formalized as D-054.",
+      "old": "currentPhase = P1; P2 deliverables still listed Rescue Day; deviation only narrated in currentPhase.goal.",
+      "new": "currentPhase = P2 (engineering-complete; G2 gate). Built (D-054): PetStatusSnapshot; Rive renderer state machine + 12 emotions; on-device hybrid Heartmind (deterministic selection + closed-set memory injection + safety, NO live LLM); Memory v2 + AUTOMATED >=95% callback reliability (zero hallucination) = G2 evidence; Companion Presence (never-guilt); Keepsake scrapbook (v4->v5 migration); home-widget foundation (Android AppWidget built + iOS WidgetKit scaffold). Phases array P1/P2 deliverables corrected (Rescue Day moved to P1; P1 rig wording clarified as a placeholder seam, aligning with the roadmap's 'puppy only' real-rig scope).",
+      "rationale": "Hybrid + local Heartmind keeps runtime tokens at $0 and child-safety by construction (R1/R2). >=95% callback is bounded by template/slot correctness (a control test proves the harness detects a bad bank). The P1/P2 deviation (Rescue Day forward) gave the prototype its emotional anchor; recorded formally as D-054 to keep the decision-log audit trail complete."
+    },
+    {
+      "ts": "2026-06-23T00:00:00Z",
+      "owner_doc": "GAME_DECISION_LOG.md",
+      "decision": "P1/P1-0: rig runtime LOCKED to Rive (animation spike result); supersedes the Live2D runtime. currentPhase advanced P0->P1.",
+      "old": "Rig runtime = Live2D SDK (Rive authorized fallback).",
+      "new": "Rig runtime = Rive (Flutter-native), pinned `rive: ^0.13`. RivePetRenderer wired behind the PetRenderer seam + KP_PET_RENDERER flag (default placeholder). Recorded as D-053; ADR-001 amended; Open Decision #1 fully resolved. Evidence: docs/ANIMATION_SPIKE_REPORT.md. Also: founder pulled Rescue Day onboarding + a templated child-safe Memory Book foundation forward from P2 into the P1 vertical slice (documented deviation from the roadmap phase partition; no deferred live-LLM built).",
+      "rationale": "Live2D Cubism has no first-party Flutter runtime (only `flutter_live2d`: 1 like / ~142 dl-30d); Rive is first-party (~1,935 likes / ~404k dl-30d / 6 platforms), builds an APK here, same params-not-frames economics (R7). Founder pre-authorization (D-048) exercised; PetRenderer seam made it a zero-gameplay-impact swap."
+    },
+    {
       "ts": "2026-06-22T00:00:00Z",
       "owner_doc": "KINDREDPAWS_CANONICAL_DECISION_BRIEF.md",
       "decision": "Brief v1.0 LOCKED; committed as SSOT root on-disk.",
@@ -455,6 +479,22 @@
       "old": "SSOT root missing on-disk; docs named the brief variously (KINDREDPAWS_CANONICAL_DECISION_BRIEF without .md, CANONICAL_DECISION_BRIEF.md, prose 'Canonical Decision Brief'). Authority chain had a missing root link.",
       "new": "Brief committed; ssotRootStatus = committed; authority chain brief -> current_state.json -> docs is now mechanically enforceable.",
       "rationale": "'The brief wins all conflicts' could not be enforced and downstream could not verify against the SSOT without the root file present under a single agreed filename."
+    },
+    {
+      "ts": "2026-06-22T00:00:00Z",
+      "owner_doc": "current_state.json",
+      "decision": "P0/G0: Lock engine = Flutter + Live2D SDK; backend = Firebase; LLM runtime = claude-haiku-4-5 (pre-gen claude-opus-4-8). Resolves Open Decision #1 and the model half of #3 (founder decisions, 2026-06-22).",
+      "old": "Engine, backend, and LLM tiers were open (brief §12 OD-1, OD-3); brief listed Unity-or-Flutter and Firebase-or-Supabase.",
+      "new": "Flutter+Live2D / Firebase / Claude Haiku 4 locked. Recorded as D-048/D-049/D-050 in GAME_DECISION_LOG.md; ADR-001 PROPOSED->LOCKED, ADR-003 ACCEPTED->LOCKED. Brief stays v1.0 (locked seed); resolutions live in this mirror + the decision log.",
+      "rationale": "Founder ratified the brief and chose the stack to start Phase 0; the SSOT brief is immutable, so resolved open-decisions are recorded downstream per the update protocol."
+    },
+    {
+      "ts": "2026-06-22T00:00:00Z",
+      "owner_doc": "current_state.json",
+      "decision": "P0 engineering deliverables complete: LLM unit-economics model v1 (G0 criterion #3 PASS — 2.7%/3.9% of ARPDAU); tech stack provisioned (Flutter architecture skeleton + service abstractions + mocks + gated Firebase seam); versioned-save migration/restore framework (R4); Heartmind/memory/dialogue schemas; analytics taxonomy; remote-config defaults; PetRenderer abstraction. Rig design brief + legal scoping + Impact Pledge skeleton + REQUIRED_ENVIRONMENTS authored.",
+      "old": "P0 deliverables pending.",
+      "new": "G0 status: engineering-complete; 2 founder/credentialed actions remain (secure rig contractor, book legal review) — both fully enabled by delivered docs. Validated: flutter analyze clean, 31 tests pass @76.4% coverage, APK build + emulator E2E green.",
+      "rationale": "Phase 0 (Pre-production) is design/provision/model, not gameplay; the playable core loop is Phase 1 (G1) and intentionally NOT started."
     }
   ],
   "nextActions": [

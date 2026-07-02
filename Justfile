@@ -39,6 +39,12 @@ format-check:
 analyze:
     flutter analyze --fatal-infos --fatal-warnings
 
+# Validate the dialogue content bank against the Content OS rules (P3-3):
+# vocabulary, closed-set memory slots, and safety/never-guilt by construction.
+# No arg = the bundled launch bank; pass a path to gate an offline-generated bank.
+content-validate *ARGS:
+    dart run tool/validate_content.dart {{ARGS}}
+
 # Unit + widget + golden + performance tests with coverage gate.
 test:
     flutter test --coverage --reporter expanded
@@ -62,7 +68,7 @@ coverage:
     bash tool/coverage_report.sh
 
 # The exact PR gate, locally.
-verify: format-check analyze test
+verify: format-check analyze content-validate test
 
 # ── builds ──────────────────────────────────────────────────────────────────
 build-apk:
