@@ -103,9 +103,13 @@ class PlayRoom extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Garden games — tiny, warm, no-fail (E4).
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            // Garden games — tiny, warm, no-fail (E4 + GE-4). Each entry is
+            // a little world prop: the ball, the basket, the bubble wand,
+            // and the star lantern.
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 6,
+              runSpacing: 6,
               children: [
                 _GameCard(
                   key: const Key('minigame-bounce'),
@@ -118,6 +122,18 @@ class PlayRoom extends StatelessWidget {
                   emoji: '🧺',
                   label: 'Snack Catch',
                   onTap: () => _openGame(context, MiniGameKind.snackCatch),
+                ),
+                _GameCard(
+                  key: const Key('minigame-bubbles'),
+                  emoji: '🫧',
+                  label: 'Bubble Drift',
+                  onTap: () => _openGame(context, MiniGameKind.bubbleDrift),
+                ),
+                _GameCard(
+                  key: const Key('minigame-trail'),
+                  emoji: '✨',
+                  label: 'Starlight Trail',
+                  onTap: () => _openGame(context, MiniGameKind.starlightTrail),
                 ),
               ],
             ),
@@ -192,17 +208,19 @@ class _GameCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(18),
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 8),
+            // Compact enough that all four garden games share one row on a
+            // 400 dp phone (the toy basket keeps its room below).
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 ExcludeSemantics(
-                  child: Text(emoji, style: const TextStyle(fontSize: 26)),
+                  child: Text(emoji, style: const TextStyle(fontSize: 22)),
                 ),
                 Text(
                   label,
                   style: const TextStyle(
-                    fontSize: 12,
+                    fontSize: 10.5,
                     fontWeight: FontWeight.w800,
                     color: Color(0xFF4A3F38),
                   ),

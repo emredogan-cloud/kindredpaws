@@ -97,4 +97,61 @@ void main() {
     expect(find.byKey(const Key('minigame-screen')), findsNothing); // popped
     expect(c.pet!.meters.energy, lessThan(100)); // the play verb applied
   });
+
+  testWidgets('the garden offers all four games; Bubble Drift plays a round', (
+    tester,
+  ) async {
+    phoneView(tester);
+    final c = makeController();
+    await c.load();
+    await c.adopt(species: Species.puppy, name: 'Biscuit');
+    await tester.pumpWidget(MaterialApp(home: RoomHost(controller: c)));
+    await tester.pumpAndSettle();
+
+    await hopToRoom(tester, 'playRoom');
+    expect(find.byKey(const Key('minigame-bubbles')), findsOneWidget);
+    expect(find.byKey(const Key('minigame-trail')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('minigame-bubbles')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byKey(const Key('minigame-screen')), findsOneWidget);
+    // A friendly tap somewhere in the sky (popping is optional joy).
+    await tester.tap(find.byKey(const Key('bubble-tap')));
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.tap(find.byKey(const Key('minigame-leave')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('minigame-screen')), findsNothing);
+  });
+
+  testWidgets('Starlight Trail celebrates after its gentle timer', (
+    tester,
+  ) async {
+    phoneView(tester);
+    final c = makeController();
+    await c.load();
+    await c.adopt(species: Species.puppy, name: 'Biscuit');
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MiniGameScreen(
+          controller: c,
+          kind: MiniGameKind.starlightTrail,
+          sessionSeconds: 1.2,
+        ),
+      ),
+    );
+    await tester.pump();
+    // Hold to rise a moment, then let the timer finish.
+    final gesture = await tester.press(find.byKey(const Key('trail-hold')));
+    await tester.pump(const Duration(milliseconds: 500));
+    await gesture.up();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('minigame-final-score')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('minigame-done')));
+    await tester.pumpAndSettle();
+  });
 }
