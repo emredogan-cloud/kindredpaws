@@ -17,6 +17,7 @@ import '../keepsake_screen.dart';
 import '../memory_book_screen.dart';
 import '../paywall_sheet.dart';
 import '../settings_screen.dart';
+import '../widgets/ambient_life_driver.dart';
 import '../widgets/cozy.dart';
 import '../widgets/feel_fx.dart';
 import 'room_registry.dart';
@@ -161,6 +162,9 @@ class _RoomHostState extends State<RoomHost> {
           ),
           body: Stack(
             children: [
+              // Every so often an idle pet simply does something on its own
+              // (GE-2 autonomous micro-behaviors; renders nothing).
+              AmbientLifeDriver(controller: widget.controller),
               // Rooms. Each page paints its own full-bleed scene, so the swipe
               // carries the scene with the room (no cross-fade seams).
               PageView.builder(

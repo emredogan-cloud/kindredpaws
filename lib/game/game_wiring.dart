@@ -27,6 +27,7 @@ GameController createGameController({
   required ServiceLocator sl,
   required LocalSaveStore store,
   int Function()? clock,
+  String Function()? idGenerator,
 }) {
   final config = SimConfig.fromRemoteConfig(sl.get<RemoteConfigService>());
   final repo = SaveRepository(
@@ -51,6 +52,12 @@ GameController createGameController({
     liveOps: sl.get<LiveOps>(),
     feel: sl.get<FeelService>(),
     notificationsAllowed: () => sl.get<PrefsService>().notificationsEnabled,
+    southernHemisphere: () => sl.get<PrefsService>().southernHemisphere,
+    recordOpenHour: (h) => sl.get<PrefsService>().recordOpenHour(h),
+    openHourHistogram: () => sl.get<PrefsService>().openHourHistogram,
+    seenHints: () => sl.get<PrefsService>().seenHints,
+    markHintSeen: (id) => sl.get<PrefsService>().markHintSeen(id),
     clock: clock,
+    idGenerator: idGenerator,
   );
 }

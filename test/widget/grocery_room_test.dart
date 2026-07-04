@@ -76,6 +76,8 @@ void main() {
     await tester.tap(find.byKey(const Key('shelf-food_apple')));
     await tester.pumpAndSettle();
     expect(c.inventory.pantryCount(ItemCatalog.apple.id), apples + 1);
-    expect(c.pet!.wallet.kibble, kibble - ItemCatalog.apple.kibblePrice);
+    // Debited the price, plus the day's grocery-trip kindness thank-you
+    // (+10 — kTestPetId's kDay0 pair includes the pantry restock).
+    expect(c.pet!.wallet.kibble, kibble - ItemCatalog.apple.kibblePrice + 10);
   });
 }

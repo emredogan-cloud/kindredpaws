@@ -84,6 +84,10 @@ class RivePetRenderer implements PetRenderer {
     required PetMood mood,
     required String lifeStage,
     PetEmotion? emotion,
+    // Care cues are NOT rig inputs — the PetStateMachine contract stays
+    // exactly {mood, lifeStage, emotion}. When the commissioned .riv lands,
+    // cue layers composite Flutter-side over the rig (same as cosmetics).
+    PetCareCues? cues,
   }) {
     final expression = emotion ?? PetEmotion.restingFor(mood);
     final box = size * lifeStageScale(lifeStage);

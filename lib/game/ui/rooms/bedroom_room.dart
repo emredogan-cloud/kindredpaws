@@ -13,6 +13,7 @@ import '../../../render/pet_renderer.dart';
 import '../../controller/game_controller.dart';
 import '../../model/care_meters.dart';
 import '../../rooms/room_id.dart';
+import '../widgets/ambient_scene.dart';
 import '../widgets/cozy.dart';
 import 'room_scaffold.dart';
 import 'widgets/need_glow.dart';
@@ -52,7 +53,14 @@ class BedroomRoom extends StatelessWidget {
         RoomScaffold(
           controller: controller,
           rig: rig,
-          sceneAsset: KpAssets.cozyRoomNight,
+          sceneAsset: KpAssets.bedroomScene,
+          ambient: const AmbientScene(variant: AmbientVariant.bedroomStars),
+          decorRoom: RoomId.bedroom,
+          seasonAccent: controller.seasonAccent,
+          firstVisitHint: const (
+            'hint_bedroom',
+            'Tuck your friend in for a cozy nap 🌙',
+          ),
           // Deep starlit hush while sleeping; soft dusk otherwise.
           tint: sleeping ? const Color(0x59283B5C) : const Color(0x26283B5C),
           petFooter: sleeping

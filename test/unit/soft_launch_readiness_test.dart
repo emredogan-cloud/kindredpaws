@@ -18,6 +18,7 @@ void main() {
         'notifications',
         'beta_feedback',
         'rescue_bundles',
+        'seasons', // GE-5: holds the world neutral (accents + seasonal offers)
       });
     });
 

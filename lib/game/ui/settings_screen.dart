@@ -83,6 +83,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
               setState(() {});
             },
           ),
+          _sectionLabel('Seasons'),
+          SwitchListTile(
+            key: const Key('settings-southern'),
+            secondary: const Icon(Icons.public_rounded),
+            title: const Text('Southern-hemisphere seasons'),
+            subtitle: const Text(
+              'Flip the year for friends below the equator '
+              '(summer in December)',
+            ),
+            value: _prefs.southernHemisphere,
+            onChanged: (v) async {
+              await _prefs.setSouthernHemisphere(v);
+              setState(() {});
+            },
+          ),
           _sectionLabel('Privacy'),
           ListTile(
             key: const Key('settings-delete'),

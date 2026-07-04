@@ -1,7 +1,8 @@
-/// The persisted save (schema v7), mirroring GAME_TECHNICAL_SYSTEMS.md §3.4.
+/// The persisted save (schema v10), mirroring GAME_TECHNICAL_SYSTEMS.md §3.4.
 /// Holds the full runtime [PetState], the daily Bond [BondLedger], the Memory
-/// Book facts, Keepsakes, the pet's evolving [PersonalityProfile], and the
-/// household [Inventory] (the room-based home).
+/// Book facts, Keepsakes, the pet's evolving [PersonalityProfile], the
+/// household [Inventory] (the room-based home), and the Daily Kindness slate
+/// (GE-1, the Genre Evolution program).
 /// Versioned + migrated forward (Risk R4: no update may orphan a pet).
 /// Serialization only — the simulation lives in `lib/game`.
 library;
@@ -10,7 +11,9 @@ import '../game/model/bond.dart';
 import '../game/model/care_meters.dart';
 import '../game/model/care_streak.dart';
 import '../game/model/inventory.dart';
+import '../game/model/kindness.dart';
 import '../game/model/life_stage.dart';
+import '../game/model/season_progress.dart';
 import '../game/model/pet_state.dart';
 import '../game/model/species.dart';
 import '../game/model/wallet.dart';
@@ -25,6 +28,9 @@ import 'migrations/v3_to_v4.dart';
 import 'migrations/v4_to_v5.dart';
 import 'migrations/v5_to_v6.dart';
 import 'migrations/v6_to_v7.dart';
+import 'migrations/v7_to_v8.dart';
+import 'migrations/v8_to_v9.dart';
+import 'migrations/v9_to_v10.dart';
 import 'save_envelope.dart';
 
 class KindredSaveState {
@@ -36,10 +42,12 @@ class KindredSaveState {
     this.nestCosmeticIds = const [],
     this.personality = PersonalityProfile.neutral,
     this.inventory = const Inventory(),
+    this.kindness,
+    this.seasonProgress,
   });
 
   /// Schema version this app writes. Bump + add a migration on change.
-  static const int currentSchemaVersion = 7;
+  static const int currentSchemaVersion = 10;
 
   /// Ordered migration chain → [currentSchemaVersion].
   static const List<Migration> migrations = [
@@ -49,6 +57,9 @@ class KindredSaveState {
     V4ToV5(),
     V5ToV6(),
     V6ToV7(),
+    V7ToV8(),
+    V8ToV9(),
+    V9ToV10(),
   ];
 
   final PetState pet;
@@ -65,6 +76,14 @@ class KindredSaveState {
   /// the wardrobe closet (persisted from v7, the room-based home).
   final Inventory inventory;
 
+  /// Today's Daily Kindness slate (persisted from v8; null until the first
+  /// session of the day offers a pair — the engine fills it lazily).
+  final KindnessState? kindness;
+
+  /// Seasons-of-Us active-day count for the current season-window
+  /// (persisted from v10; null until the first counted day).
+  final SeasonProgress? seasonProgress;
+
   KindredSaveState copyWith({
     PetState? pet,
     BondLedger? ledger,
@@ -73,6 +92,8 @@ class KindredSaveState {
     List<String>? nestCosmeticIds,
     PersonalityProfile? personality,
     Inventory? inventory,
+    KindnessState? kindness,
+    SeasonProgress? seasonProgress,
   }) => KindredSaveState(
     pet: pet ?? this.pet,
     ledger: ledger ?? this.ledger,
@@ -81,6 +102,8 @@ class KindredSaveState {
     nestCosmeticIds: nestCosmeticIds ?? this.nestCosmeticIds,
     personality: personality ?? this.personality,
     inventory: inventory ?? this.inventory,
+    kindness: kindness ?? this.kindness,
+    seasonProgress: seasonProgress ?? this.seasonProgress,
   );
 
   SaveEnvelope toEnvelope() => SaveEnvelope(
@@ -105,10 +128,13 @@ class KindredSaveState {
       'personality': personality.toMap(),
       'inventory': inventory.toMap(),
       'sleepingSinceMs': pet.sleepingSinceMs,
+      'kindness': kindness?.toMap(),
+      'seasonProgress': seasonProgress?.toMap(),
     },
   );
 
-  /// Reads a v7 envelope. Upgrade older envelopes with [MigrationRunner] first.
+  /// Reads a current-schema envelope. Upgrade older ones with
+  /// [MigrationRunner] first.
   factory KindredSaveState.fromEnvelope(SaveEnvelope env) {
     if (env.schemaVersion != currentSchemaVersion) {
       throw StateError(
@@ -163,6 +189,16 @@ class KindredSaveState {
       inventory: Inventory.fromMap(
         (d['inventory'] as Map?)?.cast<String, dynamic>() ?? const {},
       ),
+      kindness: d['kindness'] == null
+          ? null
+          : KindnessState.fromMap(
+              (d['kindness'] as Map).cast<String, dynamic>(),
+            ),
+      seasonProgress: d['seasonProgress'] == null
+          ? null
+          : SeasonProgress.fromMap(
+              (d['seasonProgress'] as Map).cast<String, dynamic>(),
+            ),
     );
   }
 

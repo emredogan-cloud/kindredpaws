@@ -87,7 +87,9 @@ void main() {
       expect(kibble, greaterThanOrEqualTo(ItemCatalog.apple.kibblePrice));
       final ok = await c.purchase(ItemCatalog.apple);
       expect(ok, isTrue);
-      expect(c.pet!.wallet.kibble, kibble - ItemCatalog.apple.kibblePrice);
+      // Debited the price, plus the day's grocery-trip kindness thank-you
+      // (+10 — kTestPetId's kDay0 pair includes the pantry restock).
+      expect(c.pet!.wallet.kibble, kibble - ItemCatalog.apple.kibblePrice + 10);
       expect(c.inventory.pantryCount(ItemCatalog.apple.id), 2); // starter +1
     });
 

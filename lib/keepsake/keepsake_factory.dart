@@ -72,7 +72,33 @@ class KeepsakeFactory {
     pet,
     KeepsakeKind.unpromptedComfort,
     '${nowMs ~/ Duration.millisecondsPerDay}',
-    'A quiet, gentle moment with ${pet.name}. 🤍',
+    'A quiet, gentle moment with ${pet.name}. 💗',
+    nowMs,
+  );
+
+  /// A décor set completed (GE-3 Cozy Corners) — once per set (stable id).
+  Keepsake decorSet(PetState pet, String setId, String setTitle, int nowMs) =>
+      _card(
+        pet,
+        KeepsakeKind.decorSet,
+        setId,
+        'We finished the $setTitle corner together. 🛋️',
+        nowMs,
+      );
+
+  /// Five gentle days in one season (GE-5) — once per season-window (the
+  /// window key holds the year, so every season is earnable again next
+  /// year: anti-FOMO by id design).
+  Keepsake season(
+    PetState pet,
+    String windowKey,
+    String seasonName,
+    int nowMs,
+  ) => _card(
+    pet,
+    KeepsakeKind.season,
+    windowKey,
+    'A $seasonName spent together, day by gentle day. 🌤️',
     nowMs,
   );
 }

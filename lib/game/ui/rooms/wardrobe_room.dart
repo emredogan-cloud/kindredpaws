@@ -51,9 +51,7 @@ class WardrobeRoom extends StatelessWidget {
     return RoomScaffold(
       controller: controller,
       rig: rig,
-      sceneAsset: KpAssets.cozyRoomDay,
-      // A soft boutique-lavender morning light.
-      tint: const Color(0x1FB9A7D9),
+      sceneAsset: KpAssets.wardrobeScene,
       content: ShelfPanel(
         title: 'Closet',
         child: ListView(
@@ -71,6 +69,7 @@ class WardrobeRoom extends StatelessWidget {
               )
             else
               ShelfGrid(
+                nested: true, // inside the closet + boutique ListView
                 children: [
                   for (final item in owned)
                     ItemCard(
@@ -97,6 +96,7 @@ class WardrobeRoom extends StatelessWidget {
               ),
             ),
             ShelfGrid(
+              nested: true, // inside the closet + boutique ListView
               children: [
                 for (final item in boutique) _boutiqueCard(context, item),
               ],
