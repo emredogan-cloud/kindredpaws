@@ -631,6 +631,12 @@ class ShelfGrid extends StatelessWidget {
     return GridView.count(
       crossAxisCount: columns,
       shrinkWrap: true,
+      // The grid is laid out inside a scrolling parent (the shop / closet
+      // ListView). Without this, the grid's own scroll physics swallow the
+      // vertical drag in its area, so the parent list can't be scrolled past
+      // the first section — the Toy/Care/Décor shelves become unreachable by
+      // finger. NeverScrollable lets drags fall through to the parent.
+      physics: const NeverScrollableScrollPhysics(),
       padding: EdgeInsets.zero,
       mainAxisSpacing: 6,
       crossAxisSpacing: 6,

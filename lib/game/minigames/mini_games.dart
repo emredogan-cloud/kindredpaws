@@ -179,7 +179,7 @@ class SnackCatchGame implements MiniGameEngine {
 class FallingSnack {
   FallingSnack({required this.x, required this.y, required this.emojiIndex});
 
-  static const faces = ['🍎', '🥕', '🫐', '🍪', '🐟'];
+  static const faces = ['🍎', '🥕', '🍇', '🍪', '🐟'];
 
   final double x;
   double y;

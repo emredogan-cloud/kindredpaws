@@ -130,7 +130,7 @@ class PlayRoom extends StatelessWidget {
                 ),
                 _GameCard(
                   key: const Key('minigame-bubbles'),
-                  emoji: '🫧',
+                  emoji: '💧',
                   label: 'Bubble Drift',
                   onTap: () => _openGame(context, MiniGameKind.bubbleDrift),
                 ),

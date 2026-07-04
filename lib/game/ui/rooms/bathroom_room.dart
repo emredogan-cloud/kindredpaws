@@ -2,7 +2,7 @@
 /// verb). Scrub the pet with your finger: foam builds, and when the bath is
 /// done the pet shakes off into its `comforted` glow. A one-tap Quick Rinse
 /// keeps cleaning fully accessible (never gesture-only), and the potty break
-/// is a giggly, gentle hygiene moment. Copy is always "let's freshen up 🫧" —
+/// is a giggly, gentle hygiene moment. Copy is always "let's freshen up 🛁" —
 /// never "you were dirty" (no blame, ever).
 library;
 

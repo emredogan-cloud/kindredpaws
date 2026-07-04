@@ -168,7 +168,7 @@ List<DialogueBankEntry> _greetings() => [
     'Hello, you. Come here for a cozy little cuddle?',
     'Hi, friend. *gentle nuzzle* I like being near you.',
     'There you are. Let\'s be warm and snug together. ☀️',
-    'Hi. A hug-shaped hello, just for you. 🤍',
+    'Hi. A hug-shaped hello, just for you. 💛',
   ], personalityDial: 'cuddly'),
   _e('greeting', '*', [
     'Hello! *stands tall* Ready for whatever today brings!',
@@ -259,7 +259,7 @@ List<DialogueBankEntry> _returns() => [
   ], personalityDial: 'playful'),
   _e('returning', '*', [
     'Oh, you\'re home. *melts into a cuddle* Stay a while? 💛',
-    'Welcome back, you. Come here — I saved the warmest spot. 🤍',
+    'Welcome back, you. Come here — I saved the warmest spot. 💛',
     'You\'re back. *gentle, happy snuggle* Everything\'s cozy now.',
   ], personalityDial: 'cuddly'),
 ];
@@ -302,7 +302,7 @@ List<DialogueBankEntry> _goodbyes() => [
     'Off you go! I\'ll save the bounciest game for when you\'re back!',
   ], personalityDial: 'playful'),
   _e('goodbye', '*', [
-    'Bye for now. *one more cuddle* I\'ll keep your spot warm. 🤍',
+    'Bye for now. *one more cuddle* I\'ll keep your spot warm. 💛',
     'See you soon, you. Take a little of this coziness with you. 💛',
     'Off into your day — wrapped in a hug from me. 🐾',
   ], personalityDial: 'cuddly'),
@@ -446,14 +446,14 @@ List<DialogueBankEntry> _comfort() => [
     'One small breath. Then another. I\'m counting them with you. ☁️',
     'The hard feeling is allowed to be here. So am I, right beside it.',
     'Let\'s be soft with you tonight. You\'ve earned a little tenderness.',
-    'I\'m a very good listener and an even better cuddler. Both are yours. 🤍',
+    'I\'m a very good listener and an even better cuddler. Both are yours. 💛',
   ], personalityDial: 'cuddly'),
   _e('comfort', '*', [
     'Let\'s slow everything right down. There. Just breathe with me. ☁️',
     'No need to rush the hard parts. We have all the quiet time you need.',
     'I\'ll sit here, steady and calm, for as long as it helps. 💛',
     'Soft and slow, that\'s the plan. You\'re safe in this gentle moment.',
-    'Let the world hush for a while. I\'ve got the quiet covered. 🤍',
+    'Let the world hush for a while. I\'ve got the quiet covered. 💛',
   ], personalityDial: 'calm'),
 ];
 

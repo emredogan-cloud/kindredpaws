@@ -133,7 +133,7 @@ abstract final class KindnessCatalog {
     trigger: KindnessTrigger.clean,
     title: 'Bubble-bath time',
     invitation: 'A warm scrub and a rinse — pure bliss.',
-    emoji: '🫧',
+    emoji: '🛁',
     room: 'Bathroom',
     kibble: 14,
   );

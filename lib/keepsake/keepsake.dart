@@ -11,7 +11,7 @@ enum KeepsakeKind {
   gotchaDay('Gotcha Day', '🎉'),
   beforeAfterGrowth('Before & After', '🌱'),
   longMemoryCallback('It Remembered', '💭'),
-  unpromptedComfort('A Quiet Comfort', '🤍'),
+  unpromptedComfort('A Quiet Comfort', '💛'),
   bondMilestone('A New Bond', '💛'),
   streakMilestone('Days Together', '🔥'),
   personalityReveal('Only My Pet', '✨'),

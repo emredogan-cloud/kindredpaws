@@ -1160,7 +1160,7 @@ class GameController extends ChangeNotifier {
     if (o.comfortBeat) return '$name feels so much better with you here 💛';
     return switch (interaction) {
       CareInteraction.feed => '$name gobbled it right up! 🍖',
-      CareInteraction.clean => '$name feels fresh and happy 🫧',
+      CareInteraction.clean => '$name feels fresh and happy 💦',
       CareInteraction.play => '$name had the best time playing! 🎾',
     };
   }
