@@ -69,6 +69,7 @@ class WardrobeRoom extends StatelessWidget {
               )
             else
               ShelfGrid(
+                nested: true, // inside the closet + boutique ListView
                 children: [
                   for (final item in owned)
                     ItemCard(
@@ -95,6 +96,7 @@ class WardrobeRoom extends StatelessWidget {
               ),
             ),
             ShelfGrid(
+              nested: true, // inside the closet + boutique ListView
               children: [
                 for (final item in boutique) _boutiqueCard(context, item),
               ],

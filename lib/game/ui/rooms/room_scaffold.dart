@@ -621,22 +621,32 @@ class ItemCard extends StatelessWidget {
 
 /// The standard shelf grid for item cards.
 class ShelfGrid extends StatelessWidget {
-  const ShelfGrid({required this.children, this.columns = 4, super.key});
+  const ShelfGrid({
+    required this.children,
+    this.columns = 4,
+    this.nested = false,
+    super.key,
+  });
 
   final List<Widget> children;
   final int columns;
+
+  /// True when this grid is laid out *inside a scrolling parent* (the multi-
+  /// section shop / closet `ListView`). Then it must NOT scroll on its own —
+  /// otherwise the grid's scroll physics swallow the vertical drag in its
+  /// area and the parent list can't be scrolled past the first section (the
+  /// Toy/Care/Décor shelves become unreachable by finger — the Huawei E2E
+  /// bug). When false (a standalone grid in a bounded box — kitchen pantry,
+  /// play toys, care shelf), it keeps its own scroll so overflow rows stay
+  /// reachable on short screens.
+  final bool nested;
 
   @override
   Widget build(BuildContext context) {
     return GridView.count(
       crossAxisCount: columns,
       shrinkWrap: true,
-      // The grid is laid out inside a scrolling parent (the shop / closet
-      // ListView). Without this, the grid's own scroll physics swallow the
-      // vertical drag in its area, so the parent list can't be scrolled past
-      // the first section — the Toy/Care/Décor shelves become unreachable by
-      // finger. NeverScrollable lets drags fall through to the parent.
-      physics: const NeverScrollableScrollPhysics(),
+      physics: nested ? const NeverScrollableScrollPhysics() : null,
       padding: EdgeInsets.zero,
       mainAxisSpacing: 6,
       crossAxisSpacing: 6,

@@ -72,7 +72,7 @@ class KeepsakeFactory {
     pet,
     KeepsakeKind.unpromptedComfort,
     '${nowMs ~/ Duration.millisecondsPerDay}',
-    'A quiet, gentle moment with ${pet.name}. 💛',
+    'A quiet, gentle moment with ${pet.name}. 💗',
     nowMs,
   );
 

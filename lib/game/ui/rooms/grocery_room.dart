@@ -86,6 +86,7 @@ class GroceryRoom extends StatelessWidget {
                 ),
               ),
               ShelfGrid(
+                nested: true, // inside the multi-section shop ListView
                 children: [
                   for (final item in items.where((i) => i.purchasable))
                     _shelfCard(item),
