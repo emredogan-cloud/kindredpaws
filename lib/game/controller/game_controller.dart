@@ -1199,7 +1199,13 @@ class GameController extends ChangeNotifier {
         context: 'persist',
       );
     }
-    await _publishSnapshot(save);
+    // Best-effort by contract: a snapshot/home-widget platform failure must
+    // never escape into the fire-and-forget gameplay callers (KP-020).
+    try {
+      await _publishSnapshot(save);
+    } catch (e, st) {
+      observability.recordError(e, st, context: 'publish_snapshot');
+    }
   }
 
   /// Writes the single shared status snapshot (§6.1) that feeds the notification
