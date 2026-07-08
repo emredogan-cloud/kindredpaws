@@ -210,6 +210,18 @@ class GameController extends ChangeNotifier {
   /// [_endSession] after the `sessionQuality` beat is emitted.
   int? _sessionStartMs;
 
+  /// Last instant the session was provably alive (session start + every
+  /// persist-worthy action). Lets [onAppForegrounded] detect a session that
+  /// was REALLY backgrounded even though the embedder only delivered
+  /// `hidden` (KP-021): a stale "active" session is closed and re-resolved
+  /// instead of silently skipping catch-up + greeting.
+  int _lastAliveMs = 0;
+
+  /// Foregrounding an "active" session after a gap this large means the
+  /// lifecycle stream lied (hidden-only background) — resolve for real.
+  /// Generous: a notification-shade peek or app-switcher glance is seconds.
+  static const int kStaleSessionGapMs = 5 * 60 * 1000;
+
   /// Wall-clock (ms) the Rescue Day onboarding began (first beat), for the
   /// activation-funnel timing. Null before onboarding starts.
   int? _onboardingStartMs;
@@ -380,6 +392,7 @@ class GameController extends ChangeNotifier {
     );
     _session = SessionInteractions.empty;
     _sessionStartMs = now;
+    _lastAliveMs = now;
     lastInteraction = null;
     ambientEmotion = null;
     _personality = PersonalityProfile.neutral;
@@ -1084,6 +1097,7 @@ class GameController extends ChangeNotifier {
     );
     _session = SessionInteractions.empty;
     _sessionStartMs = _now();
+    _lastAliveMs = _now();
     lastInteraction = null;
     ambientEmotion = null;
     _mood = resume.mood;
@@ -1157,7 +1171,16 @@ class GameController extends ChangeNotifier {
   /// (`_sessionStartMs != null`): a transient `resumed` after `inactive` (no real
   /// background) must not re-resolve catch-up or re-greet (P3-8 audit finding).
   void onAppForegrounded() {
-    if (!hasPet || _sessionStartMs != null) return;
+    if (!hasPet) return;
+    if (_sessionStartMs != null) {
+      // A session is nominally still active. If it went quiet only moments
+      // ago this is a transient blip (inactive → resumed) — keep it. If it
+      // has been silent for a real gap, the platform backgrounded us with
+      // only `hidden` (no `paused`) — close the stale session at its last
+      // provably-alive instant and fall through to a fresh resolve (KP-021).
+      if (_now() - _lastAliveMs < kStaleSessionGapMs) return;
+      _endSession(endMs: _lastAliveMs);
+    }
     _resumeSession();
     // The fresh kindness slate + season-day count must stick even if the
     // session ends abruptly (they're not derivable after the fact).
@@ -1176,12 +1199,13 @@ class GameController extends ChangeNotifier {
   /// Emits the deferred `sessionQuality` summary (the daily-retention lever):
   /// `empty=false` ⇔ the player did ≥1 care interaction this session. No-op if
   /// no session is active (guards double-emit). See [ObservabilityFacade].
-  void _endSession() {
+  void _endSession({int? endMs}) {
     final start = _sessionStartMs;
     if (start == null) return;
+    final end = endMs ?? _now();
     observability.recordSessionQuality(
       interactions: _session.total,
-      durationSeconds: ((_now() - start) / 1000).round(),
+      durationSeconds: ((end - start) / 1000).clamp(0, 1 << 32).round(),
     );
     _sessionStartMs = null;
   }
@@ -1205,6 +1229,8 @@ class GameController extends ChangeNotifier {
   Future<void> _persist() async {
     final save = _save;
     if (save == null) return;
+    // Every persist-worthy action proves the session alive (KP-021).
+    _lastAliveMs = _now();
     // Belt-and-braces for KP-010: never write while a quarantined save is
     // pending recovery (there is no in-memory save then, but keep the guard).
     if (recovery != null) return;
