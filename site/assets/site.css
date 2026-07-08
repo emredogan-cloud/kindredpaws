@@ -1,0 +1,49 @@
+/* KindredPaws legal/support pages — matches the app's cozy palette. */
+:root {
+  --cream: #fff6ec;
+  --card: #fffbf5;
+  --ink: #4a3f38;
+  --soft: #7a6a58;
+  --accent: #b5836d;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--cream);
+  color: var(--ink);
+  font: 17px/1.65 Georgia, 'Times New Roman', serif;
+}
+main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 40px 24px 72px;
+}
+header.site {
+  text-align: center;
+  padding: 40px 16px 8px;
+}
+header.site a { color: var(--ink); text-decoration: none; }
+h1 { font-size: 1.9rem; line-height: 1.25; margin: 0.4em 0; }
+h2 { font-size: 1.25rem; margin-top: 2em; color: var(--ink); }
+p.meta { color: var(--soft); font-size: 0.92rem; }
+a { color: var(--accent); }
+table { border-collapse: collapse; width: 100%; font-size: 0.95rem; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #eaddcf; vertical-align: top; }
+th { color: var(--soft); font-weight: 600; }
+ul { padding-left: 1.2em; }
+li { margin: 0.35em 0; }
+.card {
+  background: var(--card);
+  border: 1px solid #f0e4d6;
+  border-radius: 16px;
+  padding: 20px 24px;
+  margin: 16px 0;
+}
+footer {
+  color: var(--soft);
+  font-size: 0.88rem;
+  text-align: center;
+  padding: 24px 16px 48px;
+}
+footer a { color: var(--soft); }
+nav.crumbs { font-size: 0.92rem; margin-bottom: 24px; }

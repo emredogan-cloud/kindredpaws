@@ -35,6 +35,7 @@ import '../services/prefs_service.dart';
 import '../services/live_ops.dart';
 import '../services/remote_config_service.dart';
 import '../services/home_widget_service.dart';
+import '../services/link_opener.dart';
 import '../services/share_service.dart';
 import '../monetization/billing_service.dart';
 import '../services/status_snapshot_service.dart';
@@ -86,6 +87,9 @@ AppConfig bootstrap({
     FeelService(prefs: prefsService, audio: NoopAudioSink()),
   );
   sl.registerSingleton<ShareService>(const NoopShareService());
+  // Legal/support links (KP-003/KP-004). Recording default keeps tests
+  // hermetic; main() swaps in the url_launcher implementation.
+  sl.registerSingleton<LinkOpener>(RecordingLinkOpener());
   // Closed-beta feedback hook (P3-7). Noop default keeps dev/CI offline; the
   // backend-backed impl is swapped in once a real backend is wired (below).
   sl.registerSingleton<FeedbackService>(const NoopFeedbackService());

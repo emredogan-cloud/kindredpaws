@@ -13,10 +13,13 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../../core/legal_links.dart';
+import '../../core/service_locator.dart';
 import '../../monetization/entitlements.dart';
 import '../../monetization/monetization_controller.dart';
 import '../../monetization/paywall_controller.dart';
 import '../../monetization/product_catalog.dart';
+import '../../services/link_opener.dart';
 import 'widgets/cozy.dart';
 
 /// Opens the paywall as a modal sheet, logging `shown` on open + `dismissed` on
@@ -163,6 +166,13 @@ class _PaywallSheetState extends State<PaywallSheet> {
                       busy: _busy,
                       onBuy: _buy,
                     ),
+                  // Apple 3.1.2 point-of-sale disclosures (KP-003): the
+                  // auto-renewal terms + functional Terms/Privacy links must
+                  // sit adjacent to the purchase controls.
+                  if (!entitled) ...[
+                    const SizedBox(height: 10),
+                    const _SubscriptionDisclosures(),
+                  ],
                   const SizedBox(height: 12),
                   const _EthicalWallNote(),
                   // Bundle sections render only for products in the LAUNCH
@@ -373,6 +383,67 @@ class _BundleSection extends StatelessWidget {
               onTap: busy ? null : () => onBuy(p),
             ),
           ),
+      ],
+    );
+  }
+}
+
+/// The legally-required subscription disclosures at the point of sale
+/// (Apple 3.1.2 / Play equivalent — KP-003): auto-renewal terms in plain
+/// words, plus working Terms-of-Use and Privacy-Policy links.
+class _SubscriptionDisclosures extends StatelessWidget {
+  const _SubscriptionDisclosures();
+
+  Future<void> _open(BuildContext context, String url) async {
+    final ok = await ServiceLocator.instance.get<LinkOpener>().open(url);
+    if (!ok && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not open the page — it lives at $url')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final small = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+    );
+    return Column(
+      key: const Key('paywall-disclosures'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Subscriptions renew automatically. Payment is charged to your '
+          'App Store or Google Play account at purchase confirmation, and '
+          'renewal is charged within 24 hours before the period ends unless '
+          'cancelled at least 24 hours before then. Manage or cancel anytime '
+          'in your store account settings.',
+          style: small,
+        ),
+        Row(
+          children: [
+            TextButton(
+              key: const Key('paywall-terms-link'),
+              style: TextButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+              ),
+              onPressed: () => _open(context, kTermsOfUseUrl),
+              child: const Text('Terms of Use'),
+            ),
+            Text('·', style: small),
+            TextButton(
+              key: const Key('paywall-privacy-link'),
+              style: TextButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+              ),
+              onPressed: () => _open(context, kPrivacyPolicyUrl),
+              child: const Text('Privacy Policy'),
+            ),
+          ],
+        ),
       ],
     );
   }

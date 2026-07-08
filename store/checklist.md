@@ -20,7 +20,12 @@ version-controlled metadata; the credentialed store steps are founder actions.
 
 ## Privacy + compliance (gate)
 - [x] Data Safety / privacy nutrition labels drafted (`store/privacy/data_safety.md`)
-- [ ] Public privacy policy URL + support URL live (founder)
+- [ ] Public privacy policy URL + support URL live — pages authored in `site/`
+      (privacy/terms/support), deploy workflow `.github/workflows/pages.yml`
+      ready, URLs wired in-app (`lib/core/legal_links.dart`) + in
+      `metadata/en-US/privacy_url.txt`/`support_url.txt` (KP-003/KP-004).
+      **Founder:** enable GitHub Pages (Settings → Pages → Source: GitHub
+      Actions) and have counsel review the pages (F-2/F-7).
 - [ ] **G3 child-directedness legal sign-off** (Open Decision #9) — blocks listing;
       drives "Made for Kids" / age rating / Kids-category choice
 - [ ] Age rating questionnaires completed from `data_safety.md` inputs

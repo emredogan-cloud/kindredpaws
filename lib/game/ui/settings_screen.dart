@@ -8,8 +8,10 @@ library;
 import 'package:flutter/material.dart';
 
 import '../../core/kindred_terms.dart';
+import '../../core/legal_links.dart';
 import '../../core/service_locator.dart';
 import '../../services/feel_service.dart';
+import '../../services/link_opener.dart';
 import '../../services/prefs_service.dart';
 import '../controller/game_controller.dart';
 import '../model/bond.dart';
@@ -100,6 +102,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           _sectionLabel('Privacy'),
           ListTile(
+            key: const Key('settings-privacy-policy'),
+            leading: const Icon(Icons.privacy_tip_outlined),
+            title: const Text('Privacy Policy'),
+            subtitle: const Text('What we collect (very little), and why'),
+            onTap: () => _openLink(kPrivacyPolicyUrl),
+          ),
+          ListTile(
+            key: const Key('settings-terms'),
+            leading: const Icon(Icons.description_outlined),
+            title: const Text('Terms of Use'),
+            onTap: () => _openLink(kTermsOfUseUrl),
+          ),
+          ListTile(
+            key: const Key('settings-support'),
+            leading: const Icon(Icons.support_agent_rounded),
+            title: const Text('Support'),
+            subtitle: const Text('Get help or report a problem'),
+            onTap: () => _openLink(kSupportUrl),
+          ),
+          ListTile(
             key: const Key('settings-delete'),
             leading: const Icon(Icons.delete_outline_rounded),
             title: const Text('Delete my data'),
@@ -128,6 +150,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  /// Opens a legal/support page in the external browser (KP-004); a failure
+  /// surfaces gently instead of dead-ending the tap.
+  Future<void> _openLink(String url) async {
+    final ok = await ServiceLocator.instance.get<LinkOpener>().open(url);
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not open the page — it lives at $url')),
+      );
+    }
   }
 
   Widget _sectionLabel(String text) => Padding(

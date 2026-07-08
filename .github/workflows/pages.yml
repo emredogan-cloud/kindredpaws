@@ -1,0 +1,39 @@
+name: Pages
+
+# Deploys the legal/support pages in `site/` (Privacy Policy, Terms, Support —
+# KP-003/KP-004) to GitHub Pages. These URLs are referenced by the app
+# (lib/core/legal_links.dart), the paywall disclosures, and the store metadata,
+# so they must stay live. Founder one-time step: enable Pages with the
+# "GitHub Actions" source in repo Settings if the first run reports Pages
+# is not enabled (FOUNDER_ACTIONS_TODO.md F-7).
+on:
+  push:
+    branches: [main, develop]
+    paths: ["site/**", ".github/workflows/pages.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy site/ to GitHub Pages
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deployment
+        uses: actions/deploy-pages@v4

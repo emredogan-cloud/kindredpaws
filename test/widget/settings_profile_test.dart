@@ -10,6 +10,8 @@ import 'package:kindredpaws/game/model/species.dart';
 import 'package:kindredpaws/game/ui/rooms/room_host.dart';
 import 'package:kindredpaws/game/ui/settings_screen.dart';
 import 'package:kindredpaws/services/prefs_service.dart';
+import 'package:kindredpaws/core/legal_links.dart';
+import 'package:kindredpaws/services/link_opener.dart';
 
 import '../support/harness.dart';
 import '../support/room_test_utils.dart';
@@ -67,6 +69,29 @@ void main() {
     expect(prefs.notificationsEnabled, isFalse);
   });
 
+  testWidgets('legal links: Privacy / Terms / Support open externally '
+      '(KP-004)', (tester) async {
+    phoneView(tester);
+    final c = makeController();
+    await c.load();
+    await c.adopt(species: Species.puppy, name: 'Biscuit');
+    final opener =
+        ServiceLocator.instance.get<LinkOpener>() as RecordingLinkOpener;
+    await tester.pumpWidget(MaterialApp(home: SettingsScreen(controller: c)));
+
+    for (final (key, url) in [
+      ('settings-privacy-policy', kPrivacyPolicyUrl),
+      ('settings-terms', kTermsOfUseUrl),
+      ('settings-support', kSupportUrl),
+    ]) {
+      await tester.scrollUntilVisible(find.byKey(Key(key)), 120);
+      await tester.tap(find.byKey(Key(key)));
+      await tester.pump();
+      expect(opener.opened.last, url);
+    }
+    c.dispose();
+  });
+
   testWidgets('delete flow: cancel keeps everything; double-confirm starts '
       'over at Rescue Day', (tester) async {
     phoneView(tester);
@@ -77,7 +102,14 @@ void main() {
     await tester.pumpWidget(MaterialApp(home: SettingsScreen(controller: c)));
     await tester.pumpAndSettle();
 
-    // First path: bail at the second confirm — nothing lost.
+    // First path: bail at the second confirm — nothing lost. (The Privacy
+    // section grew legal-link tiles above it — scroll the tile into view.)
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('settings-delete')),
+      120,
+    );
+    await tester.ensureVisible(find.byKey(const Key('settings-delete')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('settings-delete')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('delete-continue')));

@@ -14,6 +14,9 @@ import 'package:kindredpaws/services/logger.dart';
 import 'package:kindredpaws/services/observability.dart';
 import 'package:kindredpaws/services/performance_monitor.dart';
 import 'package:kindredpaws/services/remote_config_service.dart';
+import 'package:kindredpaws/core/legal_links.dart';
+import 'package:kindredpaws/core/service_locator.dart';
+import 'package:kindredpaws/services/link_opener.dart';
 
 PaywallController _controller() {
   final obs = ObservabilityFacade(
@@ -63,6 +66,41 @@ void main() {
     expect(find.text('Heartstones'), findsNothing);
     expect(find.text('Rescue Bundles'), findsNothing);
     expect(find.textContaining('goes to real rescues'), findsNothing);
+  });
+
+  testWidgets('POS disclosures: auto-renew terms + working Terms/Privacy '
+      'links sit beside the plans (KP-003)', (tester) async {
+    ServiceLocator.instance.reset();
+    final opener = RecordingLinkOpener();
+    ServiceLocator.instance.registerSingleton<LinkOpener>(opener);
+    await _pumpSheet(tester, _controller());
+
+    expect(find.byKey(const Key('paywall-disclosures')), findsOneWidget);
+    expect(find.textContaining('renew automatically'), findsOneWidget);
+    expect(
+      find.textContaining('cancel anytime', findRichText: true),
+      findsWidgets,
+    );
+
+    await tester.tap(find.byKey(const Key('paywall-terms-link')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('paywall-privacy-link')));
+    await tester.pump();
+    expect(opener.opened, [kTermsOfUseUrl, kPrivacyPolicyUrl]);
+  });
+
+  testWidgets('disclosures hide once entitled (no plans on screen)', (
+    tester,
+  ) async {
+    ServiceLocator.instance.reset();
+    ServiceLocator.instance.registerSingleton<LinkOpener>(
+      RecordingLinkOpener(),
+    );
+    await _pumpSheet(tester, _controller());
+    await tester.tap(find.byKey(const Key('paywall-plan-monthly')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('paywall-entitled')), findsOneWidget);
+    expect(find.byKey(const Key('paywall-disclosures')), findsNothing);
   });
 
   testWidgets('buying the monthly plan flips to the entitled state', (

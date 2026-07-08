@@ -46,6 +46,12 @@ Legend: 🔴 gates any legitimate submission · 🟠 gates public launch quality
 **Why founder:** legal agreements + money movement (open decisions #4/#5).
 **Engineering readiness:** ledger seams + Rescue Wall UI remain behind flags; copy re-add is trivial once claims become literally true.
 
+## 🔴 F-6b · Enable GitHub Pages for the legal/support site (2 minutes) — KP-004
+
+**What:** Repo Settings → Pages → Source: **GitHub Actions**. Then run the `Pages` workflow (or push anything under `site/`). The Privacy Policy, Terms, and Support pages are fully authored in `site/`, the deploy workflow exists (`.github/workflows/pages.yml`), and the app + store metadata already point at the final URLs (`https://emredogan-cloud.github.io/kindredpaws/{privacy,terms,support}/`).
+**Why founder:** the harness guard blocks the agent from creating a new public web surface (attempted via `gh api .../pages`, denied 2026-07-09). Counsel review of the page content remains part of F-2/F-6.
+**Roadmap:** KP-004 (everything else in its DoD is engineering-complete).
+
 ## 🔴 F-7 · Store listing assets & consoles (KP-008 / KP-051)
 
 **What:** App Store Connect + Play Console access; upload final icon/screenshots (engineering produces candidates after R4); complete age/content questionnaires **consistent with F-2**; App Privacy / Data Safety labels **against the provisioned posture**; review notes.

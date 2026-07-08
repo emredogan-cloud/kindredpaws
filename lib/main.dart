@@ -25,6 +25,7 @@ import 'services/prefs_service.dart';
 import 'services/firebase_provisioning.dart';
 import 'services/firebase/firebase_services.dart';
 import 'services/home_widget_service.dart';
+import 'services/link_opener.dart';
 import 'services/live_ops.dart';
 import 'services/local_notification_scheduler.dart';
 import 'services/logger.dart';
@@ -62,6 +63,9 @@ Future<void> main() async {
   sl.registerSingleton<FeelService>(
     FeelService(prefs: prefsService, audio: AudioplayersSink()),
   );
+  // Real outbound links for the legally-required Privacy/Terms/Support pages
+  // (KP-003/KP-004) — same production-swap idiom.
+  sl.registerSingleton<LinkOpener>(const UrlLauncherLinkOpener());
 
   // Real Firebase stack (P3-0): activates ONLY when provisioned
   // (KP_FIREBASE_PROVISIONED + flutterfire configure). Otherwise the mock/
