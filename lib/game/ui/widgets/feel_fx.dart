@@ -14,6 +14,7 @@ import '../../controller/game_controller.dart';
 import '../../model/bond.dart';
 import '../../sim/interaction.dart';
 import 'cozy.dart';
+import '../kp_tokens.dart';
 
 enum BurstKind { crumbs, sparkles, hearts, confetti }
 
@@ -87,7 +88,7 @@ class _BurstPainter extends CustomPainter {
         case BurstKind.sparkles:
           final r = 3.0 + 2.5 * _f(h, 16);
           final paint = Paint()
-            ..color = const Color(0xFFFFE9A8).withValues(alpha: fade)
+            ..color = KpColors.sunGold.withValues(alpha: fade)
             ..strokeWidth = 2
             ..strokeCap = StrokeCap.round;
           canvas.drawLine(p.translate(-r, 0), p.translate(r, 0), paint);
@@ -124,7 +125,7 @@ class _BurstPainter extends CustomPainter {
     Color(0xFF8AB17D),
     Color(0xFF9CC8E0),
     Color(0xFFE98FA5),
-    Color(0xFFFFE9A8),
+    KpColors.sunGold,
   ];
 
   void _heart(Canvas canvas, Offset c, double r, Color color) {

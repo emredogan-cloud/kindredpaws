@@ -9,6 +9,7 @@ import '../../controller/game_controller.dart';
 import '../../model/decor.dart';
 import '../../model/items.dart';
 import '../../rooms/room_id.dart';
+import '../kp_tokens.dart';
 
 /// Placed décor stickers composed into the room scene (decorative layer —
 /// pointer-transparent; the sheet carries the accessible interaction).
@@ -76,7 +77,7 @@ class DecorateButton extends StatelessWidget {
       button: true,
       label: 'Decorate the ${room.displayName}',
       child: Material(
-        color: const Color(0xFFFFFBF5).withValues(alpha: 0.85),
+        color: KpColors.card.withValues(alpha: 0.85),
         shape: const CircleBorder(),
         elevation: 2,
         child: InkWell(
@@ -100,7 +101,7 @@ void showDecorateSheet(
 ) {
   showModalBottomSheet<void>(
     context: context,
-    backgroundColor: const Color(0xFFFFFBF5),
+    backgroundColor: KpColors.card,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
@@ -161,9 +162,7 @@ class _SlotRow extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.7),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: const Color(0xFFE9A178).withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: KpColors.peach.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

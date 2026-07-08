@@ -3,6 +3,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import '../../kp_tokens.dart';
 
 class NeedGlow extends StatelessWidget {
   const NeedGlow({
@@ -31,7 +32,7 @@ class NeedGlow extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 15, color: const Color(0xFF7A6A58)),
+          Icon(icon, size: 15, color: KpColors.taupe),
           const SizedBox(width: 4),
           ClipRRect(
             borderRadius: BorderRadius.circular(6),

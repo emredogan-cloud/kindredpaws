@@ -18,6 +18,7 @@ import '../../rooms/room_id.dart';
 import '../paywall_sheet.dart';
 import '../widgets/cozy.dart';
 import 'room_scaffold.dart';
+import '../kp_tokens.dart';
 
 class WardrobeRoom extends StatelessWidget {
   const WardrobeRoom({
@@ -89,9 +90,9 @@ class WardrobeRoom extends StatelessWidget {
               child: Text(
                 'Boutique',
                 style: TextStyle(
-                  fontSize: 12.5,
+                  fontSize: KpText.small,
                   fontWeight: FontWeight.w800,
-                  color: Color(0xFF7A6A58),
+                  color: KpColors.taupe,
                 ),
               ),
             ),

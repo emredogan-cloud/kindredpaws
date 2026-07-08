@@ -10,6 +10,7 @@ import '../../core/name_input_validator.dart';
 import '../controller/game_controller.dart';
 import '../model/species.dart';
 import 'widgets/cozy.dart';
+import 'kp_tokens.dart';
 
 class RescueDayScreen extends StatefulWidget {
   const RescueDayScreen({required this.controller, super.key});
@@ -76,7 +77,7 @@ class _RescueDayScreenState extends State<RescueDayScreen> {
               child: Container(
                 padding: const EdgeInsets.fromLTRB(22, 26, 22, 22),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFFBF5).withValues(alpha: 0.93),
+                  color: KpColors.card.withValues(alpha: 0.93),
                   borderRadius: BorderRadius.circular(28),
                   boxShadow: [
                     BoxShadow(

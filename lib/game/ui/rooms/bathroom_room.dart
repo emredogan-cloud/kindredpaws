@@ -20,6 +20,7 @@ import 'decor_ui.dart';
 import 'room_host.dart' show kRoomDockClearance;
 import 'room_scaffold.dart' show DressedPet;
 import 'widgets/need_glow.dart';
+import '../kp_tokens.dart';
 
 class BathroomRoom extends StatefulWidget {
   const BathroomRoom({
@@ -226,7 +227,7 @@ class _PottyButton extends StatelessWidget {
           button: true,
           label: 'Potty break',
           child: Material(
-            color: const Color(0xFFFFF6EC),
+            color: KpColors.cream,
             shape: const CircleBorder(),
             elevation: 2,
             child: InkWell(
@@ -248,10 +249,10 @@ class _PottyButton extends StatelessWidget {
           'Potty break',
           style: Theme.of(context).textTheme.labelMedium?.copyWith(
             fontWeight: FontWeight.w700,
-            color: const Color(0xFF4A3F38),
+            color: KpColors.ink,
             shadows: const [
-              Shadow(color: Color(0xE6FFF6EC), blurRadius: 6),
-              Shadow(color: Color(0xE6FFF6EC), blurRadius: 3),
+              Shadow(color: KpColors.creamVeil, blurRadius: 6),
+              Shadow(color: KpColors.creamVeil, blurRadius: 3),
             ],
           ),
         ),
@@ -314,7 +315,7 @@ class _SparklePainter extends CustomPainter {
     final center = size.center(Offset.zero);
     final radius = size.shortestSide * (0.3 + 0.35 * t);
     final paint = Paint()
-      ..color = const Color(0xFFFFE9A8).withValues(alpha: (1 - t))
+      ..color = KpColors.sunGold.withValues(alpha: (1 - t))
       ..strokeWidth = 2.4
       ..strokeCap = StrokeCap.round;
     for (var i = 0; i < 8; i++) {

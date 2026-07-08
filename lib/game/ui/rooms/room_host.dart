@@ -21,6 +21,7 @@ import '../widgets/ambient_life_driver.dart';
 import '../widgets/cozy.dart';
 import '../widgets/feel_fx.dart';
 import 'room_registry.dart';
+import '../kp_tokens.dart';
 
 /// Vertical space rooms must leave free at the bottom so content never sits
 /// under the floating room dock.
@@ -230,7 +231,7 @@ class _RoomHostState extends State<RoomHost> {
                           'Swipe to explore your whole home  ⟷',
                           style: TextStyle(
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF4A3F38),
+                            color: KpColors.ink,
                           ),
                         ),
                       ),
@@ -315,11 +316,11 @@ class _RoomDockState extends State<_RoomDock> {
       height: 78,
       margin: const EdgeInsets.fromLTRB(10, 0, 10, 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFBF5).withValues(alpha: 0.90),
+        color: KpColors.card.withValues(alpha: 0.90),
         borderRadius: BorderRadius.circular(26),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFE9A178).withValues(alpha: 0.22),
+            color: KpColors.peach.withValues(alpha: 0.22),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -359,9 +360,7 @@ class _RoomDockState extends State<_RoomDock> {
                       child: Icon(
                         room.icon,
                         size: 24,
-                        color: selected
-                            ? scheme.onPrimary
-                            : const Color(0xFF4A3F38),
+                        color: selected ? scheme.onPrimary : KpColors.ink,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -372,11 +371,11 @@ class _RoomDockState extends State<_RoomDock> {
                       style: TextStyle(
                         // ≥11pt for comfortable legibility before low-vision
                         // scaling (KP-028; was 9.5).
-                        fontSize: 11.5,
+                        fontSize: KpText.caption,
                         fontWeight: selected
                             ? FontWeight.w800
                             : FontWeight.w600,
-                        color: const Color(0xFF4A3F38),
+                        color: KpColors.ink,
                       ),
                     ),
                   ],
@@ -401,7 +400,7 @@ class _CozyDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      backgroundColor: const Color(0xFFFFF6EC),
+      backgroundColor: KpColors.cream,
       child: SafeArea(
         child: ListView(
           padding: const EdgeInsets.symmetric(vertical: 8),

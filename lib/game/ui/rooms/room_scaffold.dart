@@ -21,6 +21,7 @@ import '../widgets/cozy.dart';
 import '../widgets/feel_fx.dart';
 import 'decor_ui.dart';
 import 'room_host.dart' show kRoomDockClearance;
+import '../kp_tokens.dart';
 
 /// A room's canvas: full-bleed scene, an optional warm tint that gives the
 /// room its own light, the pet living mid-scene, and the room content below.
@@ -217,7 +218,7 @@ class _PulseChipState extends State<_PulseChip>
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFE9A178).withValues(alpha: 0.3),
+            color: KpColors.peach.withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 3),
           ),
@@ -466,11 +467,11 @@ class ShelfPanel extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(12, 8, 12, 4),
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFBF5).withValues(alpha: 0.92),
+        color: KpColors.card.withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFE9A178).withValues(alpha: 0.20),
+            color: KpColors.peach.withValues(alpha: 0.20),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -489,7 +490,7 @@ class ShelfPanel extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w800,
-                    color: const Color(0xFF4A3F38),
+                    color: KpColors.ink,
                   ),
                 ),
               ),
@@ -540,7 +541,7 @@ class ItemCard extends StatelessWidget {
       child: Opacity(
         opacity: enabled ? 1 : 0.55,
         child: Material(
-          color: const Color(0xFFFFF6EC),
+          color: KpColors.cream,
           borderRadius: BorderRadius.circular(18),
           child: InkWell(
             key: cardKey,
@@ -575,7 +576,7 @@ class ItemCard extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF4A3F38),
+                      color: KpColors.ink,
                     ),
                   ),
                   if (badge != null) ...[

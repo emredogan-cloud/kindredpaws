@@ -13,6 +13,7 @@ import '../../model/items.dart';
 import '../../rooms/room_id.dart';
 import '../widgets/cozy.dart';
 import 'room_scaffold.dart';
+import '../kp_tokens.dart';
 
 class GroceryRoom extends StatelessWidget {
   const GroceryRoom({
@@ -58,7 +59,7 @@ class GroceryRoom extends StatelessWidget {
               key: const Key('grocery-kibble'),
               style: const TextStyle(
                 fontWeight: FontWeight.w800,
-                color: Color(0xFF4A3F38),
+                color: KpColors.ink,
               ),
             ),
           ],
@@ -79,9 +80,9 @@ class GroceryRoom extends StatelessWidget {
                 child: Text(
                   label,
                   style: const TextStyle(
-                    fontSize: 12.5,
+                    fontSize: KpText.small,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFF7A6A58),
+                    color: KpColors.taupe,
                   ),
                 ),
               ),
@@ -152,9 +153,7 @@ class _WishJar extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.75),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: const Color(0xFFE9A178).withValues(alpha: 0.35),
-        ),
+        border: Border.all(color: KpColors.peach.withValues(alpha: 0.35)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -177,7 +176,7 @@ class _WishJar extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontWeight: FontWeight.w800,
-                      fontSize: 12.5,
+                      fontSize: KpText.small,
                     ),
                   ),
                 ),
@@ -197,7 +196,7 @@ class _WishJar extends StatelessWidget {
               key: const Key('wish-jar-progress'),
               value: progress,
               minHeight: 6,
-              backgroundColor: const Color(0xFFE9A178).withValues(alpha: 0.15),
+              backgroundColor: KpColors.peach.withValues(alpha: 0.15),
             ),
           ),
         ],

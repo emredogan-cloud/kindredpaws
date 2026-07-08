@@ -19,6 +19,7 @@ import '../model/items.dart';
 import '../model/life_stage.dart';
 import '../model/species.dart';
 import 'widgets/cozy.dart';
+import 'kp_tokens.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({required this.controller, super.key});
@@ -37,7 +38,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: const Key('settings-screen'),
-      backgroundColor: const Color(0xFFFFF6EC),
+      backgroundColor: KpColors.cream,
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 8),
@@ -170,7 +171,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       style: const TextStyle(
         fontWeight: FontWeight.w800,
         fontSize: 13,
-        color: Color(0xFF7A6A58),
+        color: KpColors.taupe,
       ),
     ),
   );
@@ -255,7 +256,7 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       key: const Key('profile-screen'),
-      backgroundColor: const Color(0xFFFFF6EC),
+      backgroundColor: KpColors.cream,
       appBar: AppBar(title: const Text('Our story')),
       body: ListenableBuilder(
         listenable: controller,
@@ -337,7 +338,7 @@ class ProfileScreen extends StatelessWidget {
                   style: TextStyle(
                     fontWeight: FontWeight.w800,
                     fontSize: 13,
-                    color: Color(0xFF7A6A58),
+                    color: KpColors.taupe,
                   ),
                 ),
               ),
@@ -349,7 +350,7 @@ class ProfileScreen extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontStyle: FontStyle.italic,
-                    color: Color(0xFF7A6A58),
+                    color: KpColors.taupe,
                   ),
                 ),
               ),

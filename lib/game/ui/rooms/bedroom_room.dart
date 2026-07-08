@@ -17,6 +17,7 @@ import '../widgets/ambient_scene.dart';
 import '../widgets/cozy.dart';
 import 'room_scaffold.dart';
 import 'widgets/need_glow.dart';
+import '../kp_tokens.dart';
 
 class BedroomRoom extends StatelessWidget {
   const BedroomRoom({
@@ -154,7 +155,7 @@ class _BigSoftButton extends StatelessWidget {
       button: true,
       label: label,
       child: Material(
-        color: const Color(0xFFFFFBF5).withValues(alpha: 0.92),
+        color: KpColors.card.withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(26),
         elevation: 3,
         shadowColor: const Color(0x66283B5C),

@@ -8,6 +8,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import '../kp_tokens.dart';
 
 /// Central, typed registry of premium UI asset paths. One place to rename/swap.
 abstract final class KpAssets {
@@ -176,11 +177,11 @@ class CozyChip extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 12),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFBF5).withValues(alpha: 0.86),
+        color: KpColors.card.withValues(alpha: 0.86),
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFE9A178).withValues(alpha: 0.18),
+            color: KpColors.peach.withValues(alpha: 0.18),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -262,10 +263,10 @@ class CozyImageButton extends StatelessWidget {
           label,
           style: Theme.of(context).textTheme.labelMedium?.copyWith(
             fontWeight: FontWeight.w700,
-            color: const Color(0xFF4A3F38),
+            color: KpColors.ink,
             shadows: const [
-              Shadow(color: Color(0xE6FFF6EC), blurRadius: 6),
-              Shadow(color: Color(0xE6FFF6EC), blurRadius: 3),
+              Shadow(color: KpColors.creamVeil, blurRadius: 6),
+              Shadow(color: KpColors.creamVeil, blurRadius: 3),
             ],
           ),
         ),

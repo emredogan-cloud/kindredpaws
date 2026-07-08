@@ -6,10 +6,14 @@ library;
 
 import 'package:flutter/material.dart';
 
-const _peach = Color(0xFFE9A178); // warm primary (buttons)
-const _cream = Color(0xFFFFF6EC); // warm surface
-const _scaffold = Color(0xFFFCEFE0); // warm scaffold — never white
-const _ink = Color(0xFF4A3F38); // warm dark text (not pure black)
+import 'kp_tokens.dart';
+
+// The palette now lives in the PUBLIC token set (KP-027) — one source of
+// truth for the theme AND every call site; dark mode (KP-042) re-points it.
+const _peach = KpColors.peach;
+const _cream = KpColors.cream;
+const _scaffold = KpColors.scaffold;
+const _ink = KpColors.ink;
 
 ThemeData cozyTheme() {
   final scheme = ColorScheme.fromSeed(
@@ -31,7 +35,7 @@ ThemeData cozyTheme() {
     ),
     cardTheme: CardThemeData(
       elevation: 1.5,
-      color: const Color(0xFFFFFBF5),
+      color: KpColors.card,
       shadowColor: _peach.withValues(alpha: 0.25),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
       clipBehavior: Clip.antiAlias,

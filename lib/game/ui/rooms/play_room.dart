@@ -18,6 +18,7 @@ import '../widgets/ambient_scene.dart';
 import '../widgets/cozy.dart';
 import 'room_scaffold.dart';
 import 'widgets/need_glow.dart';
+import '../kp_tokens.dart';
 
 class PlayRoom extends StatelessWidget {
   const PlayRoom({
@@ -207,7 +208,7 @@ class _GameCard extends StatelessWidget {
       button: true,
       label: label,
       child: Material(
-        color: const Color(0xFFFFF6EC),
+        color: KpColors.cream,
         borderRadius: BorderRadius.circular(18),
         child: InkWell(
           borderRadius: BorderRadius.circular(18),
@@ -227,7 +228,7 @@ class _GameCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 10.5,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFF4A3F38),
+                    color: KpColors.ink,
                   ),
                 ),
               ],

@@ -13,6 +13,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../sim/season_engine.dart';
+import '../kp_tokens.dart';
 
 enum AmbientVariant { homeMotes, kitchenSteam, bedroomStars, gardenButterflies }
 
@@ -389,7 +390,7 @@ class _AmbientPainter extends CustomPainter {
     canvas.drawCircle(
       c.translate(7.4, -5.4),
       0.9,
-      Paint()..color = const Color(0xFF4A3F38),
+      Paint()..color = KpColors.ink,
     );
     canvas.drawOval(
       Rect.fromCenter(center: c.translate(-1.5, -1), width: 8, height: 5.4),

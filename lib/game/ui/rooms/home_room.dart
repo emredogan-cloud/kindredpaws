@@ -20,6 +20,7 @@ import '../widgets/cozy.dart';
 import 'decor_ui.dart';
 import 'room_host.dart' show kRoomDockClearance;
 import 'room_scaffold.dart' show DressedPet;
+import '../kp_tokens.dart';
 
 class HomeRoom extends StatelessWidget {
   const HomeRoom({required this.controller, required this.rig, super.key});
@@ -287,7 +288,7 @@ class _KindnessInvite extends StatelessWidget {
   void _showKindnessSheet(BuildContext context, GameController controller) {
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: const Color(0xFFFFFBF5),
+      backgroundColor: KpColors.card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -359,7 +360,7 @@ class _KindnessCard extends StatelessWidget {
           border: Border.all(
             color: done
                 ? scheme.primary.withValues(alpha: 0.35)
-                : const Color(0xFFE9A178).withValues(alpha: 0.30),
+                : KpColors.peach.withValues(alpha: 0.30),
           ),
         ),
         child: Row(

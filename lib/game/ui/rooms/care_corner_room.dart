@@ -16,6 +16,7 @@ import '../../rooms/room_id.dart';
 import '../widgets/cozy.dart';
 import 'room_scaffold.dart';
 import 'widgets/need_glow.dart';
+import '../kp_tokens.dart';
 
 class CareCornerRoom extends StatelessWidget {
   const CareCornerRoom({
@@ -123,7 +124,7 @@ class _RitualButton extends StatelessWidget {
       button: true,
       label: label,
       child: Material(
-        color: const Color(0xFFFFF6EC),
+        color: KpColors.cream,
         borderRadius: BorderRadius.circular(18),
         child: InkWell(
           borderRadius: BorderRadius.circular(18),
@@ -139,9 +140,9 @@ class _RitualButton extends StatelessWidget {
                 Text(
                   label,
                   style: const TextStyle(
-                    fontSize: 11.5,
+                    fontSize: KpText.caption,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFF4A3F38),
+                    color: KpColors.ink,
                   ),
                 ),
               ],
