@@ -1,5 +1,5 @@
 name: kindredpaws
-description: "KindredPaws — emotionally intelligent AI virtual-pet mobile game (walking skeleton for environment validation only)."
+description: "KindredPaws — a cozy, child-safe virtual-companion game: adopt a rescued puppy or kitten, care for it, and grow a bond with a pet that remembers you."
 publish_to: "none"
 
 # Managed by release-please (see release-please-config.json). versionName/versionCode

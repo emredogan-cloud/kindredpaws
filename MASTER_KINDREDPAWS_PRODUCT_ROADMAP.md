@@ -1,5 +1,7 @@
 # MASTER KINDREDPAWS PRODUCT ROADMAP
 
+> **PROGRAM COMPLETE (2026-07-08) — this document is now a program record, not the active roadmap.** GE-1…GE-7 shipped (evidence: `MASTER_PRODUCT_EVOLUTION_REPORT.md`). The active execution backlog is **`PRE_RELEASE_REMEDIATION_ROADMAP.md`** (KP-001…KP-052, founder-accepted 2026-07-08); strategic phases/gates (P0–P6 / G0–G6) remain canonical in `game-os/GAME_MASTER_EXECUTION_ROADMAP.md`.
+
 **Genre Research → Product Evolution program — execution authority.**
 Date: 2026-07-02 · Branch program: `feature/genre-evolution` (stacked on PR #65) · Supersedes `MASTER_PRODUCT_ROADMAP.md` (E1–E6, completed) as the active roadmap. That document remains the record of the prior program.
 
