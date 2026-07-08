@@ -8,6 +8,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../../core/local_day.dart';
 import '../../core/name_input_validator.dart';
 import '../../data/kindred_save_state.dart';
 import '../../data/save_repository.dart';
@@ -79,6 +80,7 @@ class GameController extends ChangeNotifier {
     FeelService? feel,
     bool Function()? notificationsAllowed,
     bool Function()? southernHemisphere,
+    UtcOffsetAt utcOffsetAt = utcOffsetNone,
     void Function(int hour)? recordOpenHour,
     List<int> Function()? openHourHistogram,
     Set<String> Function()? seenHints,
@@ -92,6 +94,7 @@ class GameController extends ChangeNotifier {
        _notificationsAllowed = notificationsAllowed,
        _southern = southernHemisphere,
        _recordOpenHour = recordOpenHour,
+       _utcOffsetAt = utcOffsetAt,
        _openHourHistogram = openHourHistogram,
        _seenHints = seenHints,
        _markHintSeen = markHintSeen,
@@ -138,6 +141,14 @@ class GameController extends ChangeNotifier {
   /// Rhythm-aware notifications (GE-6): records the local open-hour and reads
   /// the on-device open-hour histogram. Null in pure-logic tests.
   final void Function(int hour)? _recordOpenHour;
+
+  /// Local calendar frame (KP-016/KP-018) — shared with the sim + scheduler
+  /// so kindness rollovers, seasons, Gotcha Day, and the rhythm histogram all
+  /// live on the player's clock.
+  final UtcOffsetAt _utcOffsetAt;
+
+  /// [_now] shifted into the local frame, for pure date math (months/days).
+  int _localNow() => toLocalFrame(_now(), _utcOffsetAt);
   final List<int> Function()? _openHourHistogram;
 
   /// First-visit verb hints (GE-6): the device-local seen-set + recorder.
@@ -358,6 +369,7 @@ class GameController extends ChangeNotifier {
       species: species,
       name: validated.isValid ? validated.sanitized : species.defaultName,
       nowMs: now,
+      utcOffsetAt: _utcOffsetAt,
     );
     _save = KindredSaveState(
       pet: pet,
@@ -927,7 +939,7 @@ class GameController extends ChangeNotifier {
 
   /// The current nature season (hemisphere-aware; pure date math).
   NatureSeason get season =>
-      seasonFor(_now(), southern: _southern?.call() ?? false);
+      seasonFor(_localNow(), southern: _southern?.call() ?? false);
 
   /// The season the rooms should dress for, or null while the founder's
   /// kill-switch holds the world neutral (instant revert, no restart).
@@ -939,7 +951,10 @@ class GameController extends ChangeNotifier {
   void _countSeasonDay() {
     final save = _save;
     if (save == null) return;
-    final key = seasonWindowKey(_now(), southern: _southern?.call() ?? false);
+    final key = seasonWindowKey(
+      _localNow(),
+      southern: _southern?.call() ?? false,
+    );
     final prior = save.seasonProgress;
     final days = prior != null && prior.windowKey == key ? prior.days + 1 : 1;
     _save = save.copyWith(
@@ -978,6 +993,7 @@ class GameController extends ChangeNotifier {
     final save = _save;
     if (save == null) return;
     final synced = _kindnessEngine.today(
+      utcOffsetAt: _utcOffsetAt,
       nowMs: _now(),
       petId: save.pet.petId,
       prior: save.kindness,
@@ -996,6 +1012,7 @@ class GameController extends ChangeNotifier {
     final save = _save;
     if (save == null) return false;
     final slate = _kindnessEngine.today(
+      utcOffsetAt: _utcOffsetAt,
       nowMs: _now(),
       petId: save.pet.petId,
       prior: save.kindness,
@@ -1051,7 +1068,7 @@ class GameController extends ChangeNotifier {
     // only (privacy-first — never a pet-save field). It's the clock's hour,
     // consistent with how the scheduler places its anchor hours, so the
     // hellos land at the household's habitual time.
-    final openHour = (_now() ~/ Duration.millisecondsPerHour) % 24;
+    final openHour = (_localNow() ~/ Duration.millisecondsPerHour) % 24;
     _recordOpenHour?.call(openHour);
     final resume = sim.resolveOnResume(
       state: save.pet,
@@ -1117,8 +1134,8 @@ class GameController extends ChangeNotifier {
     final pet = _save?.pet;
     if (pet == null) return;
     final daysSinceAdopt =
-        (_now() ~/ Duration.millisecondsPerDay) -
-        (pet.createdAtMs ~/ Duration.millisecondsPerDay);
+        localDayOf(_now(), _utcOffsetAt) -
+        localDayOf(pet.createdAtMs, _utcOffsetAt);
     final isAnniversary = daysSinceAdopt > 0 && daysSinceAdopt % 365 == 0;
 
     // Retention-milestone return (per session on the day; the dashboard counts

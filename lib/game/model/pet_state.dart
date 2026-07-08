@@ -9,6 +9,7 @@ import 'care_streak.dart';
 import 'life_stage.dart';
 import 'species.dart';
 import 'wallet.dart';
+import '../../core/local_day.dart';
 
 class PetState {
   const PetState({
@@ -81,8 +82,11 @@ class PetState {
     required Species species,
     required String name,
     required int nowMs,
+    UtcOffsetAt utcOffsetAt = utcOffsetNone,
   }) {
-    final dayEpoch = nowMs ~/ Duration.millisecondsPerDay;
+    // The adoption-day anchor lives in the player's local frame so the first
+    // "new day" flips at their midnight, consistent with the sim (KP-018).
+    final dayEpoch = localDayOf(nowMs, utcOffsetAt);
     return PetState(
       petId: petId,
       species: species,

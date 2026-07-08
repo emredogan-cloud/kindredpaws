@@ -6,6 +6,7 @@ import 'core/app_config.dart';
 import 'core/app_instrumentation.dart';
 import 'core/bootstrap.dart';
 import 'core/kindred_terms.dart';
+import 'core/local_day.dart';
 import 'core/performance_budgets.dart';
 import 'core/service_locator.dart';
 import 'data/prefs_save_store.dart';
@@ -86,6 +87,9 @@ Future<void> main() async {
   final observability = sl.get<ObservabilityFacade>();
   final notifications = LocalNotificationScheduler(
     sink: FlutterLocalNotificationsSink(),
+    // Anchors on the player's LOCAL wall clock (KP-016) — a "10am hello"
+    // means 10am here, in every timezone, across DST.
+    logic: InMemoryNotificationScheduler(utcOffsetAt: deviceUtcOffsetAt),
     liveOps: sl.get<LiveOps>(),
   );
   await notifications.initialize(
@@ -98,7 +102,14 @@ Future<void> main() async {
   // iOS) — never awaited, so a user-interactive dialog can't block boot.
   unawaited(notifications.requestPermission());
 
-  final controller = createGameController(sl: sl, store: PrefsSaveStore());
+  // The device's local calendar frame (KP-016/KP-018): streak days, the
+  // daily bonus, kindness rollovers, and seasons flip at the player's
+  // midnight, not UTC's.
+  final controller = createGameController(
+    sl: sl,
+    store: PrefsSaveStore(),
+    utcOffsetAt: deviceUtcOffsetAt,
+  );
   // The vector rig follows the adopted species (puppy ↔ kitten) — a
   // production re-bind in the same idiom as the home-widget/notification
   // swaps above. The Rive/placeholder backends ignore the resolver.

@@ -34,6 +34,15 @@ class LocalNotificationScheduler implements NotificationScheduler {
 
   bool get _killed => _liveOps?.isKilled(LiveFeature.notifications) ?? false;
 
+  /// OS ids currently mirrored, per domain (KP-017). Presence re-arms cancel
+  /// exactly [_presenceIds]; queued event notifications keep their slots.
+  final Set<int> _presenceIds = {};
+  final Set<int> _eventIds = {};
+
+  /// Monotonic salt so event ids stay unique + stable across presence
+  /// re-arms (a list index would shift when the presence set is replaced).
+  int _eventSalt = 0;
+
   /// Initialise the device binding (channels/categories/tz/tap handler). Call
   /// once at startup, before scheduling.
   Future<void> initialize({void Function(String? payload)? onTap}) =>
@@ -61,7 +70,10 @@ class LocalNotificationScheduler implements NotificationScheduler {
       await cancelAll();
       return;
     }
-    // Recompute the warm set, then mirror it to the OS (replace the prior set).
+    // Recompute the warm presence set (the logic layer preserves queued
+    // events), then mirror it to the OS — replacing ONLY the presence domain.
+    // `cancelAll()` here used to wipe pending celebration/streak
+    // notifications before they could fire (KP-017).
     await _logic.scheduleDailyPresence(
       petName: petName,
       fromMs: fromMs,
@@ -69,10 +81,17 @@ class LocalNotificationScheduler implements NotificationScheduler {
       days: days,
       preferredHours: preferredHours,
     );
-    await _sink.cancelAll();
+    for (final id in _presenceIds) {
+      await _sink.cancel(id);
+    }
+    _presenceIds.clear();
     var i = 0;
-    for (final n in _logic.scheduled) {
-      await _sink.schedule(_idFor(n, i++), n, payload: _payloadFor(n));
+    for (final n in _logic.scheduled.where(
+      (n) => kPresenceKinds.contains(n.kind),
+    )) {
+      final id = _idFor(n, i++);
+      _presenceIds.add(id);
+      await _sink.schedule(id, n, payload: _payloadFor(n));
     }
   }
 
@@ -91,25 +110,31 @@ class LocalNotificationScheduler implements NotificationScheduler {
       atMs: atMs,
       detail: detail,
     );
-    // The logic appends (or drops on a full day). Mirror only the new one.
+    // The logic appends (or drops on a full day). Mirror only the new one,
+    // with a monotonic salt so its id survives presence re-arms (KP-017).
     final after = _logic.scheduled;
     if (after.length > before) {
       final n = after.last;
-      await _sink.schedule(_idFor(n, after.length), n, payload: _payloadFor(n));
+      final id = _idFor(n, _eventSalt++) | 0x40000000; // disjoint event range
+      _eventIds.add(id);
+      await _sink.schedule(id, n, payload: _payloadFor(n));
     }
   }
 
   @override
   Future<void> cancelAll() async {
     await _logic.cancelAll();
+    _presenceIds.clear();
+    _eventIds.clear();
     await _sink.cancelAll();
   }
 
-  /// A stable 31-bit notification id (truncated to the minute so re-scheduling
-  /// the same slot replaces it). [salt] decorrelates same-minute slots.
+  /// A stable 30-bit notification id (truncated to the minute so re-scheduling
+  /// the same slot replaces it). [salt] decorrelates same-minute slots; the
+  /// event domain sets bit 30 so the two id spaces can never collide.
   int _idFor(PetNotification n, int salt) =>
       ((n.whenMs ~/ Duration.millisecondsPerMinute) + salt * 1000003) &
-      0x7FFFFFFF;
+      0x3FFFFFFF;
 
   /// The deep-link payload: the kind name. The app's tap handler maps it to a
   /// destination (memory → Memory Book, celebration → home, …) + emits the

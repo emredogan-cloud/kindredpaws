@@ -23,6 +23,14 @@ class _RecordingSink implements OsNotificationSink {
     return true;
   }
 
+  final List<int> cancelled = [];
+
+  @override
+  Future<void> cancel(int id) async {
+    cancelled.add(id);
+    scheduled.removeWhere((e) => e.$1 == id);
+  }
+
   @override
   Future<void> schedule(
     int id,
@@ -62,11 +70,58 @@ void main() {
         // Same payloads the in-memory logic computes are forwarded to the OS.
         expect(sink.scheduled, isNotEmpty);
         expect(sink.scheduled.length, s.scheduled.length);
-        expect(sink.cancelAllCalls, 1); // replaced the prior set first
+        // KP-017: re-arming presence never nukes the whole OS calendar —
+        // it cancels exactly the previously-mirrored presence ids.
+        expect(sink.cancelAllCalls, 0);
         // Personalised + carries a deep-link payload (the kind name).
         final first = sink.scheduled.first;
         expect(first.$2.body, contains('Biscuit'));
         expect(first.$3, first.$2.kind.name);
+
+        // A second re-arm replaces the presence set id-for-id.
+        final firstBatchIds = sink.scheduled.map((e) => e.$1).toSet();
+        await s.scheduleDailyPresence(
+          petName: 'Biscuit',
+          fromMs: _day0,
+          days: 3,
+        );
+        expect(sink.cancelled.toSet(), firstBatchIds);
+        expect(sink.cancelAllCalls, 0);
+      },
+    );
+
+    test(
+      'KP-017: a queued celebration SURVIVES a presence re-arm (logic + OS)',
+      () async {
+        final sink = _RecordingSink();
+        final s = _make(sink);
+        await s.scheduleDailyPresence(petName: 'Mochi', fromMs: _day0);
+        // A celebration queued a few hours out (e.g. a Bond-stage-up beat).
+        await s.scheduleEvent(
+          kind: NotificationKind.celebration,
+          petName: 'Mochi',
+          atMs: _day0 + 4 * 3600000,
+          detail: 'becoming Friends',
+        );
+        final osEventIds = sink.scheduled
+            .where((e) => e.$2.kind == NotificationKind.celebration)
+            .map((e) => e.$1)
+            .toList();
+        expect(osEventIds, hasLength(1));
+
+        // The audit's bug: this re-arm used to cancelAll() and wipe it.
+        await s.scheduleDailyPresence(petName: 'Mochi', fromMs: _day0);
+        expect(
+          s.scheduled.where((n) => n.kind == NotificationKind.celebration),
+          hasLength(1),
+          reason: 'the celebration must survive in the logic layer',
+        );
+        expect(
+          sink.scheduled.where((e) => e.$1 == osEventIds.single),
+          hasLength(1),
+          reason: 'the celebration must keep its OS slot',
+        );
+        expect(sink.cancelled, isNot(contains(osEventIds.single)));
       },
     );
 

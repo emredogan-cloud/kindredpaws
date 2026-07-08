@@ -4,6 +4,7 @@
 /// different rooms, and completion is detected from real care moments only.
 library;
 
+import '../../core/local_day.dart';
 import '../model/kindness.dart';
 import 'season_engine.dart';
 
@@ -20,9 +21,13 @@ class KindnessEngine {
     required String petId,
     KindnessState? prior,
     NatureSeason? season,
+    UtcOffsetAt utcOffsetAt = utcOffsetNone,
   }) {
-    final day = nowMs ~/ Duration.millisecondsPerDay;
-    if (prior != null && prior.dayEpoch == day && prior.offered.isNotEmpty) {
+    // The kindness day flips at the PLAYER's midnight (KP-018) and only ever
+    // rolls FORWARD — a backward clock must not mint a fresh (re-completable)
+    // slate for "yesterday" (KP-015).
+    final day = localDayOf(nowMs, utcOffsetAt);
+    if (prior != null && prior.offered.isNotEmpty && day <= prior.dayEpoch) {
       return prior;
     }
     return KindnessState(

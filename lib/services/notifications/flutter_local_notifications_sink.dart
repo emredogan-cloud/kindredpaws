@@ -167,6 +167,13 @@ class FlutterLocalNotificationsSink implements OsNotificationSink {
   }
 
   @override
+  Future<void> cancel(int id) async {
+    try {
+      await _plugin.cancel(id: id);
+    } catch (_) {}
+  }
+
+  @override
   Future<void> cancelAll() async {
     try {
       await _plugin.cancelAll();
