@@ -26,6 +26,9 @@ import 'room_registry.dart';
 /// under the floating room dock.
 const double kRoomDockClearance = 92;
 
+/// Device-local id for the one-time swipe-discovery nudge (KP-026).
+const String kSwipeHintId = 'swipe_rooms';
+
 class RoomHost extends StatefulWidget {
   const RoomHost({
     required this.controller,
@@ -70,6 +73,10 @@ class _RoomHostState extends State<RoomHost> {
   }
 
   void _goTo(int index) {
+    // Navigating via the dock proves the rooms were discovered (KP-026).
+    if (widget.controller.shouldShowHint(kSwipeHintId)) {
+      widget.controller.markHintSeen(kSwipeHintId);
+    }
     if (index == _current) return;
     _pages.animateToPage(
       index,
@@ -171,7 +178,13 @@ class _RoomHostState extends State<RoomHost> {
                 key: const Key('room-pages'),
                 controller: _pages,
                 itemCount: _rooms.length,
-                onPageChanged: (i) => setState(() => _current = i),
+                onPageChanged: (i) {
+                  // The swipe was discovered — retire the nudge (KP-026).
+                  if (widget.controller.shouldShowHint(kSwipeHintId)) {
+                    widget.controller.markHintSeen(kSwipeHintId);
+                  }
+                  setState(() => _current = i);
+                },
                 itemBuilder: (context, i) =>
                     _rooms[i].build(widget.controller, rig, _goToRoom),
               ),
@@ -199,6 +212,31 @@ class _RoomHostState extends State<RoomHost> {
               Positioned.fill(
                 child: CelebrationOverlay(controller: widget.controller),
               ),
+              // One-time swipe-discovery nudge (KP-026): nothing signalled
+              // that the world scrolls sideways, so most rooms went
+              // undiscovered. Dismissed by the first swipe/dock hop or a tap.
+              if (widget.controller.shouldShowHint(kSwipeHintId))
+                const Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 96,
+                  // Hit-transparent: an affordance must never steal a care
+                  // tap. It retires on the first swipe OR dock hop.
+                  child: IgnorePointer(
+                    child: Center(
+                      child: CozyChip(
+                        key: Key('swipe-nudge'),
+                        child: Text(
+                          'Swipe to explore your whole home  ⟷',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF4A3F38),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               if (_rooms.length > 1)
                 Positioned(
                   left: 0,
@@ -332,7 +370,9 @@ class _RoomDockState extends State<_RoomDock> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 9.5,
+                        // ≥11pt for comfortable legibility before low-vision
+                        // scaling (KP-028; was 9.5).
+                        fontSize: 11.5,
                         fontWeight: selected
                             ? FontWeight.w800
                             : FontWeight.w600,

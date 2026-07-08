@@ -108,6 +108,38 @@ class _RescueDayScreenState extends State<RescueDayScreen> {
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // Skip + per-beat back (KP-025): repeat/reinstalling players can
+          // jump straight to the choice; the beats stay the default path so
+          // first-timers keep the emotional hook.
+          Row(
+            children: [
+              if (_beat > 0)
+                IconButton(
+                  key: const Key('rescue-back'),
+                  tooltip: 'Back',
+                  visualDensity: VisualDensity.compact,
+                  icon: const Icon(Icons.arrow_back_rounded, size: 20),
+                  onPressed: () => setState(() => _beat--),
+                )
+              else
+                const SizedBox(width: 40),
+              const Spacer(),
+              TextButton(
+                key: const Key('rescue-skip'),
+                style: TextButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  foregroundColor: theme.colorScheme.onSurface.withValues(
+                    alpha: 0.55,
+                  ),
+                ),
+                onPressed: () {
+                  setState(() => _beat = _beats.length);
+                  widget.controller.recordOnboardingStep('choose_species');
+                },
+                child: const Text('Skip'),
+              ),
+            ],
+          ),
           ClipRRect(
             borderRadius: BorderRadius.circular(20),
             child: CozyImage(
