@@ -41,6 +41,9 @@ class DefaultRemoteConfig implements RemoteConfigService {
     'bond.stage_companion': 1200,
     'bond.stage_kindred': 4000,
     'bond.stage_soulmate': 10000,
+    // Economy guards (KP-014): care-action Kibble is a bounded daily
+    // faucet, not an infinite one (tapered in GameSimulation.interact).
+    'economy.care_kibble_daily_cap': 30,
     // Retention guards.
     'notifications.daily_cap': 2,
     'ads.rewarded_daily_cap': 6,

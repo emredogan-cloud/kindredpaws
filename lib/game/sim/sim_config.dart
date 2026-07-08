@@ -69,6 +69,7 @@ class SimConfig {
     this.recentAttentionWeight = 0.10,
     this.sleepRegenPerHour = 20.0,
     this.dailyKibbleBonus = 50,
+    this.careKibbleDailyCap = 30,
     this.streakWarmthCap = 2,
     this.streakRepairKibbleCost = 100,
     this.youngOneMinBondStage = 1, // Friend
@@ -115,6 +116,11 @@ class SimConfig {
   /// +50) — a welcome, never a hook; missing days costs nothing.
   final int dailyKibbleBonus;
 
+  /// Daily ceiling on Kibble minted by care actions (feed/clean/play taps) —
+  /// full value up to ⅔ of this, a 1-Kibble trickle to the cap, then zero
+  /// until tomorrow (KP-014: the faucet used to be uncapped, 5/tap forever).
+  final int careKibbleDailyCap;
+
   final int streakWarmthCap;
   final int streakRepairKibbleCost;
   final int youngOneMinBondStage;
@@ -145,5 +151,6 @@ class SimConfig {
       rc.getInt('bond.stage_soulmate'),
     ],
     streakWarmthCap: rc.getInt('streak.warmth_cap'),
+    careKibbleDailyCap: rc.getInt('economy.care_kibble_daily_cap'),
   );
 }

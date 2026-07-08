@@ -108,7 +108,9 @@ void main() {
     );
     final runner = MigrationRunner(KindredSaveState.migrations);
     final up = runner.upgrade(v9, KindredSaveState.currentSchemaVersion);
-    expect(up.schemaVersion, 10);
+    // Pinned to the CURRENT schema (not literal 10) — the chain has grown
+    // since (v11: care-Kibble faucet tally, KP-014).
+    expect(up.schemaVersion, KindredSaveState.currentSchemaVersion);
     final state = KindredSaveState.fromEnvelope(up);
     expect(state.seasonProgress, isNull);
   });

@@ -120,6 +120,18 @@ class GameSimulation {
     return anchor != null && today < anchor ? anchor : today;
   }
 
+  /// The tapered care-Kibble mint for this tap (KP-014): [base] until ⅔ of
+  /// the daily cap is reached, then 1/tap, then 0. Never negative.
+  int _taperCareKibble(int base, BondLedger ledger) {
+    final cap = config.careKibbleDailyCap;
+    final earned = ledger.careKibbleToday;
+    if (earned >= cap) return 0;
+    final softCap = (cap * 2) ~/ 3;
+    final allowance = earned >= softCap ? 1 : base;
+    final room = cap - earned;
+    return allowance < room ? allowance : room;
+  }
+
   /// One-time Streak Repair (§11.2): restores a just-broken streak to
   /// [toCount]. The caller charges the Kibble (config.streakRepairKibbleCost).
   CareStreak repairStreak(CareStreak streak, int toCount) =>
@@ -289,11 +301,18 @@ class GameSimulation {
       grant(config.bondPoints.lifeStageMilestone, ignoreCap: true);
     }
 
+    // KP-014: care-action Kibble is a bounded daily faucet. Full value up to
+    // ⅔ of the cap, a 1-Kibble trickle to the cap, then zero until tomorrow —
+    // earning stays rewarding, tap-farming does not (the meter floor made
+    // "willing" permanently true, so play minted 5/tap forever).
+    final minted = _taperCareKibble(effect.kibble, workingLedger);
+    workingLedger = workingLedger.mintCareKibble(minted);
+
     final next = state.copyWith(
       meters: effect.meters,
       bond: bond,
       careStreak: streakUpdate.streak,
-      wallet: state.wallet.addKibble(effect.kibble),
+      wallet: state.wallet.addKibble(minted),
       lifeStage: life.stage,
       lastSimTimestampMs: nowMs,
     );
@@ -304,7 +323,7 @@ class GameSimulation {
       ledger: workingLedger,
       mood: postMood,
       bondAwarded: totalAwarded,
-      kibbleAwarded: effect.kibble,
+      kibbleAwarded: minted,
       wasNeeded: effect.wasNeeded,
       streakIncremented: streakUpdate.isNewCareDay,
       freezeUsed: streakUpdate.freezeUsed,

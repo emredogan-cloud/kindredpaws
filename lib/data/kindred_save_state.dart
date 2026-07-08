@@ -1,4 +1,4 @@
-/// The persisted save (schema v10), mirroring GAME_TECHNICAL_SYSTEMS.md §3.4.
+/// The persisted save (schema v11), mirroring GAME_TECHNICAL_SYSTEMS.md §3.4.
 /// Holds the full runtime [PetState], the daily Bond [BondLedger], the Memory
 /// Book facts, Keepsakes, the pet's evolving [PersonalityProfile], the
 /// household [Inventory] (the room-based home), and the Daily Kindness slate
@@ -31,6 +31,7 @@ import 'migrations/v6_to_v7.dart';
 import 'migrations/v7_to_v8.dart';
 import 'migrations/v8_to_v9.dart';
 import 'migrations/v9_to_v10.dart';
+import 'migrations/v10_to_v11.dart';
 import 'save_envelope.dart';
 
 class KindredSaveState {
@@ -47,7 +48,7 @@ class KindredSaveState {
   });
 
   /// Schema version this app writes. Bump + add a migration on change.
-  static const int currentSchemaVersion = 10;
+  static const int currentSchemaVersion = 11;
 
   /// Ordered migration chain → [currentSchemaVersion].
   static const List<Migration> migrations = [
@@ -60,6 +61,7 @@ class KindredSaveState {
     V7ToV8(),
     V8ToV9(),
     V9ToV10(),
+    V10ToV11(),
   ];
 
   final PetState pet;
