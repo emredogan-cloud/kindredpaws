@@ -109,13 +109,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onTap: _confirmDelete,
           ),
           _sectionLabel('About'),
+          // Donation copy stays out until the giving loop is operational and
+          // every claim is literally true (KP-006, FOUNDER_ACTIONS_TODO F-6).
           const ListTile(
             leading: Icon(Icons.favorite_border_rounded),
             title: Text(KindredTerms.gameTitle),
-            subtitle: Text(
-              'Made with love. A share of net revenue supports real '
-              'animal shelters.',
-            ),
+            subtitle: Text('Made with love, for you and your companion.'),
           ),
           ListTile(
             key: const Key('settings-licenses'),

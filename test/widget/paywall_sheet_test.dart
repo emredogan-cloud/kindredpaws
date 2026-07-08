@@ -47,9 +47,8 @@ Future<void> _pumpSheet(WidgetTester tester, PaywallController c) async {
 }
 
 void main() {
-  testWidgets('renders plans, bundles, the ethical wall + restore', (
-    tester,
-  ) async {
+  testWidgets('renders plans, the ethical wall + restore — and ONLY honest '
+      'products (KP-006/KP-007)', (tester) async {
     await _pumpSheet(tester, _controller());
 
     expect(find.byKey(const Key('paywall-sheet')), findsOneWidget);
@@ -58,8 +57,12 @@ void main() {
     expect(find.byKey(const Key('paywall-restore')), findsOneWidget);
     // The ethical-wall promise is always visible.
     expect(find.byKey(const Key('paywall-ethical-note')), findsOneWidget);
-    // Rescue bundles disclose the giving split up front.
-    expect(find.textContaining('goes to real rescues'), findsWidgets);
+    // Launch posture: no Heartstone bundles until they can be spent (KP-007),
+    // no Rescue Bundles / giving-split claims until donations are operational
+    // (KP-006). The paywall must not advertise what the build cannot do.
+    expect(find.text('Heartstones'), findsNothing);
+    expect(find.text('Rescue Bundles'), findsNothing);
+    expect(find.textContaining('goes to real rescues'), findsNothing);
   });
 
   testWidgets('buying the monthly plan flips to the entitled state', (

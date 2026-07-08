@@ -1,12 +1,14 @@
 /// Paywall UX (P5-4) — the warm, honest monetization sheet. Surfaces the single
-/// LOCKED Forever Friends subscription (monthly + annual), the cosmetic-currency
-/// Heartstone bundles, and the Rescue Bundles with their **disclosed** giving
-/// split. Copy + plan order come from the pricing-*framing* experiment via
-/// [PaywallController]; the funnel telemetry + ethical wall live there.
+/// LOCKED Forever Friends subscription (monthly + annual) plus whatever bundle
+/// sections the LAUNCH catalogue carries (none today: Heartstone bundles wait
+/// for their spend sink, KP-007/KP-037; Rescue Bundles wait for the donation
+/// loop to be operational, KP-006/F-6). Copy + plan order come from the
+/// pricing-*framing* experiment via [PaywallController]; the funnel telemetry
+/// + ethical wall live there.
 ///
 /// Ethical wall, surfaced to the player (§18, D-047): every perk is cosmetic /
-/// quality-of-life, cancelling never affects the pet, and impact (Rescue
-/// Bundles) is transparent — never pay-to-win, never a guilt lever.
+/// quality-of-life, cancelling never affects the pet — never pay-to-win,
+/// never a guilt lever, and never a claim the build cannot honor.
 library;
 
 import 'package:flutter/material.dart';
@@ -163,23 +165,31 @@ class _PaywallSheetState extends State<PaywallSheet> {
                     ),
                   const SizedBox(height: 12),
                   const _EthicalWallNote(),
-                  const SizedBox(height: 20),
-                  _BundleSection(
-                    title: 'Heartstones',
-                    caption: 'Premium cosmetic currency — buys only looks. ✨',
-                    products: _c.heartstoneBundles,
-                    busy: _busy,
-                    onBuy: _buy,
-                  ),
-                  const SizedBox(height: 16),
-                  _BundleSection(
-                    title: 'Rescue Bundles',
-                    caption:
-                        'A cosmetic treat with a transparent giving split.',
-                    products: _c.rescueBundles,
-                    busy: _busy,
-                    onBuy: _buy,
-                  ),
+                  // Bundle sections render only for products in the LAUNCH
+                  // catalogue (KP-006/KP-007): Heartstone bundles return with
+                  // their spend sink (KP-037), Rescue Bundles when donations
+                  // are operational (F-6).
+                  if (_c.heartstoneBundles.isNotEmpty) ...[
+                    const SizedBox(height: 20),
+                    _BundleSection(
+                      title: 'Heartstones',
+                      caption: 'Premium cosmetic currency — buys only looks. ✨',
+                      products: _c.heartstoneBundles,
+                      busy: _busy,
+                      onBuy: _buy,
+                    ),
+                  ],
+                  if (_c.rescueBundles.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    _BundleSection(
+                      title: 'Rescue Bundles',
+                      caption:
+                          'A cosmetic treat with a transparent giving split.',
+                      products: _c.rescueBundles,
+                      busy: _busy,
+                      onBuy: _buy,
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   Center(
                     child: TextButton(
@@ -222,9 +232,9 @@ class _EntitledCard extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             const Text(
-              'Thank you. Your cozy perks are active: an ad-light home, a daily '
-              'Kibble top-up, monthly Heartstones & Compassion Coins, and a '
-              'rotating cosmetic. Cancel anytime — it never affects your pet.',
+              'Thank you. Your cozy perks are active: the Forever Friends '
+              'wardrobe pieces are yours to wear. Cancel anytime — it never '
+              'affects your pet.',
             ),
           ],
         ),

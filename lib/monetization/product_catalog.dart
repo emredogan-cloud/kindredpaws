@@ -109,6 +109,12 @@ const Product kForeverFriendsAnnual = Product(
 );
 
 /// Heartstone bundles — one-time premium **cosmetic** currency (no power).
+///
+/// **LAUNCH-EXCLUDED (KP-007).** Nothing in the game accepts Heartstones yet
+/// (`Wallet` has no `spendHeartstones`; no item carries a Heartstone price),
+/// and Apple 3.1.1 treats a purchasable currency with no redemption as a
+/// broken purchase. These SKUs stay defined for the Heartstone storefront
+/// (KP-037) but are NOT in [kProductCatalog] until that sink ships.
 const List<Product> kHeartstoneBundles = [
   Product(
     sku: 'heartstone_100',
@@ -145,6 +151,13 @@ const List<Product> kHeartstoneBundles = [
 /// product, the giving split is transparent (brief §9, D-047). The Coins they
 /// represent are minted server-side after receipt validation (see
 /// `MonetizationController.mintCompassionCoins`), never client-self-minted.
+///
+/// **LAUNCH-EXCLUDED (KP-006).** The Impact Pledge is a v0.1 draft: no signed
+/// intermediary, no partner shelters, no live ledger — so the giving split
+/// these bundles advertise cannot yet be performed (Apple 3.2.1 + consumer
+/// protection). They stay defined for the founder's donation
+/// operationalization (FOUNDER_ACTIONS_TODO.md F-6) and rejoin
+/// [kProductCatalog] only when every claim is literally true.
 const List<Product> kRescueBundles = [
   Product(
     sku: 'rescue_bundle_meal',
@@ -164,12 +177,12 @@ const List<Product> kRescueBundles = [
   ),
 ];
 
-/// The full catalogue.
+/// The full **launch** catalogue: what the paywall offers and what the store
+/// consoles must list. Heartstone bundles rejoin via KP-037 (spend sink);
+/// Rescue Bundles rejoin when the founder operationalizes donations (F-6).
 const List<Product> kProductCatalog = [
   kForeverFriendsMonthly,
   kForeverFriendsAnnual,
-  ...kHeartstoneBundles,
-  ...kRescueBundles,
 ];
 
 /// True iff [p] confers only allowed (cosmetic/QoL) grants — the ethical wall.
