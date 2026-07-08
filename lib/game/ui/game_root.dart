@@ -6,6 +6,7 @@ library;
 import 'package:flutter/material.dart';
 
 import '../controller/game_controller.dart';
+import 'recovery_screen.dart';
 import 'rescue_day_screen.dart';
 import 'rooms/room_host.dart';
 import 'widgets/cozy.dart';
@@ -84,6 +85,11 @@ class _GameRootState extends State<GameRoot> with WidgetsBindingObserver {
             key: Key('game-loading'),
             body: Center(child: CircularProgressIndicator()),
           );
+        }
+        // KP-010: an unreadable-but-present save routes to recovery, never to
+        // Rescue Day — adopting there would overwrite a recoverable pet.
+        if (widget.controller.recovery != null) {
+          return RecoveryScreen(controller: widget.controller);
         }
         return widget.controller.hasPet
             ? RoomHost(controller: widget.controller)

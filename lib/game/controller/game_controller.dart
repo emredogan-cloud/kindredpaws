@@ -49,6 +49,19 @@ import '../sim/season_engine.dart';
 import '../sim/shopping.dart';
 import '../sim/sim_config.dart';
 
+/// Why the app is showing the save-recovery screen instead of a pet or Rescue
+/// Day (KP-010). Null on [GameController.recovery] means "no recovery needed".
+enum RecoveryKind {
+  /// The local save exists but cannot be read (truncated write, corrupt or
+  /// unmigratable data). The blob is quarantined; nothing may overwrite it
+  /// without an explicit, confirmed fresh start.
+  corruptSave,
+
+  /// The local save was written by a NEWER app version (a downgrade). The
+  /// save is healthy — the fix is updating the app, never data loss.
+  appTooOld,
+}
+
 class GameController extends ChangeNotifier {
   GameController({
     required this.sim,
@@ -173,6 +186,14 @@ class GameController extends ChangeNotifier {
   Mood _mood = Mood.content;
   bool _loading = true;
 
+  /// Non-null while the save is unreadable → the UI shows the recovery screen
+  /// (never Rescue Day: adopting would persist a fresh pet over a recoverable
+  /// one — the KP-010 data-loss path this state exists to close).
+  RecoveryKind? recovery;
+
+  /// Pet id salvaged from the unreadable blob, for keying a cloud restore.
+  String? _recoveryPetId;
+
   /// Wall-clock (ms) the current play session began, or null between sessions.
   /// Set when a session starts (adopt / resume / app-foregrounded); cleared by
   /// [_endSession] after the `sessionQuality` beat is emitted.
@@ -231,23 +252,101 @@ class GameController extends ChangeNotifier {
 
   /// Load the local save (migrating forward), resolve offline catch-up, and
   /// surface the pet. If there's no save, [hasPet] stays false → Rescue Day.
+  ///
+  /// KP-010: a save that EXISTS but cannot be read is never treated as "no
+  /// pet". The blob is quarantined by the repository, a cloud restore is
+  /// attempted, and failing that the controller enters [recovery] — from which
+  /// adoption is blocked until the player explicitly confirms a fresh start.
   Future<void> load() async {
-    final res = await repo.load();
-    final state = res.valueOrNull;
-    if (state != null) {
-      _save = state;
-      _personality =
-          state.personality; // restore drift (P3-4; was reset before)
-      _resumeSession();
-      await _persist();
+    final outcome = await repo.loadOutcome();
+    switch (outcome) {
+      case SaveLoaded(:final state):
+        _adoptLoadedState(state);
+        await _persist();
+      case SaveAbsent():
+        break; // genuinely fresh install → Rescue Day
+      case SaveUnreadable(
+        :final error,
+        :final stackTrace,
+        :final isNewerSchema,
+        :final salvagedPetId,
+      ):
+        observability.recordError(
+          error,
+          stackTrace,
+          context: 'save_unreadable',
+          keys: {
+            'newer_schema': isNewerSchema,
+            'pet_id_salvaged': salvagedPetId != null,
+          },
+        );
+        _recoveryPetId = salvagedPetId;
+        if (isNewerSchema) {
+          recovery = RecoveryKind.appTooOld;
+        } else {
+          final restored = await _tryCloudRestore();
+          if (!restored) recovery = RecoveryKind.corruptSave;
+        }
     }
     _loading = false;
     notifyListeners();
   }
 
+  /// Re-run the whole load path from the recovery screen ("Try again").
+  Future<void> retryLoad() async {
+    _loading = true;
+    recovery = null;
+    notifyListeners();
+    await load();
+  }
+
+  /// Attempt to pull the authoritative cloud snapshot for the quarantined
+  /// save. True when a pet was restored. No-op (false) while the backend is
+  /// unprovisioned or the blob yielded no pet id.
+  Future<bool> _tryCloudRestore() async {
+    final petId = _recoveryPetId;
+    if (petId == null) return false;
+    final res = await repo.restoreFromCloud(petId);
+    final state = res.valueOrNull;
+    if (state == null) {
+      if (res.isErr) {
+        observability.recordError(
+          res.errorOrNull ?? 'cloud restore failed',
+          null,
+          context: 'save_recovery_cloud_restore',
+        );
+      }
+      return false;
+    }
+    _adoptLoadedState(state);
+    recovery = null;
+    lastMessage = '${state.pet.name} is safe and sound — welcome back! 💛';
+    return true;
+  }
+
+  /// The player explicitly chose "start fresh" from the recovery screen after
+  /// the confirm dialog. The quarantined blob stays preserved in the backup
+  /// slot; only now may Rescue Day (and its persist) run again.
+  void beginFreshStart() {
+    if (recovery != RecoveryKind.corruptSave) return;
+    recovery = null;
+    notifyListeners();
+  }
+
+  /// Shared "a save is now live in memory" wiring for load + cloud restore.
+  void _adoptLoadedState(KindredSaveState state) {
+    _save = state;
+    _personality = state.personality; // restore drift (P3-4; was reset before)
+    _resumeSession();
+  }
+
   /// Rescue Day adoption: create the pet, seed the first memories, schedule
   /// warm notifications, persist. The emotional core of onboarding (§13).
   Future<void> adopt({required Species species, required String name}) async {
+    // KP-010 invariant: while a quarantined save awaits recovery, adopting
+    // (which persists a fresh pet) is refused — beginFreshStart() is the only
+    // explicit, player-confirmed way past this guard.
+    if (recovery != null) return;
     final now = _now();
     // Re-validate at the persistence boundary so the controller — not just the
     // Rescue Day widget — is the chokepoint keeping PII/profanity out of the save
@@ -1089,6 +1188,9 @@ class GameController extends ChangeNotifier {
   Future<void> _persist() async {
     final save = _save;
     if (save == null) return;
+    // Belt-and-braces for KP-010: never write while a quarantined save is
+    // pending recovery (there is no in-memory save then, but keep the guard).
+    if (recovery != null) return;
     final res = await repo.save(save);
     if (res.isErr) {
       observability.recordError(

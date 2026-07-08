@@ -79,12 +79,16 @@ class CareMeters {
     'happiness': happiness,
   };
 
+  /// A lost meter value defaults to a comfortable 80 — "doing fine, could use
+  /// a little care" — never a shock state after save repair (KP-010).
   factory CareMeters.fromMap(Map<String, dynamic> m) => CareMeters(
-    hunger: (m['hunger'] as num).toDouble(),
-    energy: (m['energy'] as num).toDouble(),
-    hygiene: (m['hygiene'] as num).toDouble(),
-    happiness: (m['happiness'] as num).toDouble(),
+    hunger: _meterOr(m['hunger']),
+    energy: _meterOr(m['energy']),
+    hygiene: _meterOr(m['hygiene']),
+    happiness: _meterOr(m['happiness']),
   );
+
+  static double _meterOr(Object? v) => v is num ? v.toDouble() : 80;
 
   @override
   bool operator ==(Object other) =>

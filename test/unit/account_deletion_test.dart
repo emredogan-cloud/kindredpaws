@@ -12,6 +12,10 @@ class _ThrowingStore implements LocalSaveStore {
   Future<void> write(String json) async {}
   @override
   Future<void> delete() async => throw StateError('disk gone');
+  @override
+  Future<void> writeBackup(String blob) async {}
+  @override
+  Future<String?> readBackup() async => null;
 }
 
 void main() {
