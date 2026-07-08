@@ -66,9 +66,9 @@ Legend: 🔴 gates any legitimate submission · 🟠 gates public launch quality
 
 **What:** launch localization languages (open decision #6 — gates KP-041 beyond `en`), soft-launch geos (#7), subscription price validation (#8), live-LLM go/no-go for adults (#10). Then run the G3→G4 KPI gates on live cohorts.
 
-## 🟡 F-10 · Physical-device install approval (KP-049)
+## ✅ F-10 · Physical-device install approval (KP-049) — RESOLVED 2026-07-09
 
-**What:** On the connected Xiaomi (MIUI): Settings → Developer options → enable **Install via USB** (needs a MIUI account login), or tap the install-confirm dialog when the agent installs. Without it, emulator E2E remains the validation of record.
+The MIUI gate is open: `adb install` of the release APK succeeded on the connected Xiaomi (Android 13). R1+R2 were walked through on the real device (install → cold open → adoption → home → care action → force-stop → relaunch persistence; zero fatal exceptions). Evidence: `screenshots/remediation_device/01-08*.png`. Remaining KP-049 legs: Samsung/Pixel matrix + notification-delivery observation (R7).
 
 ---
 

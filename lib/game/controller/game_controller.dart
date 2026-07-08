@@ -160,6 +160,34 @@ class GameController extends ChangeNotifier {
   bool shouldShowHint(String hintId) =>
       !(_seenHints?.call().contains(hintId) ?? true);
 
+  /// The one-time notification priming moment (KP-023). Stored in the same
+  /// device-local seen-set as the first-visit hints (not the pet save).
+  static const String kNotificationPrimingId = 'notification_priming';
+
+  /// Offer the warm notification-permission card only AFTER the player is
+  /// invested: a pet exists and at least one care action landed this
+  /// session. The OS prompt used to fire at cold boot, over the rainy
+  /// cold-open's first beat — spending the one prompt before the player
+  /// cared (KP-023).
+  bool get shouldOfferNotificationPriming =>
+      hasPet && _session.total >= 1 && shouldShowHint(kNotificationPrimingId);
+
+  /// The player accepted the priming card → NOW ask the OS.
+  Future<void> acceptNotificationPriming() async {
+    markHintSeen(kNotificationPrimingId);
+    final granted = await notifications.requestPermission();
+    final name = pet?.name ?? 'Your friend';
+    lastMessage = granted
+        ? '$name will send a gentle hello now and then 💛'
+        : 'No worries — you can change this in Settings any time.';
+    notifyListeners();
+  }
+
+  /// "Maybe later" — never ask again unprompted; Settings remains the path.
+  void declineNotificationPriming() {
+    markHintSeen(kNotificationPrimingId);
+  }
+
   /// Marks [hintId] shown so its pulse never repeats (once per install).
   void markHintSeen(String hintId) {
     _markHintSeen?.call(hintId);

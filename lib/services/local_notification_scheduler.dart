@@ -49,6 +49,7 @@ class LocalNotificationScheduler implements NotificationScheduler {
       _sink.initialize(onTap: onTap);
 
   /// Request OS permission (Android 13+ / iOS). Returns whether granted.
+  @override
   Future<bool> requestPermission() => _sink.requestPermission();
 
   @override

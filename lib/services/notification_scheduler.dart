@@ -96,6 +96,12 @@ List<int> preferredNotificationHours(List<int> histogram, int cap) {
 }
 
 abstract interface class NotificationScheduler {
+  /// Ask the OS for notification permission. Called ONLY from the warm
+  /// post-adoption priming moment (KP-023) — never at cold boot: the one
+  /// system prompt must land after the player is invested, not over the
+  /// rainy cold-open's first beat.
+  Future<bool> requestPermission();
+
   /// Schedule the next [days] of warm presence notifications for [petName],
   /// honouring the [dailyCap] (1–2). Replaces any previously-scheduled set.
   /// [preferredHours] (GE-6) overrides the default anchor hours with the
@@ -139,6 +145,16 @@ class InMemoryNotificationScheduler implements NotificationScheduler {
 
   final UtcOffsetAt _utcOffsetAt;
   final List<PetNotification> _scheduled = [];
+
+  /// How many times permission was requested (tests pin the KP-023 timing:
+  /// zero at boot, one after the priming card is accepted).
+  int permissionRequests = 0;
+
+  @override
+  Future<bool> requestPermission() async {
+    permissionRequests++;
+    return true;
+  }
 
   /// The hard daily ceiling — never more than this many in a calendar day.
   static const int dailyCap = 2;

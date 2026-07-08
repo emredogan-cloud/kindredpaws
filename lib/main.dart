@@ -98,9 +98,10 @@ Future<void> main() async {
     }),
   );
   sl.registerSingleton<NotificationScheduler>(notifications);
-  // Ask for notification permission in-context, fire-and-forget (Android 13+/
-  // iOS) — never awaited, so a user-interactive dialog can't block boot.
-  unawaited(notifications.requestPermission());
+  // Deliberately NO permission request here (KP-023): the OS dialog used to
+  // pop over the rainy cold-open's first beat, spending the one prompt
+  // before the player cared. It now waits for the warm post-adoption
+  // priming card (GameController.acceptNotificationPriming).
 
   // The device's local calendar frame (KP-016/KP-018): streak days, the
   // daily bonus, kindness rollovers, and seasons flip at the player's

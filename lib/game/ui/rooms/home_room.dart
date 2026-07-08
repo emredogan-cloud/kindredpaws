@@ -58,6 +58,8 @@ class HomeRoom extends StatelessWidget {
                 _bondBar(context, pet.bond),
                 if (controller.streakRepairOffer != null)
                   _RepairOfferChip(controller: controller),
+                if (controller.shouldOfferNotificationPriming)
+                  _NotificationPrimingCard(controller: controller),
                 _KindnessInvite(controller: controller),
                 if (controller.petLine != null)
                   CozySpeechBubble(text: controller.petLine!),
@@ -401,6 +403,57 @@ class _KindnessCard extends StatelessWidget {
 }
 
 /// The one-time Streak Repair invitation (§11.2): appears only right after a
+/// The warm notification-priming card (KP-023): shown once, only after the
+/// player's first care action — the invested moment — and tied to the "warm
+/// reminders" promise. Accepting triggers the ONE OS permission prompt;
+/// declining defers to the Settings toggle forever. Never at cold boot.
+class _NotificationPrimingCard extends StatelessWidget {
+  const _NotificationPrimingCard({required this.controller});
+  final GameController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final name = controller.pet?.name ?? 'Your friend';
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: CozyChip(
+        child: Row(
+          key: const Key('notification-priming'),
+          children: [
+            Flexible(
+              child: Text(
+                'A gentle hello from $name now and then? Two a day, tops 💛',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+            TextButton(
+              key: const Key('notification-priming-accept'),
+              style: TextButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+              ),
+              onPressed: controller.acceptNotificationPriming,
+              child: const Text(
+                'Sounds lovely',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ),
+            IconButton(
+              key: const Key('notification-priming-decline'),
+              tooltip: 'Maybe later',
+              visualDensity: VisualDensity.compact,
+              icon: const Icon(Icons.close_rounded, size: 18),
+              onPressed: controller.declineNotificationPriming,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// streak breaks, reads as a welcome-back, and can be dismissed for free —
 /// ignoring it never costs anything and the pet never minds.
 class _RepairOfferChip extends StatelessWidget {
