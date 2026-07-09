@@ -17,7 +17,8 @@ import '../controller/game_controller.dart';
 import '../model/bond.dart';
 import '../model/items.dart';
 import '../model/life_stage.dart';
-import '../model/species.dart';
+import '../../render/pet_renderer.dart';
+import 'rooms/room_scaffold.dart' show DressedPet;
 import 'widgets/cozy.dart';
 import 'kp_tokens.dart';
 
@@ -273,13 +274,27 @@ class ProfileScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     const SizedBox(height: 8),
+                    // The portrait is the DRESSED pet — the identity screen
+                    // renders the actual companion, cosmetics and all, not a
+                    // platform emoji (KP-029).
                     SizedBox(
                       height: 150,
                       child: Center(
                         child: ExcludeSemantics(
-                          child: Text(
-                            pet.species == Species.puppy ? '🐶' : '🐱',
-                            style: const TextStyle(fontSize: 84),
+                          child: SizedBox(
+                            width: 140,
+                            height: 140,
+                            child: FittedBox(
+                              child: SizedBox(
+                                width: 160,
+                                height: 160,
+                                child: DressedPet(
+                                  controller: controller,
+                                  rig: ServiceLocator.instance
+                                      .get<PetRenderer>(),
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ),

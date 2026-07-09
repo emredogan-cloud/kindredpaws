@@ -7,6 +7,9 @@ library;
 import 'package:flutter/material.dart';
 
 import '../../core/name_input_validator.dart';
+import '../../render/pet_renderer.dart';
+import '../../render/vector_pet_renderer.dart';
+import '../model/life_stage.dart';
 import '../controller/game_controller.dart';
 import '../model/species.dart';
 import 'widgets/cozy.dart';
@@ -206,15 +209,23 @@ class _RescueDayScreenState extends State<RescueDayScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _speciesCard('choose-puppy', '🐶', Species.puppy),
-            _speciesCard('choose-kitten', '🐱', Species.kitten),
+            _speciesCard('choose-puppy', Species.puppy),
+            _speciesCard('choose-kitten', Species.kitten),
           ],
         ),
       ],
     );
   }
 
-  Widget _speciesCard(String key, String emoji, Species species) {
+  Widget _speciesCard(String key, Species species) {
+    // The REAL character greets the player at the emotional peak (KP-029) —
+    // an OS emoji here read as a prototype right above the premium rug art.
+    // Deterministic (no idle loop), so tests and goldens stay stable.
+    final preview = VectorPetRenderer(
+      speciesOf: () => species,
+      size: 88,
+      continuousMotion: false,
+    );
     return Card(
       child: InkWell(
         key: Key(key),
@@ -232,7 +243,17 @@ class _RescueDayScreenState extends State<RescueDayScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(emoji, style: const TextStyle(fontSize: 56)),
+              ExcludeSemantics(
+                child: SizedBox(
+                  width: 88,
+                  height: 88,
+                  child: preview.build(
+                    context,
+                    mood: PetMood.joyful,
+                    lifeStage: LifeStage.pupKit.id,
+                  ),
+                ),
+              ),
               const SizedBox(height: 8),
               Text(species.displayName),
             ],

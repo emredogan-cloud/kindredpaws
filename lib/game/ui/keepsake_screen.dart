@@ -7,6 +7,10 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../../render/pet_renderer.dart';
+import '../../render/vector_pet_renderer.dart';
+import '../model/species.dart';
+
 import '../../keepsake/keepsake.dart';
 import '../../services/share_service.dart';
 import '../controller/game_controller.dart';
@@ -83,15 +87,51 @@ class _KeepsakeCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Expanded(
-            child: Container(
-              color: const Color(0xFFFBE3D2), // warm peach (cozy, not Material)
-              alignment: Alignment.center,
-              child: ExcludeSemantics(
-                child: Text(
-                  keepsake.kind.emoji,
-                  style: const TextStyle(fontSize: 48),
+            // The designed card template + the RENDERED pet (KP-029): this is
+            // the app's viral share surface — it must look finished, not a
+            // single emoji on a peach rectangle while keepsake_template.png
+            // sat unused in assets/cards/.
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.asset(
+                  'assets/cards/keepsake_template.png',
+                  fit: BoxFit.cover,
+                  // Grid thumbnails are small — decode small (perf).
+                  cacheWidth: 360,
+                  errorBuilder: (_, _, _) =>
+                      const ColoredBox(color: Color(0xFFFBE3D2)),
                 ),
-              ),
+                Center(
+                  child: ExcludeSemantics(
+                    child: SizedBox(
+                      width: 72,
+                      height: 72,
+                      child:
+                          VectorPetRenderer(
+                            speciesOf: () => Species.fromId(keepsake.species),
+                            size: 72,
+                            continuousMotion: false,
+                          ).build(
+                            context,
+                            mood: PetMood.joyful,
+                            lifeStage: keepsake.lifeStage,
+                          ),
+                    ),
+                  ),
+                ),
+                // The keepsake KIND stays legible as a small corner badge.
+                Positioned(
+                  top: 6,
+                  right: 6,
+                  child: ExcludeSemantics(
+                    child: Text(
+                      keepsake.kind.emoji,
+                      style: const TextStyle(fontSize: 18),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           Padding(
