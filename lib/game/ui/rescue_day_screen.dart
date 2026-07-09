@@ -7,9 +7,13 @@ library;
 import 'package:flutter/material.dart';
 
 import '../../core/name_input_validator.dart';
+import '../../render/pet_renderer.dart';
+import '../../render/vector_pet_renderer.dart';
+import '../model/life_stage.dart';
 import '../controller/game_controller.dart';
 import '../model/species.dart';
 import 'widgets/cozy.dart';
+import 'kp_tokens.dart';
 
 class RescueDayScreen extends StatefulWidget {
   const RescueDayScreen({required this.controller, super.key});
@@ -76,7 +80,7 @@ class _RescueDayScreenState extends State<RescueDayScreen> {
               child: Container(
                 padding: const EdgeInsets.fromLTRB(22, 26, 22, 22),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFFBF5).withValues(alpha: 0.93),
+                  color: KpColors.card.withValues(alpha: 0.93),
                   borderRadius: BorderRadius.circular(28),
                   boxShadow: [
                     BoxShadow(
@@ -108,6 +112,38 @@ class _RescueDayScreenState extends State<RescueDayScreen> {
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // Skip + per-beat back (KP-025): repeat/reinstalling players can
+          // jump straight to the choice; the beats stay the default path so
+          // first-timers keep the emotional hook.
+          Row(
+            children: [
+              if (_beat > 0)
+                IconButton(
+                  key: const Key('rescue-back'),
+                  tooltip: 'Back',
+                  visualDensity: VisualDensity.compact,
+                  icon: const Icon(Icons.arrow_back_rounded, size: 20),
+                  onPressed: () => setState(() => _beat--),
+                )
+              else
+                const SizedBox(width: 40),
+              const Spacer(),
+              TextButton(
+                key: const Key('rescue-skip'),
+                style: TextButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  foregroundColor: theme.colorScheme.onSurface.withValues(
+                    alpha: 0.55,
+                  ),
+                ),
+                onPressed: () {
+                  setState(() => _beat = _beats.length);
+                  widget.controller.recordOnboardingStep('choose_species');
+                },
+                child: const Text('Skip'),
+              ),
+            ],
+          ),
           ClipRRect(
             borderRadius: BorderRadius.circular(20),
             child: CozyImage(
@@ -173,15 +209,23 @@ class _RescueDayScreenState extends State<RescueDayScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _speciesCard('choose-puppy', '🐶', Species.puppy),
-            _speciesCard('choose-kitten', '🐱', Species.kitten),
+            _speciesCard('choose-puppy', Species.puppy),
+            _speciesCard('choose-kitten', Species.kitten),
           ],
         ),
       ],
     );
   }
 
-  Widget _speciesCard(String key, String emoji, Species species) {
+  Widget _speciesCard(String key, Species species) {
+    // The REAL character greets the player at the emotional peak (KP-029) —
+    // an OS emoji here read as a prototype right above the premium rug art.
+    // Deterministic (no idle loop), so tests and goldens stay stable.
+    final preview = VectorPetRenderer(
+      speciesOf: () => species,
+      size: 88,
+      continuousMotion: false,
+    );
     return Card(
       child: InkWell(
         key: Key(key),
@@ -199,7 +243,17 @@ class _RescueDayScreenState extends State<RescueDayScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(emoji, style: const TextStyle(fontSize: 56)),
+              ExcludeSemantics(
+                child: SizedBox(
+                  width: 88,
+                  height: 88,
+                  child: preview.build(
+                    context,
+                    mood: PetMood.joyful,
+                    lifeStage: LifeStage.pupKit.id,
+                  ),
+                ),
+              ),
               const SizedBox(height: 8),
               Text(species.displayName),
             ],

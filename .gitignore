@@ -94,4 +94,5 @@ videos/
 !test/golden/goldens/
 !test/golden/goldens/*.png
 prompt.txt
+Talking_tom_mission.md
 test/golden/failures/

@@ -7,6 +7,7 @@
 /// is deterministic and server-validatable (gate G1). No wall-clock is read here.
 library;
 
+import '../../core/local_day.dart';
 import '../model/care_meters.dart';
 import '../model/care_streak.dart';
 import '../model/items.dart';
@@ -20,6 +21,8 @@ import 'life_stage_engine.dart';
 import 'mood_resolver.dart';
 import 'sim_config.dart';
 
+/// UTC-frame day (legacy helper). The sim itself uses its injected
+/// [UtcOffsetAt] so day boundaries flip at the PLAYER's midnight (KP-018).
 int dayOfMs(int ms) => ms ~/ Duration.millisecondsPerDay;
 
 class ResumeOutcome {
@@ -80,8 +83,9 @@ class InteractionOutcome {
 }
 
 class GameSimulation {
-  GameSimulation(this.config)
-    : _meters = CareMeterSimulator(config),
+  GameSimulation(this.config, {UtcOffsetAt utcOffsetAt = utcOffsetNone})
+    : _utcOffsetAt = utcOffsetAt,
+      _meters = CareMeterSimulator(config),
       _mood = MoodResolver(config),
       _bond = BondEngine(config),
       _interaction = InteractionEngine(config),
@@ -94,6 +98,10 @@ class GameSimulation {
       );
 
   final SimConfig config;
+
+  /// Local calendar frame (KP-018): tests keep the deterministic UTC default;
+  /// production injects the device offset so days flip at local midnight.
+  final UtcOffsetAt _utcOffsetAt;
   final CareMeterSimulator _meters;
   final MoodResolver _mood;
   final BondEngine _bond;
@@ -102,6 +110,27 @@ class GameSimulation {
   final LifeStageEngine _life;
 
   MoodResolver get mood => _mood;
+
+  /// The LOCAL calendar day used for daily caps/streaks, clamped monotonic
+  /// against the ledger's recorded day: a backward clock must not roll the
+  /// ledger to "yesterday" and reset the daily Bond cap (KP-015/KP-018).
+  int _workingDay(int nowMs, BondLedger ledger) {
+    final today = localDayOf(nowMs, _utcOffsetAt);
+    final anchor = ledger.dayEpoch;
+    return anchor != null && today < anchor ? anchor : today;
+  }
+
+  /// The tapered care-Kibble mint for this tap (KP-014): [base] until ⅔ of
+  /// the daily cap is reached, then 1/tap, then 0. Never negative.
+  int _taperCareKibble(int base, BondLedger ledger) {
+    final cap = config.careKibbleDailyCap;
+    final earned = ledger.careKibbleToday;
+    if (earned >= cap) return 0;
+    final softCap = (cap * 2) ~/ 3;
+    final allowance = earned >= softCap ? 1 : base;
+    final room = cap - earned;
+    return allowance < room ? allowance : room;
+  }
 
   /// One-time Streak Repair (§11.2): restores a just-broken streak to
   /// [toCount]. The caller charges the Kibble (config.streakRepairKibbleCost).
@@ -116,16 +145,34 @@ class GameSimulation {
     required BondLedger ledger,
     required int nowMs,
   }) {
-    final elapsed = nowMs - state.lastSimTimestampMs;
+    // A backward clock (or cross-zone travel) can make elapsed negative —
+    // clamp to zero so meters never mutate from time running "backwards"
+    // (KP-015: no state may be minted or lost from clock manipulation).
+    final elapsed = (nowMs - state.lastSimTimestampMs).clamp(
+      0,
+      1 << 48, // effectively unbounded upper — decay itself caps at 7 days
+    );
     final decayed = _meters.applyDecay(state.meters, elapsed);
-    final offlineHours = _meters.effectiveDecayHours(elapsed < 0 ? 0 : elapsed);
-    final today = dayOfMs(nowMs);
+    final offlineHours = _meters.effectiveDecayHours(elapsed);
+    final today = localDayOf(nowMs, _utcOffsetAt);
 
-    final isNewDay = state.lastActiveDayEpoch != today;
+    // Day advance is MONOTONIC (KP-015): only a strictly FORWARD calendar day
+    // is a new day. `!=` let any clock change (backward included) re-grant
+    // the +50 daily bonus, the greeting Bond, and an activeDays growth tick,
+    // repeatably, on every resume.
+    final lastActive = state.lastActiveDayEpoch;
+    final isNewDay = lastActive == null || today > lastActive;
     final activeDays = isNewDay ? state.activeDays + 1 : state.activeDays;
+    // The working day is clamped monotonic too: on a backward clock the
+    // ledger must keep TODAY's earned-Bond tally (a fresh `forDay(yesterday)`
+    // would reset the daily cap → farmable), and the stored anchor must never
+    // move backward.
+    final effectiveToday = lastActive != null && today < lastActive
+        ? lastActive
+        : today;
 
     var bond = state.bond;
-    var workingLedger = ledger.forDay(today);
+    var workingLedger = ledger.forDay(effectiveToday);
     var greetingBond = 0;
     if (isNewDay) {
       final award = _bond.award(
@@ -133,7 +180,7 @@ class GameSimulation {
         rawPoints: config.bondPoints.firstDailyGreeting,
         mood: _mood.resolve(decayed),
         ledger: workingLedger,
-        todayEpochDay: today,
+        todayEpochDay: effectiveToday,
       );
       bond = award.bond;
       workingLedger = award.ledger;
@@ -152,7 +199,7 @@ class GameSimulation {
         rawPoints: config.bondPoints.lifeStageMilestone,
         mood: Mood.content,
         ledger: workingLedger,
-        todayEpochDay: today,
+        todayEpochDay: effectiveToday,
         ignoreDailyCap: true, // macro milestone is exempt from the daily cap
       );
       bond = award.bond;
@@ -166,8 +213,12 @@ class GameSimulation {
       lifeStage: life.stage,
       wallet: state.wallet.addKibble(dailyKibble),
       activeDays: activeDays,
-      lastActiveDayEpoch: today,
-      lastSimTimestampMs: nowMs,
+      lastActiveDayEpoch: effectiveToday,
+      // The sim clock is monotonic as well: a backward wall-clock never
+      // rewinds the anchor (elapsed stays 0 until real time catches up).
+      lastSimTimestampMs: nowMs > state.lastSimTimestampMs
+          ? nowMs
+          : state.lastSimTimestampMs,
     );
 
     return ResumeOutcome(
@@ -194,7 +245,7 @@ class GameSimulation {
     ItemDef? item,
     int toyAffinity = 0,
   }) {
-    final today = dayOfMs(nowMs);
+    final today = _workingDay(nowMs, ledger);
     final preMood = _mood.resolve(state.meters);
 
     final effect = _interaction.apply(
@@ -250,11 +301,18 @@ class GameSimulation {
       grant(config.bondPoints.lifeStageMilestone, ignoreCap: true);
     }
 
+    // KP-014: care-action Kibble is a bounded daily faucet. Full value up to
+    // ⅔ of the cap, a 1-Kibble trickle to the cap, then zero until tomorrow —
+    // earning stays rewarding, tap-farming does not (the meter floor made
+    // "willing" permanently true, so play minted 5/tap forever).
+    final minted = _taperCareKibble(effect.kibble, workingLedger);
+    workingLedger = workingLedger.mintCareKibble(minted);
+
     final next = state.copyWith(
       meters: effect.meters,
       bond: bond,
       careStreak: streakUpdate.streak,
-      wallet: state.wallet.addKibble(effect.kibble),
+      wallet: state.wallet.addKibble(minted),
       lifeStage: life.stage,
       lastSimTimestampMs: nowMs,
     );
@@ -265,7 +323,7 @@ class GameSimulation {
       ledger: workingLedger,
       mood: postMood,
       bondAwarded: totalAwarded,
-      kibbleAwarded: effect.kibble,
+      kibbleAwarded: minted,
       wasNeeded: effect.wasNeeded,
       streakIncremented: streakUpdate.isNewCareDay,
       freezeUsed: streakUpdate.freezeUsed,
@@ -290,7 +348,7 @@ class GameSimulation {
     required BondLedger ledger,
     required int nowMs,
   }) {
-    final today = dayOfMs(nowMs);
+    final today = _workingDay(nowMs, ledger);
     final preMood = _mood.resolve(state.meters);
     double clamp(double v) => v.clamp(config.floor, 100.0);
     final lifted = CareMeters(
@@ -340,7 +398,7 @@ class GameSimulation {
     required BondLedger ledger,
     required int nowMs,
   }) {
-    final today = dayOfMs(nowMs);
+    final today = _workingDay(nowMs, ledger);
     final preMood = _mood.resolve(state.meters);
     final soothed = state.meters.copyWith(
       happiness:

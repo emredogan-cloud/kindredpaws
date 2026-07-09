@@ -18,6 +18,7 @@ import '../../rooms/room_id.dart';
 import '../paywall_sheet.dart';
 import '../widgets/cozy.dart';
 import 'room_scaffold.dart';
+import '../kp_tokens.dart';
 
 class WardrobeRoom extends StatelessWidget {
   const WardrobeRoom({
@@ -51,9 +52,7 @@ class WardrobeRoom extends StatelessWidget {
     return RoomScaffold(
       controller: controller,
       rig: rig,
-      sceneAsset: KpAssets.cozyRoomDay,
-      // A soft boutique-lavender morning light.
-      tint: const Color(0x1FB9A7D9),
+      sceneAsset: KpAssets.wardrobeScene,
       content: ShelfPanel(
         title: 'Closet',
         child: ListView(
@@ -71,6 +70,7 @@ class WardrobeRoom extends StatelessWidget {
               )
             else
               ShelfGrid(
+                nested: true, // inside the closet + boutique ListView
                 children: [
                   for (final item in owned)
                     ItemCard(
@@ -90,13 +90,14 @@ class WardrobeRoom extends StatelessWidget {
               child: Text(
                 'Boutique',
                 style: TextStyle(
-                  fontSize: 12.5,
+                  fontSize: KpText.small,
                   fontWeight: FontWeight.w800,
-                  color: Color(0xFF7A6A58),
+                  color: KpColors.taupe,
                 ),
               ),
             ),
             ShelfGrid(
+              nested: true, // inside the closet + boutique ListView
               children: [
                 for (final item in boutique) _boutiqueCard(context, item),
               ],

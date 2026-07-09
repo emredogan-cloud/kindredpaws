@@ -1,7 +1,8 @@
-/// The persisted save (schema v7), mirroring GAME_TECHNICAL_SYSTEMS.md §3.4.
+/// The persisted save (schema v11), mirroring GAME_TECHNICAL_SYSTEMS.md §3.4.
 /// Holds the full runtime [PetState], the daily Bond [BondLedger], the Memory
-/// Book facts, Keepsakes, the pet's evolving [PersonalityProfile], and the
-/// household [Inventory] (the room-based home).
+/// Book facts, Keepsakes, the pet's evolving [PersonalityProfile], the
+/// household [Inventory] (the room-based home), and the Daily Kindness slate
+/// (GE-1, the Genre Evolution program).
 /// Versioned + migrated forward (Risk R4: no update may orphan a pet).
 /// Serialization only — the simulation lives in `lib/game`.
 library;
@@ -10,7 +11,9 @@ import '../game/model/bond.dart';
 import '../game/model/care_meters.dart';
 import '../game/model/care_streak.dart';
 import '../game/model/inventory.dart';
+import '../game/model/kindness.dart';
 import '../game/model/life_stage.dart';
+import '../game/model/season_progress.dart';
 import '../game/model/pet_state.dart';
 import '../game/model/species.dart';
 import '../game/model/wallet.dart';
@@ -25,6 +28,10 @@ import 'migrations/v3_to_v4.dart';
 import 'migrations/v4_to_v5.dart';
 import 'migrations/v5_to_v6.dart';
 import 'migrations/v6_to_v7.dart';
+import 'migrations/v7_to_v8.dart';
+import 'migrations/v8_to_v9.dart';
+import 'migrations/v9_to_v10.dart';
+import 'migrations/v10_to_v11.dart';
 import 'save_envelope.dart';
 
 class KindredSaveState {
@@ -36,10 +43,12 @@ class KindredSaveState {
     this.nestCosmeticIds = const [],
     this.personality = PersonalityProfile.neutral,
     this.inventory = const Inventory(),
+    this.kindness,
+    this.seasonProgress,
   });
 
   /// Schema version this app writes. Bump + add a migration on change.
-  static const int currentSchemaVersion = 7;
+  static const int currentSchemaVersion = 11;
 
   /// Ordered migration chain → [currentSchemaVersion].
   static const List<Migration> migrations = [
@@ -49,6 +58,10 @@ class KindredSaveState {
     V4ToV5(),
     V5ToV6(),
     V6ToV7(),
+    V7ToV8(),
+    V8ToV9(),
+    V9ToV10(),
+    V10ToV11(),
   ];
 
   final PetState pet;
@@ -65,6 +78,14 @@ class KindredSaveState {
   /// the wardrobe closet (persisted from v7, the room-based home).
   final Inventory inventory;
 
+  /// Today's Daily Kindness slate (persisted from v8; null until the first
+  /// session of the day offers a pair — the engine fills it lazily).
+  final KindnessState? kindness;
+
+  /// Seasons-of-Us active-day count for the current season-window
+  /// (persisted from v10; null until the first counted day).
+  final SeasonProgress? seasonProgress;
+
   KindredSaveState copyWith({
     PetState? pet,
     BondLedger? ledger,
@@ -73,6 +94,8 @@ class KindredSaveState {
     List<String>? nestCosmeticIds,
     PersonalityProfile? personality,
     Inventory? inventory,
+    KindnessState? kindness,
+    SeasonProgress? seasonProgress,
   }) => KindredSaveState(
     pet: pet ?? this.pet,
     ledger: ledger ?? this.ledger,
@@ -81,6 +104,8 @@ class KindredSaveState {
     nestCosmeticIds: nestCosmeticIds ?? this.nestCosmeticIds,
     personality: personality ?? this.personality,
     inventory: inventory ?? this.inventory,
+    kindness: kindness ?? this.kindness,
+    seasonProgress: seasonProgress ?? this.seasonProgress,
   );
 
   SaveEnvelope toEnvelope() => SaveEnvelope(
@@ -105,10 +130,20 @@ class KindredSaveState {
       'personality': personality.toMap(),
       'inventory': inventory.toMap(),
       'sleepingSinceMs': pet.sleepingSinceMs,
+      'kindness': kindness?.toMap(),
+      'seasonProgress': seasonProgress?.toMap(),
     },
   );
 
-  /// Reads a v7 envelope. Upgrade older envelopes with [MigrationRunner] first.
+  /// Reads a current-schema envelope. Upgrade older ones with
+  /// [MigrationRunner] first.
+  ///
+  /// Deserialization is TOTAL for everything except `petId` (KP-010): a
+  /// missing or malformed field falls back to a safe default instead of
+  /// throwing, because one bad field must never cost a player the whole pet.
+  /// `petId` stays strict — it is the identity anchor: without it the save
+  /// cannot be keyed for cloud restore, so the caller's recovery path (which
+  /// quarantines the blob and never overwrites it) is the honest outcome.
   factory KindredSaveState.fromEnvelope(SaveEnvelope env) {
     if (env.schemaVersion != currentSchemaVersion) {
       throw StateError(
@@ -117,53 +152,108 @@ class KindredSaveState {
       );
     }
     final d = env.data;
-    final bondMap = (d['bond'] as Map).cast<String, dynamic>();
-    final bondValue = (bondMap['value'] as num).toInt();
-    final nest = (d['nest'] as Map?)?.cast<String, dynamic>() ?? const {};
-    final factsList = (d['memoryFacts'] as List? ?? const [])
-        .map((e) => MemoryFact.fromJson((e as Map).cast<String, dynamic>()))
-        .toList();
+
+    final petId = d['petId'];
+    if (petId is! String || petId.isEmpty) {
+      throw const FormatException('save has no petId — identity unrecoverable');
+    }
+
+    final bondMap = _mapOrEmpty(d['bond']);
+    final bondValue = _intOr(bondMap['value']) ?? 0;
+    final nest = _mapOrEmpty(d['nest']);
+    final species = Species.fromId(_stringOr(d['species'], ''));
+    final createdAtMs = _intOr(d['createdAtMs']) ?? 0;
 
     final pet = PetState(
-      petId: d['petId'] as String,
-      species: Species.fromId(d['species'] as String),
-      name: d['name'] as String,
-      lifeStage: LifeStage.fromId(d['lifeStage'] as String),
-      meters: CareMeters.fromMap(
-        (d['careMeters'] as Map).cast<String, dynamic>(),
-      ),
+      petId: petId,
+      species: species,
+      name: _stringOr(d['name'], species.defaultName),
+      lifeStage: LifeStage.fromId(_stringOr(d['lifeStage'], '')),
+      meters: CareMeters.fromMap(_mapOrEmpty(d['careMeters'])),
       // Stage is recomputed from the authoritative value on load.
       bond: Bond(value: bondValue, stage: Bond.stageFor(bondValue)),
-      careStreak: CareStreak.fromMap(
-        (d['careStreak'] as Map).cast<String, dynamic>(),
-      ),
-      wallet: Wallet.fromMap((d['wallet'] as Map).cast<String, dynamic>()),
-      activeDays: (d['activeDays'] as num?)?.toInt() ?? 1,
-      lastActiveDayEpoch: (d['lastActiveDayEpoch'] as num?)?.toInt(),
-      createdAtMs: (d['createdAtMs'] as num?)?.toInt() ?? 0,
-      lastSimTimestampMs: (d['lastSimTimestampMs'] as num).toInt(),
-      sleepingSinceMs: (d['sleepingSinceMs'] as num?)?.toInt(),
+      careStreak: CareStreak.fromMap(_mapOrEmpty(d['careStreak'])),
+      wallet: Wallet.fromMap(_mapOrEmpty(d['wallet'])),
+      activeDays: _intOr(d['activeDays']) ?? 1,
+      lastActiveDayEpoch: _intOr(d['lastActiveDayEpoch']),
+      createdAtMs: createdAtMs,
+      // A lost sim timestamp resumes from creation: the offline catch-up cap
+      // (7 days) bounds the elapsed decay, so this is always gentle.
+      lastSimTimestampMs: _intOr(d['lastSimTimestampMs']) ?? createdAtMs,
+      sleepingSinceMs: _intOr(d['sleepingSinceMs']),
     );
 
     return KindredSaveState(
       pet: pet,
-      ledger: BondLedger.fromMap(
-        (d['bondLedger'] as Map?)?.cast<String, dynamic>() ?? const {},
+      ledger: _section(
+        () => BondLedger.fromMap(_mapOrEmpty(d['bondLedger'])),
+        BondLedger.empty,
       ),
-      facts: factsList,
-      keepsakes: (d['keepsakes'] as List? ?? const [])
-          .map((e) => Keepsake.fromJson((e as Map).cast<String, dynamic>()))
-          .toList(),
+      // One corrupt scrapbook entry must not take the pet down with it: parse
+      // per-item, skip what cannot be read, keep the rest.
+      facts: _lenientList(d['memoryFacts'], MemoryFact.fromJson),
+      keepsakes: _lenientList(d['keepsakes'], Keepsake.fromJson),
       nestCosmeticIds: (nest['cosmeticIds'] as List? ?? const [])
-          .map((e) => e as String)
+          .whereType<String>()
           .toList(),
-      personality: PersonalityProfile.fromMap(
-        (d['personality'] as Map?)?.cast<String, dynamic>() ?? const {},
+      personality: _section(
+        () => PersonalityProfile.fromMap(_mapOrEmpty(d['personality'])),
+        PersonalityProfile.neutral,
       ),
-      inventory: Inventory.fromMap(
-        (d['inventory'] as Map?)?.cast<String, dynamic>() ?? const {},
+      inventory: _section(
+        () => Inventory.fromMap(_mapOrEmpty(d['inventory'])),
+        const Inventory(),
       ),
+      // Daily/seasonal slates regenerate on their own — corrupt ones drop.
+      kindness: d['kindness'] == null
+          ? null
+          : _section(
+              () => KindnessState.fromMap(_mapOrEmpty(d['kindness'])),
+              null,
+            ),
+      seasonProgress: d['seasonProgress'] == null
+          ? null
+          : _section(
+              () => SeasonProgress.fromMap(_mapOrEmpty(d['seasonProgress'])),
+              null,
+            ),
     );
+  }
+
+  static Map<String, dynamic> _mapOrEmpty(Object? v) =>
+      v is Map ? v.cast<String, dynamic>() : const <String, dynamic>{};
+
+  static String _stringOr(Object? v, String fallback) =>
+      v is String && v.isNotEmpty ? v : fallback;
+
+  static int? _intOr(Object? v) => v is num ? v.toInt() : null;
+
+  /// Parse a subsystem section, falling back to [fallback] if its inner shape
+  /// is corrupt — the pet survives; the subsystem state resets.
+  static T _section<T>(T Function() parse, T fallback) {
+    try {
+      return parse();
+    } catch (_) {
+      return fallback;
+    }
+  }
+
+  /// Parse a list of records item-by-item, skipping unreadable entries.
+  static List<T> _lenientList<T>(
+    Object? raw,
+    T Function(Map<String, dynamic>) fromJson,
+  ) {
+    if (raw is! List) return const [];
+    final out = <T>[];
+    for (final e in raw) {
+      if (e is! Map) continue;
+      try {
+        out.add(fromJson(e.cast<String, dynamic>()));
+      } catch (_) {
+        // Skip the one bad record; keep every readable one.
+      }
+    }
+    return out;
   }
 
   /// A fresh save for a newly rescued pet.

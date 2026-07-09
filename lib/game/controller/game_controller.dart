@@ -8,6 +8,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../../core/local_day.dart';
 import '../../core/name_input_validator.dart';
 import '../../data/kindred_save_state.dart';
 import '../../data/save_repository.dart';
@@ -32,17 +33,35 @@ import '../../services/share_service.dart';
 import '../../services/status_snapshot_service.dart';
 import '../minigames/mini_games.dart' show miniGameKibble;
 import '../model/bond.dart';
+import '../model/decor.dart';
 import '../model/inventory.dart';
 import '../model/items.dart';
+import '../model/kindness.dart';
 import '../model/mood.dart';
 import '../model/pet_state.dart';
 import '../model/pet_status_snapshot.dart';
 import '../model/species.dart';
 import '../sim/bond_engine.dart';
 import '../sim/game_simulation.dart';
+import '../model/season_progress.dart';
 import '../sim/interaction.dart';
+import '../sim/kindness_engine.dart';
+import '../sim/season_engine.dart';
 import '../sim/shopping.dart';
 import '../sim/sim_config.dart';
+
+/// Why the app is showing the save-recovery screen instead of a pet or Rescue
+/// Day (KP-010). Null on [GameController.recovery] means "no recovery needed".
+enum RecoveryKind {
+  /// The local save exists but cannot be read (truncated write, corrupt or
+  /// unmigratable data). The blob is quarantined; nothing may overwrite it
+  /// without an explicit, confirmed fresh start.
+  corruptSave,
+
+  /// The local save was written by a NEWER app version (a downgrade). The
+  /// save is healthy — the fix is updating the app, never data loss.
+  appTooOld,
+}
 
 class GameController extends ChangeNotifier {
   GameController({
@@ -60,6 +79,12 @@ class GameController extends ChangeNotifier {
     LiveOps? liveOps,
     FeelService? feel,
     bool Function()? notificationsAllowed,
+    bool Function()? southernHemisphere,
+    UtcOffsetAt utcOffsetAt = utcOffsetNone,
+    void Function(int hour)? recordOpenHour,
+    List<int> Function()? openHourHistogram,
+    Set<String> Function()? seenHints,
+    void Function(String id)? markHintSeen,
     int Function()? clock,
     String Function()? idGenerator,
   }) : _feedback = feedback ?? const NoopFeedbackService(),
@@ -67,6 +92,12 @@ class GameController extends ChangeNotifier {
        _liveOps = liveOps,
        _feel = feel,
        _notificationsAllowed = notificationsAllowed,
+       _southern = southernHemisphere,
+       _recordOpenHour = recordOpenHour,
+       _utcOffsetAt = utcOffsetAt,
+       _openHourHistogram = openHourHistogram,
+       _seenHints = seenHints,
+       _markHintSeen = markHintSeen,
        _now = clock ?? (() => DateTime.now().millisecondsSinceEpoch),
        _idGenerator =
            idGenerator ??
@@ -104,6 +135,65 @@ class GameController extends ChangeNotifier {
   /// Player-side notification preference (Settings toggle), or null in tests.
   final bool Function()? _notificationsAllowed;
 
+  /// Southern-hemisphere seasons (Settings toggle, GE-5), or null (northern).
+  final bool Function()? _southern;
+
+  /// Rhythm-aware notifications (GE-6): records the local open-hour and reads
+  /// the on-device open-hour histogram. Null in pure-logic tests.
+  final void Function(int hour)? _recordOpenHour;
+
+  /// Local calendar frame (KP-016/KP-018) — shared with the sim + scheduler
+  /// so kindness rollovers, seasons, Gotcha Day, and the rhythm histogram all
+  /// live on the player's clock.
+  final UtcOffsetAt _utcOffsetAt;
+
+  /// [_now] shifted into the local frame, for pure date math (months/days).
+  int _localNow() => toLocalFrame(_now(), _utcOffsetAt);
+  final List<int> Function()? _openHourHistogram;
+
+  /// First-visit verb hints (GE-6): the device-local seen-set + recorder.
+  /// Null in pure-logic tests (hints simply never show).
+  final Set<String> Function()? _seenHints;
+  final void Function(String id)? _markHintSeen;
+
+  /// True if [hintId]'s one-time pulse hasn't been shown yet (GE-6).
+  bool shouldShowHint(String hintId) =>
+      !(_seenHints?.call().contains(hintId) ?? true);
+
+  /// The one-time notification priming moment (KP-023). Stored in the same
+  /// device-local seen-set as the first-visit hints (not the pet save).
+  static const String kNotificationPrimingId = 'notification_priming';
+
+  /// Offer the warm notification-permission card only AFTER the player is
+  /// invested: a pet exists and at least one care action landed this
+  /// session. The OS prompt used to fire at cold boot, over the rainy
+  /// cold-open's first beat — spending the one prompt before the player
+  /// cared (KP-023).
+  bool get shouldOfferNotificationPriming =>
+      hasPet && _session.total >= 1 && shouldShowHint(kNotificationPrimingId);
+
+  /// The player accepted the priming card → NOW ask the OS.
+  Future<void> acceptNotificationPriming() async {
+    markHintSeen(kNotificationPrimingId);
+    final granted = await notifications.requestPermission();
+    final name = pet?.name ?? 'Your friend';
+    lastMessage = granted
+        ? '$name will send a gentle hello now and then 💛'
+        : 'No worries — you can change this in Settings any time.';
+    notifyListeners();
+  }
+
+  /// "Maybe later" — never ask again unprompted; Settings remains the path.
+  void declineNotificationPriming() {
+    markHintSeen(kNotificationPrimingId);
+  }
+
+  /// Marks [hintId] shown so its pulse never repeats (once per install).
+  void markHintSeen(String hintId) {
+    _markHintSeen?.call(hintId);
+    notifyListeners();
+  }
+
   /// Notifications are live unless the founder's LiveOps kill-switch OR the
   /// player's own Settings toggle has disabled them.
   bool get _notificationsLive =>
@@ -135,10 +225,30 @@ class GameController extends ChangeNotifier {
   Mood _mood = Mood.content;
   bool _loading = true;
 
+  /// Non-null while the save is unreadable → the UI shows the recovery screen
+  /// (never Rescue Day: adopting would persist a fresh pet over a recoverable
+  /// one — the KP-010 data-loss path this state exists to close).
+  RecoveryKind? recovery;
+
+  /// Pet id salvaged from the unreadable blob, for keying a cloud restore.
+  String? _recoveryPetId;
+
   /// Wall-clock (ms) the current play session began, or null between sessions.
   /// Set when a session starts (adopt / resume / app-foregrounded); cleared by
   /// [_endSession] after the `sessionQuality` beat is emitted.
   int? _sessionStartMs;
+
+  /// Last instant the session was provably alive (session start + every
+  /// persist-worthy action). Lets [onAppForegrounded] detect a session that
+  /// was REALLY backgrounded even though the embedder only delivered
+  /// `hidden` (KP-021): a stale "active" session is closed and re-resolved
+  /// instead of silently skipping catch-up + greeting.
+  int _lastAliveMs = 0;
+
+  /// Foregrounding an "active" session after a gap this large means the
+  /// lifecycle stream lied (hidden-only background) — resolve for real.
+  /// Generous: a notification-shade peek or app-switcher glance is seconds.
+  static const int kStaleSessionGapMs = 5 * 60 * 1000;
 
   /// Wall-clock (ms) the Rescue Day onboarding began (first beat), for the
   /// activation-funnel timing. Null before onboarding starts.
@@ -172,6 +282,10 @@ class GameController extends ChangeNotifier {
 
   bool get loading => _loading;
   bool get hasPet => _save != null;
+
+  /// This session's interaction tallies (read-only — e.g. the garden
+  /// songbird visits after play; GE-2 ambient presence).
+  SessionInteractions get session => _session;
   PetState? get pet => _save?.pet;
   Mood get mood => _mood;
   List<MemoryFact> get facts => _save?.facts ?? const [];
@@ -189,23 +303,101 @@ class GameController extends ChangeNotifier {
 
   /// Load the local save (migrating forward), resolve offline catch-up, and
   /// surface the pet. If there's no save, [hasPet] stays false → Rescue Day.
+  ///
+  /// KP-010: a save that EXISTS but cannot be read is never treated as "no
+  /// pet". The blob is quarantined by the repository, a cloud restore is
+  /// attempted, and failing that the controller enters [recovery] — from which
+  /// adoption is blocked until the player explicitly confirms a fresh start.
   Future<void> load() async {
-    final res = await repo.load();
-    final state = res.valueOrNull;
-    if (state != null) {
-      _save = state;
-      _personality =
-          state.personality; // restore drift (P3-4; was reset before)
-      _resumeSession();
-      await _persist();
+    final outcome = await repo.loadOutcome();
+    switch (outcome) {
+      case SaveLoaded(:final state):
+        _adoptLoadedState(state);
+        await _persist();
+      case SaveAbsent():
+        break; // genuinely fresh install → Rescue Day
+      case SaveUnreadable(
+        :final error,
+        :final stackTrace,
+        :final isNewerSchema,
+        :final salvagedPetId,
+      ):
+        observability.recordError(
+          error,
+          stackTrace,
+          context: 'save_unreadable',
+          keys: {
+            'newer_schema': isNewerSchema,
+            'pet_id_salvaged': salvagedPetId != null,
+          },
+        );
+        _recoveryPetId = salvagedPetId;
+        if (isNewerSchema) {
+          recovery = RecoveryKind.appTooOld;
+        } else {
+          final restored = await _tryCloudRestore();
+          if (!restored) recovery = RecoveryKind.corruptSave;
+        }
     }
     _loading = false;
     notifyListeners();
   }
 
+  /// Re-run the whole load path from the recovery screen ("Try again").
+  Future<void> retryLoad() async {
+    _loading = true;
+    recovery = null;
+    notifyListeners();
+    await load();
+  }
+
+  /// Attempt to pull the authoritative cloud snapshot for the quarantined
+  /// save. True when a pet was restored. No-op (false) while the backend is
+  /// unprovisioned or the blob yielded no pet id.
+  Future<bool> _tryCloudRestore() async {
+    final petId = _recoveryPetId;
+    if (petId == null) return false;
+    final res = await repo.restoreFromCloud(petId);
+    final state = res.valueOrNull;
+    if (state == null) {
+      if (res.isErr) {
+        observability.recordError(
+          res.errorOrNull ?? 'cloud restore failed',
+          null,
+          context: 'save_recovery_cloud_restore',
+        );
+      }
+      return false;
+    }
+    _adoptLoadedState(state);
+    recovery = null;
+    lastMessage = '${state.pet.name} is safe and sound — welcome back! 💛';
+    return true;
+  }
+
+  /// The player explicitly chose "start fresh" from the recovery screen after
+  /// the confirm dialog. The quarantined blob stays preserved in the backup
+  /// slot; only now may Rescue Day (and its persist) run again.
+  void beginFreshStart() {
+    if (recovery != RecoveryKind.corruptSave) return;
+    recovery = null;
+    notifyListeners();
+  }
+
+  /// Shared "a save is now live in memory" wiring for load + cloud restore.
+  void _adoptLoadedState(KindredSaveState state) {
+    _save = state;
+    _personality = state.personality; // restore drift (P3-4; was reset before)
+    _resumeSession();
+  }
+
   /// Rescue Day adoption: create the pet, seed the first memories, schedule
   /// warm notifications, persist. The emotional core of onboarding (§13).
   Future<void> adopt({required Species species, required String name}) async {
+    // KP-010 invariant: while a quarantined save awaits recovery, adopting
+    // (which persists a fresh pet) is refused — beginFreshStart() is the only
+    // explicit, player-confirmed way past this guard.
+    if (recovery != null) return;
     final now = _now();
     // Re-validate at the persistence boundary so the controller — not just the
     // Rescue Day widget — is the chokepoint keeping PII/profanity out of the save
@@ -217,6 +409,7 @@ class GameController extends ChangeNotifier {
       species: species,
       name: validated.isValid ? validated.sanitized : species.defaultName,
       nowMs: now,
+      utcOffsetAt: _utcOffsetAt,
     );
     _save = KindredSaveState(
       pet: pet,
@@ -227,6 +420,7 @@ class GameController extends ChangeNotifier {
     );
     _session = SessionInteractions.empty;
     _sessionStartMs = now;
+    _lastAliveMs = now;
     lastInteraction = null;
     ambientEmotion = null;
     _personality = PersonalityProfile.neutral;
@@ -235,8 +429,13 @@ class GameController extends ChangeNotifier {
       'species': species.id,
     });
     if (_notificationsLive) {
-      await notifications.scheduleDailyPresence(petName: pet.name, fromMs: now);
+      await notifications.scheduleDailyPresence(
+        petName: pet.name,
+        fromMs: now,
+        preferredHours: _preferredHours(),
+      );
     }
+    _syncKindness(); // Rescue Day ends with today's first two kindnesses
     await _persist();
     lastMessage = 'Welcome home, ${pet.name}! 💛';
     _say(HeartmindIntent.greeting); // the pet's first words
@@ -345,6 +544,11 @@ class GameController extends ChangeNotifier {
     ); // persist the drift (P3-4)
     // The pet speaks: a milestone celebration if it grew, else a care ack.
     _say(outcome.grew ? HeartmindIntent.milestone : HeartmindIntent.careAck);
+    _recordKindness(switch (interaction) {
+      CareInteraction.feed => KindnessTrigger.feed,
+      CareInteraction.clean => KindnessTrigger.clean,
+      CareInteraction.play => KindnessTrigger.play,
+    }, itemId: item?.id);
 
     observability.event(AnalyticsEvent.careAction, {
       'verb': interaction.id,
@@ -420,9 +624,30 @@ class GameController extends ChangeNotifier {
       notifyListeners();
       return false;
     }
-    _save = save.copyWith(pet: outcome.state, inventory: outcome.inventory);
+    var inventory = outcome.inventory!;
+    // A wished-for item coming home empties the jar (quietly, proudly).
+    if (inventory.wishlistId == item.id) {
+      inventory = inventory.copyWith(clearWishlist: true);
+    }
+    _save = save.copyWith(pet: outcome.state, inventory: inventory);
     _cue(SfxCue.basket, HapticKind.success);
     lastMessage = '${item.emoji} ${item.displayName} — into the basket!';
+    // Décor set completion (GE-3): exactly once per set (stable keepsake id).
+    if (item.kind == ItemKind.decor) {
+      for (final set in DecorSets.containing(item.id)) {
+        if (set.completedBy(inventory.decor)) {
+          _collect(
+            _keepsakes.decorSet(outcome.state!, set.id, set.title, _now()),
+          );
+          _cue(SfxCue.tada, HapticKind.celebrate);
+          lastMessage =
+              '${set.emoji} The ${set.title} set is complete — '
+              'a keepsake for the book!';
+          _say(HeartmindIntent.milestone);
+        }
+      }
+    }
+    _recordKindness(KindnessTrigger.grocery, itemId: item.id);
     observability.event(AnalyticsEvent.careAction, {
       'verb': 'purchase',
       'bond_awarded': 0,
@@ -431,6 +656,51 @@ class GameController extends ChangeNotifier {
     await _persist();
     notifyListeners();
     return true;
+  }
+
+  // ---- Cozy Corners décor (GE-3 — pure expression, never power) ----
+
+  /// Places an owned décor piece in [slot] (two taps: spot → piece).
+  Future<void> placeDecor(DecorSlot slot, ItemDef item) async {
+    final save = _save;
+    if (save == null || item.kind != ItemKind.decor) return;
+    if (!save.inventory.ownsDecor(item.id)) return;
+    _save = save.copyWith(inventory: save.inventory.place(slot.id, item.id));
+    _cue(SfxCue.softPop);
+    lastMessage =
+        '${item.emoji} The ${item.displayName} looks lovely on '
+        '${slot.label}!';
+    await _persist();
+    notifyListeners();
+  }
+
+  /// Empties a décor slot (the piece stays owned — back to the box).
+  Future<void> clearDecor(DecorSlot slot) async {
+    final save = _save;
+    if (save == null || save.inventory.placedIn(slot.id) == null) return;
+    _save = save.copyWith(inventory: save.inventory.clearSlot(slot.id));
+    _cue(SfxCue.softPop);
+    await _persist();
+    notifyListeners();
+  }
+
+  /// Sets (or clears, with null) the one wished-for shop item — the saving
+  /// jar. Pure intent: no notifications, no badges, no nagging, ever.
+  Future<void> setWishlist(ItemDef? item) async {
+    final save = _save;
+    if (save == null) return;
+    final inv = item == null
+        ? save.inventory.copyWith(clearWishlist: true)
+        : save.inventory.copyWith(wishlistId: item.id);
+    _save = save.copyWith(inventory: inv);
+    if (item != null) {
+      _cue(SfxCue.sparkle);
+      lastMessage =
+          '${item.emoji} Wished for the ${item.displayName} — '
+          'the jar is on the shelf!';
+    }
+    await _persist();
+    notifyListeners();
   }
 
   // ---- Care Corner (gentle wellness — never frightening) ----
@@ -476,6 +746,7 @@ class GameController extends ChangeNotifier {
     _say(
       outcome.comfortBeat ? HeartmindIntent.comfort : HeartmindIntent.careAck,
     );
+    _recordKindness(KindnessTrigger.supply, itemId: supply.id);
     observability.event(AnalyticsEvent.careAction, {
       'verb': 'supply',
       'bond_awarded': outcome.bondAwarded,
@@ -510,6 +781,7 @@ class GameController extends ChangeNotifier {
       _collect(_keepsakes.comfort(outcome.state, _now()));
     }
     _say(HeartmindIntent.comfort);
+    _recordKindness(KindnessTrigger.comfort);
     observability.event(AnalyticsEvent.careAction, {
       'verb': 'comfort',
       'bond_awarded': outcome.bondAwarded,
@@ -535,6 +807,9 @@ class GameController extends ChangeNotifier {
     lastInteraction = null;
     ambientEmotion = null;
     _say(HeartmindIntent.careAck);
+    if (_recordKindness(KindnessTrigger.wellness)) {
+      unawaited(_persist()); // the only sync caller — completion must stick
+    }
     notifyListeners();
   }
 
@@ -555,6 +830,7 @@ class GameController extends ChangeNotifier {
     lastMessage =
         '${item.emoji} ${save.pet.name} is wearing the '
         '${item.displayName}!';
+    _recordKindness(KindnessTrigger.dressUp, itemId: item.id);
     await _persist();
     notifyListeners();
   }
@@ -581,6 +857,7 @@ class GameController extends ChangeNotifier {
     _cue(SfxCue.lullabyDip);
     lastMessage = 'Sweet dreams, ${save.pet.name} 🌙';
     _say(HeartmindIntent.goodbye);
+    _recordKindness(KindnessTrigger.tuckIn);
     await _persist();
     notifyListeners();
   }
@@ -660,6 +937,7 @@ class GameController extends ChangeNotifier {
       lastMessage = '+$bonus Kibble \u2014 what a game! \u{1F9B4}';
       _cue(SfxCue.tada, HapticKind.success);
     }
+    _recordKindness(KindnessTrigger.miniGame);
     observability.event(AnalyticsEvent.careAction, {
       'verb': 'minigame_$gameId',
       'bond_awarded': lastOutcome?.bondAwarded ?? 0,
@@ -696,8 +974,143 @@ class GameController extends ChangeNotifier {
     return true;
   }
 
+  // ---- Seasons of Us (GE-5, Genre Evolution) ----
+
+  bool get _seasonsLive => _liveOps?.isKilled(LiveFeature.seasons) != true;
+
+  /// The current nature season (hemisphere-aware; pure date math).
+  NatureSeason get season =>
+      seasonFor(_localNow(), southern: _southern?.call() ?? false);
+
+  /// The season the rooms should dress for, or null while the founder's
+  /// kill-switch holds the world neutral (instant revert, no restart).
+  NatureSeason? get seasonAccent => _seasonsLive ? season : null;
+
+  /// Counts one active day toward the season keepsake (called only on a
+  /// real new-day session start). Five gentle days → the keepsake, once
+  /// per season-window; every season is earnable again next year.
+  void _countSeasonDay() {
+    final save = _save;
+    if (save == null) return;
+    final key = seasonWindowKey(
+      _localNow(),
+      southern: _southern?.call() ?? false,
+    );
+    final prior = save.seasonProgress;
+    final days = prior != null && prior.windowKey == key ? prior.days + 1 : 1;
+    _save = save.copyWith(
+      seasonProgress: SeasonProgress(windowKey: key, days: days),
+    );
+    if (days == seasonKeepsakeDays) {
+      final s = season;
+      _collect(
+        _keepsakes.season(save.pet, key, s.displayName.toLowerCase(), _now()),
+      );
+      _cue(SfxCue.tada, HapticKind.celebrate);
+      lastMessage =
+          '${s.emoji} Five ${s.displayName.toLowerCase()} days together — '
+          'a keepsake for the book!';
+      _say(HeartmindIntent.milestone);
+    }
+  }
+
+  // ---- Daily Kindnesses (GE-1, Genre Evolution) ----
+
+  static const KindnessEngine _kindnessEngine = KindnessEngine();
+
+  /// Today's kindness slate (offered pair + completion) — null before the
+  /// first session of the day resolves it.
+  KindnessState? get kindnessToday => _save?.kindness;
+
+  /// Today's offered kindnesses resolved to their defs (retired ids skip).
+  List<KindnessDef> get todaysKindnesses => [
+    for (final id in _save?.kindness?.offered ?? const <String>[])
+      ?KindnessCatalog.byId(id),
+  ];
+
+  /// Ensures the slate belongs to today (a new day quietly brings a fresh
+  /// pair; yesterday's simply fades — nothing lost, nothing mentioned).
+  void _syncKindness() {
+    final save = _save;
+    if (save == null) return;
+    final synced = _kindnessEngine.today(
+      utcOffsetAt: _utcOffsetAt,
+      nowMs: _now(),
+      petId: save.pet.petId,
+      prior: save.kindness,
+      season: _seasonsLive ? season : null,
+    );
+    if (!identical(synced, save.kindness)) {
+      _save = save.copyWith(kindness: synced);
+    }
+  }
+
+  /// A real care moment happened — detect completions, thank with Kibble, and
+  /// celebrate. The moment already carried its own bond/meters through the
+  /// sim; the kindness adds delight, never a second scoop of power. Returns
+  /// true when something completed (sync callers persist on that signal).
+  bool _recordKindness(KindnessTrigger trigger, {String? itemId}) {
+    final save = _save;
+    if (save == null) return false;
+    final slate = _kindnessEngine.today(
+      utcOffsetAt: _utcOffsetAt,
+      nowMs: _now(),
+      petId: save.pet.petId,
+      prior: save.kindness,
+      season: _seasonsLive ? season : null,
+    );
+    final res = _kindnessEngine.record(slate, trigger, itemId: itemId);
+    if (res.completed.isEmpty) {
+      if (!identical(res.state, save.kindness)) {
+        _save = save.copyWith(kindness: res.state);
+      }
+      return false;
+    }
+    var wallet = save.pet.wallet;
+    var thanks = 0;
+    for (final def in res.completed) {
+      wallet = wallet.addKibble(def.kibble);
+      thanks += def.kibble;
+    }
+    _save = save.copyWith(
+      pet: save.pet.copyWith(wallet: wallet),
+      kindness: res.state,
+    );
+    _cue(SfxCue.tada, HapticKind.celebrate);
+    lastMessage = res.state.allDone
+        ? 'Every kindness done today — +$thanks Kibble! 💛'
+        : '${res.completed.first.emoji} A kindness complete — '
+              '+$thanks Kibble!';
+    _say(
+      res.state.allDone ? HeartmindIntent.milestone : HeartmindIntent.careAck,
+    );
+    // Its own event kind — kindnesses must never skew the careAction funnel.
+    for (final def in res.completed) {
+      observability.event(AnalyticsEvent.kindnessComplete, {
+        'kindness': def.id,
+        'kibble': def.kibble,
+        'all_done': res.state.allDone,
+      });
+    }
+    return true;
+  }
+
+  /// The household's preferred notification hours from the on-device rhythm
+  /// histogram (GE-6), or null in tests without the seam (defaults stand).
+  List<int>? _preferredHours() {
+    final hist = _openHourHistogram?.call();
+    if (hist == null) return null;
+    return preferredNotificationHours(hist, 1);
+  }
+
   void _resumeSession() {
     final save = _save!;
+    // Rhythm-aware notifications (GE-6): note the session-open hour, on-device
+    // only (privacy-first — never a pet-save field). It's the clock's hour,
+    // consistent with how the scheduler places its anchor hours, so the
+    // hellos land at the household's habitual time.
+    final openHour = (_localNow() ~/ Duration.millisecondsPerHour) % 24;
+    _recordOpenHour?.call(openHour);
     final resume = sim.resolveOnResume(
       state: save.pet,
       ledger: save.ledger,
@@ -712,6 +1125,7 @@ class GameController extends ChangeNotifier {
     );
     _session = SessionInteractions.empty;
     _sessionStartMs = _now();
+    _lastAliveMs = _now();
     lastInteraction = null;
     ambientEmotion = null;
     _mood = resume.mood;
@@ -730,6 +1144,22 @@ class GameController extends ChangeNotifier {
         ? HeartmindIntent.returning
         : HeartmindIntent.greeting;
     _say(intent, tryCallback: true);
+    _syncKindness(); // today's pair greets the day (deterministic, quiet)
+    // A real new day (the daily Kibble marks it) counts toward the season
+    // keepsake — five gentle days, never a streak (GE-5).
+    if (resume.dailyKibble > 0 && _seasonsLive) _countSeasonDay();
+    // Re-arm presence notifications on the freshly-updated rhythm (GE-6):
+    // as the open-hour histogram grows, the hellos drift toward when this
+    // household actually plays.
+    if (_notificationsLive) {
+      unawaited(
+        notifications.scheduleDailyPresence(
+          petName: resume.state.name,
+          fromMs: _now(),
+          preferredHours: _preferredHours(),
+        ),
+      );
+    }
     _recordRetentionBeats();
   }
 
@@ -746,8 +1176,8 @@ class GameController extends ChangeNotifier {
     final pet = _save?.pet;
     if (pet == null) return;
     final daysSinceAdopt =
-        (_now() ~/ Duration.millisecondsPerDay) -
-        (pet.createdAtMs ~/ Duration.millisecondsPerDay);
+        localDayOf(_now(), _utcOffsetAt) -
+        localDayOf(pet.createdAtMs, _utcOffsetAt);
     final isAnniversary = daysSinceAdopt > 0 && daysSinceAdopt % 365 == 0;
 
     // Retention-milestone return (per session on the day; the dashboard counts
@@ -769,8 +1199,20 @@ class GameController extends ChangeNotifier {
   /// (`_sessionStartMs != null`): a transient `resumed` after `inactive` (no real
   /// background) must not re-resolve catch-up or re-greet (P3-8 audit finding).
   void onAppForegrounded() {
-    if (!hasPet || _sessionStartMs != null) return;
+    if (!hasPet) return;
+    if (_sessionStartMs != null) {
+      // A session is nominally still active. If it went quiet only moments
+      // ago this is a transient blip (inactive → resumed) — keep it. If it
+      // has been silent for a real gap, the platform backgrounded us with
+      // only `hidden` (no `paused`) — close the stale session at its last
+      // provably-alive instant and fall through to a fresh resolve (KP-021).
+      if (_now() - _lastAliveMs < kStaleSessionGapMs) return;
+      _endSession(endMs: _lastAliveMs);
+    }
     _resumeSession();
+    // The fresh kindness slate + season-day count must stick even if the
+    // session ends abruptly (they're not derivable after the fact).
+    unawaited(_persist());
     notifyListeners();
   }
 
@@ -785,12 +1227,13 @@ class GameController extends ChangeNotifier {
   /// Emits the deferred `sessionQuality` summary (the daily-retention lever):
   /// `empty=false` ⇔ the player did ≥1 care interaction this session. No-op if
   /// no session is active (guards double-emit). See [ObservabilityFacade].
-  void _endSession() {
+  void _endSession({int? endMs}) {
     final start = _sessionStartMs;
     if (start == null) return;
+    final end = endMs ?? _now();
     observability.recordSessionQuality(
       interactions: _session.total,
-      durationSeconds: ((_now() - start) / 1000).round(),
+      durationSeconds: ((end - start) / 1000).clamp(0, 1 << 32).round(),
     );
     _sessionStartMs = null;
   }
@@ -814,6 +1257,11 @@ class GameController extends ChangeNotifier {
   Future<void> _persist() async {
     final save = _save;
     if (save == null) return;
+    // Every persist-worthy action proves the session alive (KP-021).
+    _lastAliveMs = _now();
+    // Belt-and-braces for KP-010: never write while a quarantined save is
+    // pending recovery (there is no in-memory save then, but keep the guard).
+    if (recovery != null) return;
     final res = await repo.save(save);
     if (res.isErr) {
       observability.recordError(
@@ -822,7 +1270,13 @@ class GameController extends ChangeNotifier {
         context: 'persist',
       );
     }
-    await _publishSnapshot(save);
+    // Best-effort by contract: a snapshot/home-widget platform failure must
+    // never escape into the fire-and-forget gameplay callers (KP-020).
+    try {
+      await _publishSnapshot(save);
+    } catch (e, st) {
+      observability.recordError(e, st, context: 'publish_snapshot');
+    }
   }
 
   /// Writes the single shared status snapshot (§6.1) that feeds the notification
@@ -885,7 +1339,7 @@ class GameController extends ChangeNotifier {
     if (o.comfortBeat) return '$name feels so much better with you here 💛';
     return switch (interaction) {
       CareInteraction.feed => '$name gobbled it right up! 🍖',
-      CareInteraction.clean => '$name feels fresh and happy 🫧',
+      CareInteraction.clean => '$name feels fresh and happy 💦',
       CareInteraction.play => '$name had the best time playing! 🎾',
     };
   }

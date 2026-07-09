@@ -158,7 +158,11 @@ class InteractionEngine {
           happiness: _clamp(meters.happiness + _diminish(joy, n)),
           energy: _clamp(meters.energy - energyCost),
         );
-        final willing = meters.energy > energyCost;
+        // "Willing" means the pet has genuine energy headroom — energy the
+        // play can spend without landing on the no-death floor. Comparing
+        // against the raw cost alone was permanently true (floor 15 > cost
+        // 10), which made play mint full Kibble forever (KP-014).
+        final willing = meters.energy - energyCost > config.floor;
         return InteractionEffect(
           meters: next,
           rawBondPoints: _diminish(

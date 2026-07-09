@@ -31,5 +31,22 @@ class PrefsSaveStore implements LocalSaveStore {
   Future<void> delete() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(prefsName);
+    // Right-to-be-forgotten wipes the quarantine slot too — a corrupt-save
+    // backup is still the player's personal data (§8.3).
+    await prefs.remove('$prefsName.corrupt_backup');
+  }
+
+  /// Quarantine slot (KP-010) — kept under a sibling key so a fresh-pet write
+  /// to [prefsName] can never destroy an unreadable-but-recoverable save.
+  @override
+  Future<void> writeBackup(String blob) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('$prefsName.corrupt_backup', blob);
+  }
+
+  @override
+  Future<String?> readBackup() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('$prefsName.corrupt_backup');
   }
 }

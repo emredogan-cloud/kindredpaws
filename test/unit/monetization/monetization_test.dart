@@ -57,6 +57,31 @@ void main() {
         expect(b.grants, [Grant.heartstones]);
       }
     });
+
+    test('LAUNCH catalogue sells nothing the build cannot honor '
+        '(KP-006/KP-007)', () {
+      // Heartstones have no spend sink yet (no spendHeartstones, no
+      // Heartstone-priced item) → their bundles must stay out of the launch
+      // catalogue until KP-037 ships the storefront. Apple 3.1.1.
+      expect(
+        kProductCatalog.where(
+          (p) => !p.isSubscription && p.grants.contains(Grant.heartstones),
+        ),
+        isEmpty,
+        reason: 'purchasable currency with no sink (KP-007)',
+      );
+      // The donation loop is not operational → no product may advertise a
+      // giving split until every claim is literally true. Apple 3.2.1.
+      expect(
+        kProductCatalog.where((p) => p.isRescueBundle),
+        isEmpty,
+        reason:
+            'giving-split claims without an operational donation loop '
+            '(KP-006)',
+      );
+      // The subscription itself remains offered.
+      expect(kProductCatalog.where((p) => p.isSubscription), hasLength(2));
+    });
   });
 
   group('Entitlements — cosmetic/QoL only', () {

@@ -70,10 +70,12 @@ const Map<ExperimentVariant, PaywallCopy> _copy = {
     subline: 'All the cozy perks, for less per month on the annual plan.',
     annualFirst: true,
   ),
-  // Treatment B — impact-forward (the giving framing, for treatments:2 runs).
+  // Treatment B — warmth-forward (for treatments:2 runs). The former
+  // impact-forward framing ("a kinder home for rescues") is retired until the
+  // donation loop is operational — no claim may outrun reality (KP-006).
   ExperimentVariant.treatmentB: PaywallCopy(
     headline: 'Forever Friends, real friends',
-    subline: 'Cozy perks for you — and a kinder home for rescues. 💛',
+    subline: 'The coziest way to care, made with kindness. 💛',
     annualFirst: true,
   ),
 };
@@ -100,11 +102,19 @@ class PaywallController {
 
   Entitlements get entitlements => monetization.entitlements;
 
-  /// The single subscription tier (LOCKED) + the cosmetic-currency bundles.
+  /// The single subscription tier (LOCKED) + whatever bundles the LAUNCH
+  /// catalogue carries. Derived from [kProductCatalog] so the paywall can
+  /// never advertise a product the launch posture excludes: Heartstone
+  /// bundles are out until their spend sink ships (KP-007/KP-037), Rescue
+  /// Bundles until donations are operational (KP-006/F-6). Empty lists simply
+  /// render no section.
   Product get subscriptionMonthly => kForeverFriendsMonthly;
   Product get subscriptionAnnual => kForeverFriendsAnnual;
-  List<Product> get heartstoneBundles => kHeartstoneBundles;
-  List<Product> get rescueBundles => kRescueBundles;
+  List<Product> get heartstoneBundles => kProductCatalog
+      .where((p) => !p.isSubscription && p.grants.contains(Grant.heartstones))
+      .toList();
+  List<Product> get rescueBundles =>
+      kProductCatalog.where((p) => p.isRescueBundle).toList();
 
   /// Resolves the paywall value-framing variant **and** logs the exposure (once
   /// per user) so conversion can be attributed. Call once when the sheet opens.

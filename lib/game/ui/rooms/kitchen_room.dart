@@ -12,6 +12,7 @@ import '../../controller/game_controller.dart';
 import '../../model/care_meters.dart';
 import '../../model/items.dart';
 import '../../rooms/room_id.dart';
+import '../widgets/ambient_scene.dart';
 import '../widgets/cozy.dart';
 import 'room_scaffold.dart';
 import 'widgets/need_glow.dart';
@@ -68,9 +69,14 @@ class _KitchenRoomState extends State<KitchenRoom> {
         RoomScaffold(
           controller: controller,
           rig: rig,
-          sceneAsset: KpAssets.cozyRoomDay,
-          // A warm, buttery morning-kitchen light.
-          tint: const Color(0x2EFFD9A0),
+          sceneAsset: KpAssets.kitchenScene,
+          ambient: const AmbientScene(variant: AmbientVariant.kitchenSteam),
+          decorRoom: RoomId.kitchen,
+          seasonAccent: controller.seasonAccent,
+          firstVisitHint: const (
+            'hint_kitchen',
+            'Tap a food on the pantry shelf to share a meal 🍽️',
+          ),
           content: ShelfPanel(
             title: 'Pantry',
             trailing: NeedGlow(

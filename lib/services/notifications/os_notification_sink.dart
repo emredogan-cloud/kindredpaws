@@ -28,7 +28,11 @@ abstract interface class OsNotificationSink {
     required String payload,
   });
 
-  /// Cancel every scheduled notification (the "replace the set" primitive).
+  /// Cancel one scheduled notification by [id] (the per-domain primitive —
+  /// re-arming daily presence must not wipe pending celebrations, KP-017).
+  Future<void> cancel(int id);
+
+  /// Cancel every scheduled notification (kill-switch / notifications-off).
   Future<void> cancelAll();
 }
 
@@ -51,6 +55,9 @@ class NoopOsNotificationSink implements OsNotificationSink {
     PetNotification notification, {
     required String payload,
   }) async {}
+
+  @override
+  Future<void> cancel(int id) async {}
 
   @override
   Future<void> cancelAll() async {}

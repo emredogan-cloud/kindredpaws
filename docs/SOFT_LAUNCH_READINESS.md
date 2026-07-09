@@ -51,7 +51,7 @@ app-store update takes hours-to-days and soft launch needs minutes.
 ### 2.1 Crash spike / stability (crash-free < 99.5%)
 1. **Detect:** Crashlytics alert, or a rise in P1 `crashReport` beta items (`had_crash=true`).
 2. **Assess:** which build/feature? The beta item's diagnostic snapshot pins env + flags + versions; group by Crashlytics signature.
-3. **Mitigate:** if a single feature is implicated, flip its kill-switch (`killswitch.<feature>` → true) — e.g. `rewarded_ads`, `keepsake_share`, `notifications`, `live_chat`, `beta_feedback`, `rescue_bundles`. If config-driven, roll the offending value back to its default.
+3. **Mitigate:** if a single feature is implicated, flip its kill-switch (`killswitch.<feature>` → true) — e.g. `rewarded_ads`, `keepsake_share`, `notifications`, `live_chat`, `beta_feedback`, `rescue_bundles`, `seasons`. If config-driven, roll the offending value back to its default.
 4. **Verify:** crash-free recovers; the breadcrumb trail (`event:*`, `perf:*`) confirms the path is gone.
 5. **Post-mortem:** add a regression test at the lowest layer; ship the real fix; re-enable.
 

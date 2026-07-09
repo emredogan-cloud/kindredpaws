@@ -1,20 +1,25 @@
 /// Paywall UX (P5-4) — the warm, honest monetization sheet. Surfaces the single
-/// LOCKED Forever Friends subscription (monthly + annual), the cosmetic-currency
-/// Heartstone bundles, and the Rescue Bundles with their **disclosed** giving
-/// split. Copy + plan order come from the pricing-*framing* experiment via
-/// [PaywallController]; the funnel telemetry + ethical wall live there.
+/// LOCKED Forever Friends subscription (monthly + annual) plus whatever bundle
+/// sections the LAUNCH catalogue carries (none today: Heartstone bundles wait
+/// for their spend sink, KP-007/KP-037; Rescue Bundles wait for the donation
+/// loop to be operational, KP-006/F-6). Copy + plan order come from the
+/// pricing-*framing* experiment via [PaywallController]; the funnel telemetry
+/// + ethical wall live there.
 ///
 /// Ethical wall, surfaced to the player (§18, D-047): every perk is cosmetic /
-/// quality-of-life, cancelling never affects the pet, and impact (Rescue
-/// Bundles) is transparent — never pay-to-win, never a guilt lever.
+/// quality-of-life, cancelling never affects the pet — never pay-to-win,
+/// never a guilt lever, and never a claim the build cannot honor.
 library;
 
 import 'package:flutter/material.dart';
 
+import '../../core/legal_links.dart';
+import '../../core/service_locator.dart';
 import '../../monetization/entitlements.dart';
 import '../../monetization/monetization_controller.dart';
 import '../../monetization/paywall_controller.dart';
 import '../../monetization/product_catalog.dart';
+import '../../services/link_opener.dart';
 import 'widgets/cozy.dart';
 
 /// Opens the paywall as a modal sheet, logging `shown` on open + `dismissed` on
@@ -161,25 +166,40 @@ class _PaywallSheetState extends State<PaywallSheet> {
                       busy: _busy,
                       onBuy: _buy,
                     ),
+                  // Apple 3.1.2 point-of-sale disclosures (KP-003): the
+                  // auto-renewal terms + functional Terms/Privacy links must
+                  // sit adjacent to the purchase controls.
+                  if (!entitled) ...[
+                    const SizedBox(height: 10),
+                    const _SubscriptionDisclosures(),
+                  ],
                   const SizedBox(height: 12),
                   const _EthicalWallNote(),
-                  const SizedBox(height: 20),
-                  _BundleSection(
-                    title: 'Heartstones',
-                    caption: 'Premium cosmetic currency — buys only looks. ✨',
-                    products: _c.heartstoneBundles,
-                    busy: _busy,
-                    onBuy: _buy,
-                  ),
-                  const SizedBox(height: 16),
-                  _BundleSection(
-                    title: 'Rescue Bundles',
-                    caption:
-                        'A cosmetic treat with a transparent giving split.',
-                    products: _c.rescueBundles,
-                    busy: _busy,
-                    onBuy: _buy,
-                  ),
+                  // Bundle sections render only for products in the LAUNCH
+                  // catalogue (KP-006/KP-007): Heartstone bundles return with
+                  // their spend sink (KP-037), Rescue Bundles when donations
+                  // are operational (F-6).
+                  if (_c.heartstoneBundles.isNotEmpty) ...[
+                    const SizedBox(height: 20),
+                    _BundleSection(
+                      title: 'Heartstones',
+                      caption: 'Premium cosmetic currency — buys only looks. ✨',
+                      products: _c.heartstoneBundles,
+                      busy: _busy,
+                      onBuy: _buy,
+                    ),
+                  ],
+                  if (_c.rescueBundles.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    _BundleSection(
+                      title: 'Rescue Bundles',
+                      caption:
+                          'A cosmetic treat with a transparent giving split.',
+                      products: _c.rescueBundles,
+                      busy: _busy,
+                      onBuy: _buy,
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   Center(
                     child: TextButton(
@@ -222,9 +242,9 @@ class _EntitledCard extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             const Text(
-              'Thank you. Your cozy perks are active: an ad-light home, a daily '
-              'Kibble top-up, monthly Heartstones & Compassion Coins, and a '
-              'rotating cosmetic. Cancel anytime — it never affects your pet.',
+              'Thank you. Your cozy perks are active: the Forever Friends '
+              'wardrobe pieces are yours to wear. Cancel anytime — it never '
+              'affects your pet.',
             ),
           ],
         ),
@@ -363,6 +383,67 @@ class _BundleSection extends StatelessWidget {
               onTap: busy ? null : () => onBuy(p),
             ),
           ),
+      ],
+    );
+  }
+}
+
+/// The legally-required subscription disclosures at the point of sale
+/// (Apple 3.1.2 / Play equivalent — KP-003): auto-renewal terms in plain
+/// words, plus working Terms-of-Use and Privacy-Policy links.
+class _SubscriptionDisclosures extends StatelessWidget {
+  const _SubscriptionDisclosures();
+
+  Future<void> _open(BuildContext context, String url) async {
+    final ok = await ServiceLocator.instance.get<LinkOpener>().open(url);
+    if (!ok && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not open the page — it lives at $url')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final small = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+    );
+    return Column(
+      key: const Key('paywall-disclosures'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Subscriptions renew automatically. Payment is charged to your '
+          'App Store or Google Play account at purchase confirmation, and '
+          'renewal is charged within 24 hours before the period ends unless '
+          'cancelled at least 24 hours before then. Manage or cancel anytime '
+          'in your store account settings.',
+          style: small,
+        ),
+        Row(
+          children: [
+            TextButton(
+              key: const Key('paywall-terms-link'),
+              style: TextButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+              ),
+              onPressed: () => _open(context, kTermsOfUseUrl),
+              child: const Text('Terms of Use'),
+            ),
+            Text('·', style: small),
+            TextButton(
+              key: const Key('paywall-privacy-link'),
+              style: TextButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+              ),
+              onPressed: () => _open(context, kPrivacyPolicyUrl),
+              child: const Text('Privacy Policy'),
+            ),
+          ],
+        ),
       ],
     );
   }

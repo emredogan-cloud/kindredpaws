@@ -8,27 +8,45 @@ import '../model/bond.dart';
 import '../model/mood.dart';
 import 'sim_config.dart';
 
-/// Tracks Bond points accrued within a single UTC day for the soft cap. Resets
-/// automatically when the day rolls over.
+/// Tracks the per-day accruals: Bond points (for the ~55/day soft cap) and
+/// care-action Kibble (for the KP-014 faucet cap). Resets automatically when
+/// the (local) day rolls over — and only ever rolls FORWARD (KP-015).
 class BondLedger {
-  const BondLedger({required this.dayEpoch, required this.earnedToday});
+  const BondLedger({
+    required this.dayEpoch,
+    required this.earnedToday,
+    this.careKibbleToday = 0,
+  });
 
   final int? dayEpoch;
   final int earnedToday;
+
+  /// Kibble minted by care actions today (persisted so an app restart can't
+  /// refill the faucet — schema v11).
+  final int careKibbleToday;
 
   static const BondLedger empty = BondLedger(dayEpoch: null, earnedToday: 0);
 
   BondLedger forDay(int today) =>
       dayEpoch == today ? this : BondLedger(dayEpoch: today, earnedToday: 0);
 
+  /// [amount] more care-action Kibble minted today.
+  BondLedger mintCareKibble(int amount) => BondLedger(
+    dayEpoch: dayEpoch,
+    earnedToday: earnedToday,
+    careKibbleToday: careKibbleToday + amount,
+  );
+
   Map<String, dynamic> toMap() => {
     'dayEpoch': dayEpoch,
     'earnedToday': earnedToday,
+    'careKibbleToday': careKibbleToday,
   };
 
   factory BondLedger.fromMap(Map<String, dynamic> m) => BondLedger(
     dayEpoch: (m['dayEpoch'] as num?)?.toInt(),
     earnedToday: (m['earnedToday'] as num?)?.toInt() ?? 0,
+    careKibbleToday: (m['careKibbleToday'] as num?)?.toInt() ?? 0,
   );
 }
 
@@ -79,6 +97,9 @@ class BondEngine {
       ledger: BondLedger(
         dayEpoch: todayEpochDay,
         earnedToday: today.earnedToday + grant,
+        // Carry the care-Kibble tally — a Bond award must never refill the
+        // day's Kibble faucet (KP-014).
+        careKibbleToday: today.careKibbleToday,
       ),
       awarded: grant,
     );

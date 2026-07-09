@@ -17,13 +17,18 @@ import '../keepsake_screen.dart';
 import '../memory_book_screen.dart';
 import '../paywall_sheet.dart';
 import '../settings_screen.dart';
+import '../widgets/ambient_life_driver.dart';
 import '../widgets/cozy.dart';
 import '../widgets/feel_fx.dart';
 import 'room_registry.dart';
+import '../kp_tokens.dart';
 
 /// Vertical space rooms must leave free at the bottom so content never sits
 /// under the floating room dock.
 const double kRoomDockClearance = 92;
+
+/// Device-local id for the one-time swipe-discovery nudge (KP-026).
+const String kSwipeHintId = 'swipe_rooms';
 
 class RoomHost extends StatefulWidget {
   const RoomHost({
@@ -69,6 +74,10 @@ class _RoomHostState extends State<RoomHost> {
   }
 
   void _goTo(int index) {
+    // Navigating via the dock proves the rooms were discovered (KP-026).
+    if (widget.controller.shouldShowHint(kSwipeHintId)) {
+      widget.controller.markHintSeen(kSwipeHintId);
+    }
     if (index == _current) return;
     _pages.animateToPage(
       index,
@@ -161,13 +170,22 @@ class _RoomHostState extends State<RoomHost> {
           ),
           body: Stack(
             children: [
+              // Every so often an idle pet simply does something on its own
+              // (GE-2 autonomous micro-behaviors; renders nothing).
+              AmbientLifeDriver(controller: widget.controller),
               // Rooms. Each page paints its own full-bleed scene, so the swipe
               // carries the scene with the room (no cross-fade seams).
               PageView.builder(
                 key: const Key('room-pages'),
                 controller: _pages,
                 itemCount: _rooms.length,
-                onPageChanged: (i) => setState(() => _current = i),
+                onPageChanged: (i) {
+                  // The swipe was discovered — retire the nudge (KP-026).
+                  if (widget.controller.shouldShowHint(kSwipeHintId)) {
+                    widget.controller.markHintSeen(kSwipeHintId);
+                  }
+                  setState(() => _current = i);
+                },
                 itemBuilder: (context, i) =>
                     _rooms[i].build(widget.controller, rig, _goToRoom),
               ),
@@ -195,6 +213,31 @@ class _RoomHostState extends State<RoomHost> {
               Positioned.fill(
                 child: CelebrationOverlay(controller: widget.controller),
               ),
+              // One-time swipe-discovery nudge (KP-026): nothing signalled
+              // that the world scrolls sideways, so most rooms went
+              // undiscovered. Dismissed by the first swipe/dock hop or a tap.
+              if (widget.controller.shouldShowHint(kSwipeHintId))
+                const Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 96,
+                  // Hit-transparent: an affordance must never steal a care
+                  // tap. It retires on the first swipe OR dock hop.
+                  child: IgnorePointer(
+                    child: Center(
+                      child: CozyChip(
+                        key: Key('swipe-nudge'),
+                        child: Text(
+                          'Swipe to explore your whole home  ⟷',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: KpColors.ink,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               if (_rooms.length > 1)
                 Positioned(
                   left: 0,
@@ -273,11 +316,11 @@ class _RoomDockState extends State<_RoomDock> {
       height: 78,
       margin: const EdgeInsets.fromLTRB(10, 0, 10, 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFBF5).withValues(alpha: 0.90),
+        color: KpColors.card.withValues(alpha: 0.90),
         borderRadius: BorderRadius.circular(26),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFE9A178).withValues(alpha: 0.22),
+            color: KpColors.peach.withValues(alpha: 0.22),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -317,9 +360,7 @@ class _RoomDockState extends State<_RoomDock> {
                       child: Icon(
                         room.icon,
                         size: 24,
-                        color: selected
-                            ? scheme.onPrimary
-                            : const Color(0xFF4A3F38),
+                        color: selected ? scheme.onPrimary : KpColors.ink,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -328,11 +369,13 @@ class _RoomDockState extends State<_RoomDock> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 9.5,
+                        // ≥11pt for comfortable legibility before low-vision
+                        // scaling (KP-028; was 9.5).
+                        fontSize: KpText.caption,
                         fontWeight: selected
                             ? FontWeight.w800
                             : FontWeight.w600,
-                        color: const Color(0xFF4A3F38),
+                        color: KpColors.ink,
                       ),
                     ),
                   ],
@@ -357,7 +400,7 @@ class _CozyDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      backgroundColor: const Color(0xFFFFF6EC),
+      backgroundColor: KpColors.cream,
       child: SafeArea(
         child: ListView(
           padding: const EdgeInsets.symmetric(vertical: 8),

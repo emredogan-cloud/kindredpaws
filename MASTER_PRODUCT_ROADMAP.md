@@ -1,5 +1,7 @@
 # MASTER PRODUCT ROADMAP — KindredPaws Product Evolution
 
+> **PROGRAM COMPLETE — historical record.** The E1–E6 program shipped and was superseded by `MASTER_KINDREDPAWS_PRODUCT_ROADMAP.md` (GE-series, also complete). The active execution backlog is **`PRE_RELEASE_REMEDIATION_ROADMAP.md`** (since 2026-07-08); strategic phases/gates remain canonical in `game-os/GAME_MASTER_EXECUTION_ROADMAP.md`.
+
 **Execution authority** for the founder-approved Product Evolution program (supersedes sprint briefs; canon guardrails from `game-os/` remain binding where not explicitly evolved by the founder).
 **Baseline:** post-Immersive-Pet-Experience (PR #63, CI green): 8-room home, vector pet on the Rive contract, inventory + Kibble economy, save v7, 522 tests / 91.7 % coverage.
 **Benchmark:** My Talking Tom — gameplay/UX/progression patterns only. No assets, code, animations, or protected content are ever copied or extracted.

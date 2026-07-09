@@ -3,6 +3,7 @@
 /// in tests (with an in-memory store + an injected clock).
 library;
 
+import '../core/local_day.dart';
 import '../core/service_locator.dart';
 import '../data/save_repository.dart';
 import '../services/analytics_service.dart';
@@ -27,6 +28,12 @@ GameController createGameController({
   required ServiceLocator sl,
   required LocalSaveStore store,
   int Function()? clock,
+  String Function()? idGenerator,
+
+  /// Local calendar frame (KP-016/KP-018). Tests keep the deterministic UTC
+  /// default; `main()` passes the device offset so day boundaries, seasons,
+  /// and notification rhythm live on the player's clock.
+  UtcOffsetAt utcOffsetAt = utcOffsetNone,
 }) {
   final config = SimConfig.fromRemoteConfig(sl.get<RemoteConfigService>());
   final repo = SaveRepository(
@@ -37,7 +44,7 @@ GameController createGameController({
     onIdentityReset: () async => sl.get<AnalyticsService>().resetIdentifiers(),
   );
   return GameController(
-    sim: GameSimulation(config),
+    sim: GameSimulation(config, utcOffsetAt: utcOffsetAt),
     config: config,
     repo: repo,
     observability: sl.get<ObservabilityFacade>(),
@@ -51,6 +58,13 @@ GameController createGameController({
     liveOps: sl.get<LiveOps>(),
     feel: sl.get<FeelService>(),
     notificationsAllowed: () => sl.get<PrefsService>().notificationsEnabled,
+    southernHemisphere: () => sl.get<PrefsService>().southernHemisphere,
+    utcOffsetAt: utcOffsetAt,
+    recordOpenHour: (h) => sl.get<PrefsService>().recordOpenHour(h),
+    openHourHistogram: () => sl.get<PrefsService>().openHourHistogram,
+    seenHints: () => sl.get<PrefsService>().seenHints,
+    markHintSeen: (id) => sl.get<PrefsService>().markHintSeen(id),
     clock: clock,
+    idGenerator: idGenerator,
   );
 }

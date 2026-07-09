@@ -7,7 +7,7 @@
 [![Nightly](https://github.com/emredogan-cloud/kindredpaws/actions/workflows/nightly.yml/badge.svg)](https://github.com/emredogan-cloud/kindredpaws/actions/workflows/nightly.yml)
 [![Security](https://github.com/emredogan-cloud/kindredpaws/actions/workflows/security.yml/badge.svg)](https://github.com/emredogan-cloud/kindredpaws/actions/workflows/security.yml)
 
-> **Status: Phase 1 (Core-loop prototype) — in progress.** Phase 0 (Pre-production / G0) is complete ([`PHASE0_COMPLETION_REPORT.md`](PHASE0_COMPLETION_REPORT.md)). The app is now a **playable vertical slice**: adopt a pet on Rescue Day, care for it (feed / clean / play), grow The Bond, and your progress persists across restarts. Rig runtime is **Rive** (locked at P1-0, [`docs/ANIMATION_SPIKE_REPORT.md`](docs/ANIMATION_SPIKE_REPORT.md)). See [`game-os/current_state.json`](game-os/current_state.json) for the live phase/gate status.
+> **Status: Phase 3 (MVP / closed beta) — pre-release remediation in progress.** Phases 0–2 engineering plus two evolution programs (E1–E6, GE-1–GE-7) are complete: an 8-room home, the vector pet on the locked Rive contract, Heartmind memory/dialogue, décor/sets/seasons/minigames, save schema v10 (migrations v1→v10), 644 tests at 91% coverage. The 2026-07-08 pre-App-Store audit ([`PRE_APP_STORE_FINAL_AUDIT_REPORT.md`](PRE_APP_STORE_FINAL_AUDIT_REPORT.md)) verdict is **DO NOT SUBMIT yet** — commerce/backend run on inert seams pending founder provisioning. The active execution backlog is [`PRE_RELEASE_REMEDIATION_ROADMAP.md`](PRE_RELEASE_REMEDIATION_ROADMAP.md) (KP-001…KP-052). See [`game-os/current_state.json`](game-os/current_state.json) for the live phase/gate status.
 
 ---
 
@@ -19,7 +19,7 @@
 | [`CLAUDE.md`](CLAUDE.md) | Operating manual for AI agents working this repo (build/test/ship loop, guardrails). |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | Branching, conventional commits, PR rules, the self-merge model. |
 | [`game-os/`](game-os/) | Product/design "operating system" (roadmap, gameplay bible, decision log, canonical brief). Design source of truth. |
-| `lib/`, `test/`, `integration_test/` | The Flutter walking skeleton + its unit / widget / golden / integration / performance tests. |
+| `lib/`, `test/`, `integration_test/` | The Flutter app + its unit / widget / golden / integration / performance tests. |
 | `tool/` | Agent automation scripts (doctor, emulator boot, E2E drive, screenshots, coverage). |
 | `.github/` | CI/CD workflows, issue/PR templates, CODEOWNERS, labels, dependabot, release automation. |
 | `Justfile` / `Makefile` | The canonical command surface used by humans, agents, and CI alike. |
@@ -27,7 +27,7 @@
 ## Tech stack (decided)
 
 - **Engine:** Flutter (stable) + Dart — chosen for agent-autonomy & testability (see report §3).
-- **Backend (planned):** managed BaaS (Firebase or Supabase) — no owned servers.
+- **Backend:** Firebase (locked at G0, D-049) — auth, Firestore cloud save, Remote Config, Analytics, Crashlytics; no owned servers. Runs on inert mock seams until founder provisioning (see `PRE_RELEASE_REMEDIATION_ROADMAP.md` KP-001).
 - **CI/CD:** GitHub Actions (PR / nightly / release / security).
 - **Device testing:** local Android emulator (KVM) + **Firebase Test Lab** (cloud Android/iOS) + **Codemagic** (macOS iOS builds). See report §5.
 

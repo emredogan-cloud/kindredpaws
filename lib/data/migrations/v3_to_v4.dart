@@ -28,16 +28,21 @@ class V3ToV4 extends Migration {
     final ls = next['lifeStage'] as String?;
     next['lifeStage'] = _lifeStageIds[ls] ?? ls ?? 'pupKit';
 
-    // bond: flat → nested {value, stage}.
-    next['bond'] = {
-      'value': (next.remove('bondValue') as num?)?.toInt() ?? 0,
-      'stage': next.remove('bondStage') ?? 'Stranger',
-    };
+    // bond: flat → nested {value, stage}. Skip when already nested — a
+    // re-applied step must be a no-op, never a bond reset (KP-022).
+    if (next['bond'] is! Map) {
+      next['bond'] = {
+        'value': (next.remove('bondValue') as num?)?.toInt() ?? 0,
+        'stage': next.remove('bondStage') ?? 'Stranger',
+      };
+    }
 
-    // nest: cosmetic id list → nested.
-    next['nest'] = {
-      'cosmeticIds': next.remove('nestCosmeticIds') ?? <String>[],
-    };
+    // nest: cosmetic id list → nested (same idempotency guard).
+    if (next['nest'] is! Map) {
+      next['nest'] = {
+        'cosmeticIds': next.remove('nestCosmeticIds') ?? <String>[],
+      };
+    }
 
     // careStreak: ensure the day-tracker field exists.
     final cs = Map<String, dynamic>.from(

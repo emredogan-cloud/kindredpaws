@@ -41,6 +41,9 @@ class DefaultRemoteConfig implements RemoteConfigService {
     'bond.stage_companion': 1200,
     'bond.stage_kindred': 4000,
     'bond.stage_soulmate': 10000,
+    // Economy guards (KP-014): care-action Kibble is a bounded daily
+    // faucet, not an infinite one (tapered in GameSimulation.interact).
+    'economy.care_kibble_daily_cap': 30,
     // Retention guards.
     'notifications.daily_cap': 2,
     'ads.rewarded_daily_cap': 6,
@@ -57,6 +60,7 @@ class DefaultRemoteConfig implements RemoteConfigService {
     'killswitch.notifications': false,
     'killswitch.beta_feedback': false,
     'killswitch.rescue_bundles': false,
+    'killswitch.seasons': false, // GE-5: neutral world on demand
     // LiveOps rollout percentages (0..100; 100 = fully rolled out).
     'rollout.live_chat.pct': 100,
     'rollout.rewarded_ads.pct': 100,
@@ -64,6 +68,7 @@ class DefaultRemoteConfig implements RemoteConfigService {
     'rollout.notifications.pct': 100,
     'rollout.beta_feedback.pct': 100,
     'rollout.rescue_bundles.pct': 100,
+    'rollout.seasons.pct': 100,
     // Content-hotfix coordination: the dialogue-bank version the live config
     // expects (bumped when a Remote Config top-up ships; see Content OS).
     'liveops.content_version': 1,

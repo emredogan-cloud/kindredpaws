@@ -6,6 +6,7 @@ import 'core/app_config.dart';
 import 'core/app_instrumentation.dart';
 import 'core/bootstrap.dart';
 import 'core/kindred_terms.dart';
+import 'core/local_day.dart';
 import 'core/performance_budgets.dart';
 import 'core/service_locator.dart';
 import 'data/prefs_save_store.dart';
@@ -14,6 +15,7 @@ import 'game/game_wiring.dart';
 import 'game/model/species.dart';
 import 'game/ui/cozy_theme.dart';
 import 'game/ui/game_root.dart';
+import 'game/ui/widgets/ambient_scene.dart';
 import 'render/pet_renderer.dart';
 import 'render/pet_renderer_factory.dart';
 import 'services/analytics_service.dart';
@@ -24,6 +26,7 @@ import 'services/prefs_service.dart';
 import 'services/firebase_provisioning.dart';
 import 'services/firebase/firebase_services.dart';
 import 'services/home_widget_service.dart';
+import 'services/link_opener.dart';
 import 'services/live_ops.dart';
 import 'services/local_notification_scheduler.dart';
 import 'services/logger.dart';
@@ -40,6 +43,10 @@ Future<void> main() async {
   // the Rive contract); tests/CI keep the deterministic placeholder default.
   // An explicit KP_PET_RENDERER (e.g. `rive` once the .riv lands) always wins.
   final config = bootstrap(fallbackRenderer: PetRendererBackend.vector);
+  // Ambient room life goes live (GE-2): steam, stars, butterflies, motes.
+  // Tests/CI never flip this, so their frames stay deterministic; the system
+  // reduced-motion setting always wins regardless.
+  AmbientScene.motionEnabled = true;
   final sl = ServiceLocator.instance;
   // Activate crash capture as early as possible (P3-7): route uncaught Flutter +
   // platform errors to the CrashReporter so the closed beta gets crash-free-rate
@@ -57,6 +64,9 @@ Future<void> main() async {
   sl.registerSingleton<FeelService>(
     FeelService(prefs: prefsService, audio: AudioplayersSink()),
   );
+  // Real outbound links for the legally-required Privacy/Terms/Support pages
+  // (KP-003/KP-004) — same production-swap idiom.
+  sl.registerSingleton<LinkOpener>(const UrlLauncherLinkOpener());
 
   // Real Firebase stack (P3-0): activates ONLY when provisioned
   // (KP_FIREBASE_PROVISIONED + flutterfire configure). Otherwise the mock/
@@ -77,6 +87,9 @@ Future<void> main() async {
   final observability = sl.get<ObservabilityFacade>();
   final notifications = LocalNotificationScheduler(
     sink: FlutterLocalNotificationsSink(),
+    // Anchors on the player's LOCAL wall clock (KP-016) — a "10am hello"
+    // means 10am here, in every timezone, across DST.
+    logic: InMemoryNotificationScheduler(utcOffsetAt: deviceUtcOffsetAt),
     liveOps: sl.get<LiveOps>(),
   );
   await notifications.initialize(
@@ -85,11 +98,19 @@ Future<void> main() async {
     }),
   );
   sl.registerSingleton<NotificationScheduler>(notifications);
-  // Ask for notification permission in-context, fire-and-forget (Android 13+/
-  // iOS) — never awaited, so a user-interactive dialog can't block boot.
-  unawaited(notifications.requestPermission());
+  // Deliberately NO permission request here (KP-023): the OS dialog used to
+  // pop over the rainy cold-open's first beat, spending the one prompt
+  // before the player cared. It now waits for the warm post-adoption
+  // priming card (GameController.acceptNotificationPriming).
 
-  final controller = createGameController(sl: sl, store: PrefsSaveStore());
+  // The device's local calendar frame (KP-016/KP-018): streak days, the
+  // daily bonus, kindness rollovers, and seasons flip at the player's
+  // midnight, not UTC's.
+  final controller = createGameController(
+    sl: sl,
+    store: PrefsSaveStore(),
+    utcOffsetAt: deviceUtcOffsetAt,
+  );
   // The vector rig follows the adopted species (puppy ↔ kitten) — a
   // production re-bind in the same idiom as the home-widget/notification
   // swaps above. The Rive/placeholder backends ignore the resolver.

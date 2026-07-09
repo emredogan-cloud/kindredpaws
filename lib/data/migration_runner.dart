@@ -9,6 +9,14 @@ import 'save_envelope.dart';
 class MigrationRunner {
   MigrationRunner(List<Migration> migrations)
     : _byFrom = {for (final m in migrations) m.fromVersion: m} {
+    // A duplicate fromVersion would silently shadow a step in the map above —
+    // and a shadowed or re-applied step is a latent data-loss path (KP-022).
+    if (_byFrom.length != migrations.length) {
+      throw ArgumentError(
+        'Duplicate migration fromVersion registration '
+        '(${migrations.map((m) => m.fromVersion).toList()})',
+      );
+    }
     for (final m in migrations) {
       if (m.toVersion != m.fromVersion + 1) {
         throw ArgumentError(

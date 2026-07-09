@@ -8,15 +8,19 @@ library;
 import 'package:flutter/material.dart';
 
 import '../../core/kindred_terms.dart';
+import '../../core/legal_links.dart';
 import '../../core/service_locator.dart';
 import '../../services/feel_service.dart';
+import '../../services/link_opener.dart';
 import '../../services/prefs_service.dart';
 import '../controller/game_controller.dart';
 import '../model/bond.dart';
 import '../model/items.dart';
 import '../model/life_stage.dart';
-import '../model/species.dart';
+import '../../render/pet_renderer.dart';
+import 'rooms/room_scaffold.dart' show DressedPet;
 import 'widgets/cozy.dart';
+import 'kp_tokens.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({required this.controller, super.key});
@@ -35,7 +39,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: const Key('settings-screen'),
-      backgroundColor: const Color(0xFFFFF6EC),
+      backgroundColor: KpColors.cream,
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 8),
@@ -83,7 +87,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
               setState(() {});
             },
           ),
+          _sectionLabel('Seasons'),
+          SwitchListTile(
+            key: const Key('settings-southern'),
+            secondary: const Icon(Icons.public_rounded),
+            title: const Text('Southern-hemisphere seasons'),
+            subtitle: const Text(
+              'Flip the year for friends below the equator '
+              '(summer in December)',
+            ),
+            value: _prefs.southernHemisphere,
+            onChanged: (v) async {
+              await _prefs.setSouthernHemisphere(v);
+              setState(() {});
+            },
+          ),
           _sectionLabel('Privacy'),
+          ListTile(
+            key: const Key('settings-privacy-policy'),
+            leading: const Icon(Icons.privacy_tip_outlined),
+            title: const Text('Privacy Policy'),
+            subtitle: const Text('What we collect (very little), and why'),
+            onTap: () => _openLink(kPrivacyPolicyUrl),
+          ),
+          ListTile(
+            key: const Key('settings-terms'),
+            leading: const Icon(Icons.description_outlined),
+            title: const Text('Terms of Use'),
+            onTap: () => _openLink(kTermsOfUseUrl),
+          ),
+          ListTile(
+            key: const Key('settings-support'),
+            leading: const Icon(Icons.support_agent_rounded),
+            title: const Text('Support'),
+            subtitle: const Text('Get help or report a problem'),
+            onTap: () => _openLink(kSupportUrl),
+          ),
           ListTile(
             key: const Key('settings-delete'),
             leading: const Icon(Icons.delete_outline_rounded),
@@ -94,13 +133,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onTap: _confirmDelete,
           ),
           _sectionLabel('About'),
+          // Donation copy stays out until the giving loop is operational and
+          // every claim is literally true (KP-006, FOUNDER_ACTIONS_TODO F-6).
           const ListTile(
             leading: Icon(Icons.favorite_border_rounded),
             title: Text(KindredTerms.gameTitle),
-            subtitle: Text(
-              'Made with love. A share of net revenue supports real '
-              'animal shelters.',
-            ),
+            subtitle: Text('Made with love, for you and your companion.'),
           ),
           ListTile(
             key: const Key('settings-licenses'),
@@ -116,6 +154,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  /// Opens a legal/support page in the external browser (KP-004); a failure
+  /// surfaces gently instead of dead-ending the tap.
+  Future<void> _openLink(String url) async {
+    final ok = await ServiceLocator.instance.get<LinkOpener>().open(url);
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not open the page — it lives at $url')),
+      );
+    }
+  }
+
   Widget _sectionLabel(String text) => Padding(
     padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
     child: Text(
@@ -123,7 +172,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       style: const TextStyle(
         fontWeight: FontWeight.w800,
         fontSize: 13,
-        color: Color(0xFF7A6A58),
+        color: KpColors.taupe,
       ),
     ),
   );
@@ -208,7 +257,7 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       key: const Key('profile-screen'),
-      backgroundColor: const Color(0xFFFFF6EC),
+      backgroundColor: KpColors.cream,
       appBar: AppBar(title: const Text('Our story')),
       body: ListenableBuilder(
         listenable: controller,
@@ -225,13 +274,27 @@ class ProfileScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     const SizedBox(height: 8),
+                    // The portrait is the DRESSED pet — the identity screen
+                    // renders the actual companion, cosmetics and all, not a
+                    // platform emoji (KP-029).
                     SizedBox(
                       height: 150,
                       child: Center(
                         child: ExcludeSemantics(
-                          child: Text(
-                            pet.species == Species.puppy ? '🐶' : '🐱',
-                            style: const TextStyle(fontSize: 84),
+                          child: SizedBox(
+                            width: 140,
+                            height: 140,
+                            child: FittedBox(
+                              child: SizedBox(
+                                width: 160,
+                                height: 160,
+                                child: DressedPet(
+                                  controller: controller,
+                                  rig: ServiceLocator.instance
+                                      .get<PetRenderer>(),
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -290,7 +353,7 @@ class ProfileScreen extends StatelessWidget {
                   style: TextStyle(
                     fontWeight: FontWeight.w800,
                     fontSize: 13,
-                    color: Color(0xFF7A6A58),
+                    color: KpColors.taupe,
                   ),
                 ),
               ),
@@ -302,7 +365,7 @@ class ProfileScreen extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontStyle: FontStyle.italic,
-                    color: Color(0xFF7A6A58),
+                    color: KpColors.taupe,
                   ),
                 ),
               ),

@@ -34,12 +34,17 @@ class CareStreakEngine {
 
   final SimConfig config;
 
-  /// Registers a care action on [todayEpochDay] (days since epoch, UTC).
+  /// Registers a care action on [todayEpochDay] (days since epoch, in the
+  /// player's local frame).
   CareStreakUpdate registerCareDay(CareStreak streak, int todayEpochDay) {
     final last = streak.lastCareDayEpoch;
 
-    // Already cared today — no streak change, no extra Bond day.
-    if (last == todayEpochDay) {
+    // Same day — or an EARLIER day (clock set back / DST underflow): no
+    // change either way. A negative gap used to fall through `gap <= 0` into
+    // "consecutive", incrementing the streak AND dragging the anchor
+    // backwards, corrupting all later gap math (KP-019). The anchor only
+    // ever moves forward.
+    if (last != null && todayEpochDay <= last) {
       return CareStreakUpdate(
         streak: streak,
         isNewCareDay: false,

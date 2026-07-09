@@ -2,7 +2,7 @@
 /// verb). Scrub the pet with your finger: foam builds, and when the bath is
 /// done the pet shakes off into its `comforted` glow. A one-tap Quick Rinse
 /// keeps cleaning fully accessible (never gesture-only), and the potty break
-/// is a giggly, gentle hygiene moment. Copy is always "let's freshen up 🫧" —
+/// is a giggly, gentle hygiene moment. Copy is always "let's freshen up 🛁" —
 /// never "you were dirty" (no blame, ever).
 library;
 
@@ -16,9 +16,11 @@ import '../../model/care_meters.dart';
 import '../../rooms/room_id.dart';
 import '../../sim/interaction.dart';
 import '../widgets/cozy.dart';
+import 'decor_ui.dart';
 import 'room_host.dart' show kRoomDockClearance;
 import 'room_scaffold.dart' show DressedPet;
 import 'widgets/need_glow.dart';
+import '../kp_tokens.dart';
 
 class BathroomRoom extends StatefulWidget {
   const BathroomRoom({
@@ -67,129 +69,144 @@ class _BathroomRoomState extends State<BathroomRoom> {
 
     return CozyBackground(
       asset: KpAssets.bathroomScene,
-      child: SafeArea(
-        child: Column(
-          children: [
-            if (c.petLine != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 52),
-                child: CozySpeechBubble(text: c.petLine!),
-              )
-            else
-              const SizedBox(height: 64),
-            // The pet at the tub, scrubbable, wearing its foam.
-            Expanded(
-              child: Align(
-                alignment: const Alignment(0, 0.1),
-                child: GestureDetector(
-                  key: const Key('bath-scrub'),
-                  onTap: c.nudgeAmbient,
-                  onPanUpdate: _onScrub,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    clipBehavior: Clip.none,
-                    children: [
-                      DressedPet(controller: c, rig: widget.rig),
-                      // Foam builds with the scrub (deterministic bubbles).
-                      if (_scrub > 0.02)
-                        Positioned.fill(
-                          child: IgnorePointer(
-                            child: CustomPaint(
-                              painter: _FoamPainter(progress: _scrub),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Placed décor lives in the scene (GE-3 Cozy Corners).
+          DecorLayer(controller: c, room: RoomId.bathroom),
+          SafeArea(
+            child: Column(
+              children: [
+                if (c.petLine != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 52),
+                    child: CozySpeechBubble(text: c.petLine!),
+                  )
+                else
+                  const SizedBox(height: 64),
+                // The pet at the tub, scrubbable, wearing its foam.
+                Expanded(
+                  child: Align(
+                    alignment: const Alignment(0, 0.1),
+                    child: GestureDetector(
+                      key: const Key('bath-scrub'),
+                      onTap: c.nudgeAmbient,
+                      onPanUpdate: _onScrub,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        clipBehavior: Clip.none,
+                        children: [
+                          DressedPet(controller: c, rig: widget.rig),
+                          // Foam builds with the scrub (deterministic bubbles).
+                          if (_scrub > 0.02)
+                            Positioned.fill(
+                              child: IgnorePointer(
+                                child: CustomPaint(
+                                  painter: _FoamPainter(progress: _scrub),
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                      // Shake-off sparkle pop when a bath completes.
-                      if (_baths > 0)
-                        Positioned.fill(
-                          child: IgnorePointer(
-                            child: TweenAnimationBuilder<double>(
-                              key: ValueKey(_baths),
-                              tween: Tween(begin: 0, end: 1),
-                              duration: const Duration(milliseconds: 700),
-                              curve: Curves.easeOutCubic,
-                              builder: (context, t, _) =>
-                                  CustomPaint(painter: _SparklePainter(t: t)),
+                          // Shake-off sparkle pop when a bath completes.
+                          if (_baths > 0)
+                            Positioned.fill(
+                              child: IgnorePointer(
+                                child: TweenAnimationBuilder<double>(
+                                  key: ValueKey(_baths),
+                                  tween: Tween(begin: 0, end: 1),
+                                  duration: const Duration(milliseconds: 700),
+                                  curve: Curves.easeOutCubic,
+                                  builder: (context, t, _) => CustomPaint(
+                                    painter: _SparklePainter(t: t),
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            if (c.lastMessage != null)
-              CozyChip(
-                child: Text(
-                  c.lastMessage!,
-                  key: const Key('room-feedback'),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: scheme.primary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            const SizedBox(height: 8),
-            CozyChip(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Flexible(
-                        child: Text(
-                          'Rub-a-dub! Scrub with your finger',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      NeedGlow(
-                        label: 'Sparkle',
-                        value: pet.meters.of(CareNeed.hygiene),
-                        icon: Icons.bubble_chart_rounded,
-                      ),
-                    ],
-                  ),
-                  if (_scrub > 0.02) ...[
-                    const SizedBox(height: 6),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: LinearProgressIndicator(
-                        key: const Key('scrub-progress'),
-                        value: _scrub,
-                        minHeight: 8,
-                        color: const Color(0xFF9CC8E0),
-                        backgroundColor: const Color(
-                          0xFF9CC8E0,
-                        ).withValues(alpha: 0.2),
+                        ],
                       ),
                     ),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                CozyImageButton(
-                  asset: KpAssets.btnClean,
-                  label: 'Quick rinse',
-                  tapKey: const Key('bath-quick-rinse'),
-                  onTap: () => c.interact(CareInteraction.clean),
+                  ),
                 ),
-                _PottyButton(controller: c),
+                if (c.lastMessage != null)
+                  CozyChip(
+                    child: Text(
+                      c.lastMessage!,
+                      key: const Key('room-feedback'),
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: scheme.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 8),
+                CozyChip(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Flexible(
+                            child: Text(
+                              'Rub-a-dub! Scrub with your finger',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(fontWeight: FontWeight.w700),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          NeedGlow(
+                            label: 'Sparkle',
+                            value: pet.meters.of(CareNeed.hygiene),
+                            icon: Icons.bubble_chart_rounded,
+                          ),
+                        ],
+                      ),
+                      if (_scrub > 0.02) ...[
+                        const SizedBox(height: 6),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: LinearProgressIndicator(
+                            key: const Key('scrub-progress'),
+                            value: _scrub,
+                            minHeight: 8,
+                            color: const Color(0xFF9CC8E0),
+                            backgroundColor: const Color(
+                              0xFF9CC8E0,
+                            ).withValues(alpha: 0.2),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    CozyImageButton(
+                      asset: KpAssets.btnClean,
+                      label: 'Quick rinse',
+                      tapKey: const Key('bath-quick-rinse'),
+                      onTap: () => c.interact(CareInteraction.clean),
+                    ),
+                    _PottyButton(controller: c),
+                  ],
+                ),
+                const SizedBox(height: kRoomDockClearance),
               ],
             ),
-            const SizedBox(height: kRoomDockClearance),
-          ],
-        ),
+          ),
+          Positioned(
+            top: 6,
+            right: 10,
+            child: SafeArea(
+              child: DecorateButton(controller: c, room: RoomId.bathroom),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -210,7 +227,7 @@ class _PottyButton extends StatelessWidget {
           button: true,
           label: 'Potty break',
           child: Material(
-            color: const Color(0xFFFFF6EC),
+            color: KpColors.cream,
             shape: const CircleBorder(),
             elevation: 2,
             child: InkWell(
@@ -232,10 +249,10 @@ class _PottyButton extends StatelessWidget {
           'Potty break',
           style: Theme.of(context).textTheme.labelMedium?.copyWith(
             fontWeight: FontWeight.w700,
-            color: const Color(0xFF4A3F38),
+            color: KpColors.ink,
             shadows: const [
-              Shadow(color: Color(0xE6FFF6EC), blurRadius: 6),
-              Shadow(color: Color(0xE6FFF6EC), blurRadius: 3),
+              Shadow(color: KpColors.creamVeil, blurRadius: 6),
+              Shadow(color: KpColors.creamVeil, blurRadius: 3),
             ],
           ),
         ),
@@ -298,7 +315,7 @@ class _SparklePainter extends CustomPainter {
     final center = size.center(Offset.zero);
     final radius = size.shortestSide * (0.3 + 0.35 * t);
     final paint = Paint()
-      ..color = const Color(0xFFFFE9A8).withValues(alpha: (1 - t))
+      ..color = KpColors.sunGold.withValues(alpha: (1 - t))
       ..strokeWidth = 2.4
       ..strokeCap = StrokeCap.round;
     for (var i = 0; i < 8; i++) {

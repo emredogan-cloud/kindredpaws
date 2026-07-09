@@ -1,5 +1,5 @@
 name: kindredpaws
-description: "KindredPaws — emotionally intelligent AI virtual-pet mobile game (walking skeleton for environment validation only)."
+description: "KindredPaws — a cozy, child-safe virtual-companion game: adopt a rescued puppy or kitten, care for it, and grow a bond with a pet that remembers you."
 publish_to: "none"
 
 # Managed by release-please (see release-please-config.json). versionName/versionCode
@@ -19,6 +19,9 @@ dependencies:
   # 0.14.x at P2 when the real .riv rig lands. Do not bump to ^0.14 unintentionally.
   rive: ^0.13.0
   shared_preferences: ^2.5.5
+  # Opens the legally-required external links (Privacy Policy / Terms at the
+  # point of sale per Apple 3.1.2, support page per 1.5) — KP-003/KP-004.
+  url_launcher: ^6.3.1
   firebase_core: ^4.11.0
   cloud_firestore: ^6.6.0
   firebase_auth: ^6.5.4
@@ -59,3 +62,5 @@ flutter:
     - assets/wardrobe/
     # Original synthesized SFX (tool/generate_sfx.dart — license-clean).
     - assets/audio/
+    # Generated item sticker art (tool/generate_gpt_assets.py).
+    - assets/items/

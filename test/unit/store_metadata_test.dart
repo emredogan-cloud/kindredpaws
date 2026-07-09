@@ -36,6 +36,35 @@ void main() {
       expect(File('store/checklist.md').existsSync(), isTrue);
     });
 
+    test('privacy + support URLs are wired and backed by authored pages '
+        '(KP-004)', () {
+      // The store metadata, the in-app links, and the hosted pages must never
+      // drift: each URL constant appears in metadata and has real content in
+      // site/ behind it (deployed by .github/workflows/pages.yml).
+      final privacyUrl = File(
+        'store/metadata/en-US/privacy_url.txt',
+      ).readAsStringSync().trim();
+      final supportUrl = File(
+        'store/metadata/en-US/support_url.txt',
+      ).readAsStringSync().trim();
+      expect(privacyUrl, startsWith('https://'));
+      expect(supportUrl, startsWith('https://'));
+
+      final links = File('lib/core/legal_links.dart').readAsStringSync();
+      expect(links, contains(privacyUrl));
+      expect(links, contains(supportUrl));
+
+      expect(File('site/privacy/index.html').existsSync(), isTrue);
+      expect(File('site/terms/index.html').existsSync(), isTrue);
+      expect(File('site/support/index.html').existsSync(), isTrue);
+      // The privacy page must reflect the honest posture headlines.
+      final page = File(
+        'site/privacy/index.html',
+      ).readAsStringSync().toLowerCase();
+      expect(page, contains('never sell'));
+      expect(page, contains('right to be forgotten'));
+    });
+
     test('the description stays on-message (rescue + memory + child-safe)', () {
       final d = File(
         'store/metadata/en-US/description.txt',
